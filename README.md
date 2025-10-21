@@ -262,11 +262,10 @@ Meet the talented team behind MenuLix from the **National School of Artificial I
 | Role | Name | GitHub |
 |------|------|--------|
 | 👨‍💼 **Team Leader** | MAHDI YAHYA ABDERRAHMANE | [@yahyaMMD](https://github.com/yahyaMMD) |
-| 👩‍💻 **Developer** | BOUTAYA HALA | [@BoutayaHala](#) |
-| 👨‍💻 **Developer** | GUENDOUZ AHMED FATEH | [@GuendouzFateh](#) |
-| 👨‍💻 **Developer** | CHERDOUH YASSIR | [@CherdouhYassir](#) |
-| 👨‍💻 **Developer** | BENNACER ACHREF BAHA EDDINE | [@BennacerAchref](#) |
-| 👩‍💻 **Developer** | HAICHOUR AMANI | [@HaichourAmani](#) |
+| 👩‍💻 **Developer** | BOUTAYA HALA | [ HALA BOUTAYA ](https://github.com/hallaboutaya) |
+| 👨‍💻 **Developer** | CHERDOUH YASSIR |[ YASSIR CHERDOUH ](https://github.com/yassircherdouh) |
+| 👨‍💻 **Developer** | BENNACER ACHREF BAHA EDDINE | [ ACHRAF BAHA EDDINE BENNACER](https://github.com/ax666raf) |
+| 👩‍💻 **Developer** | HAICHOUR AMANI | [ AMANI HAICHOUR ](https://github.com/amanihaichour) |
 
 ---
 
