@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🍽️ MenuLix
+# 🍽️ QrMenu
 
 ### *Transform Your Restaurant Experience with Digital Menus*
 
