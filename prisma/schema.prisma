@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  email         String        @unique
+  password      String
+  role          Role          @default(USER)
+  profiles      Profile[]
+  subscriptions Subscription[]
+  createdAt     DateTime      @default(now())
+}
+
+model Profile {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  ownerId     String    @db.ObjectId
+  owner       User      @relation(fields: [ownerId], references: [id])
+  name        String
+  description String?
+  logo        String?
+  socialLinks Json?
+  location    Json?
+  menus       Menu[]
+  feedbacks   Feedback[]
+  createdAt   DateTime  @default(now())
+}
+
+model Menu {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  profileId   String     @db.ObjectId
+  profile     Profile    @relation(fields: [profileId], references: [id])
+  name        String
+  description String?
+  types       Type[]
+  categories  Category[]
+  tags        Tag[]
+  items       Item[]
+  isActive    Boolean    @default(false)
+  analytics   Analytics[]
+  createdAt   DateTime   @default(now())
+}
+
+model Type {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  name    String
+  image   String?
+  menuId  String @db.ObjectId
+}
+
+model Category {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  name    String
+  image   String?
+  menuId  String @db.ObjectId
+}
+
+model Tag {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  name    String
+  color   String
+  menuId  String @db.ObjectId
+}
+
+model Item {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  image       String?
+  categoryId  String?
+  typeId      String?
+  menuId      String   @db.ObjectId
+  tags        String[]
+  price       Float?
+}
+
+model Feedback {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  profileId   String   @db.ObjectId
+  userName    String
+  rating      Int
+  comment     String?
+  createdAt   DateTime @default(now())
+}
+
+model Subscription {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  plan        Plan
+  expiresAt   DateTime
+  active      Boolean  @default(true)
+  paymentRef  String?
+}
+
+model Analytics {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  menuId    String   @db.ObjectId
+  date      DateTime
+  scans     Int      @default(0)
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Plan {
+  FREE
+  STANDARD
+  CUSTOM
+}
