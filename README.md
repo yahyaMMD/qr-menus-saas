@@ -97,7 +97,7 @@ menulix/
 ├── 📁 components/                # Reusable React components
 ├── 📁 lib/                       # Utility functions & helpers
 ├── 📁 prisma/                    # Database schema & migrations
-└── 📁 public/                    # Static assets
+└── 📁 public/                    # Static assets (images, icons, etc.)
 ```
 
 ---
