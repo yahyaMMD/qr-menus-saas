@@ -52,6 +52,7 @@ model Type {
   name    String
   image   String?
   menuId  String @db.ObjectId
+  menu Menu @relation(fields: [menuId], references: [id])
 }
 
 model Category {
@@ -59,6 +60,7 @@ model Category {
   name    String
   image   String?
   menuId  String @db.ObjectId
+  menu Menu @relation(fields: [menuId], references: [id])
 }
 
 model Tag {
@@ -66,6 +68,7 @@ model Tag {
   name    String
   color   String
   menuId  String @db.ObjectId
+  menu Menu @relation(fields: [menuId], references: [id])
 }
 
 model Item {
@@ -78,6 +81,9 @@ model Item {
   menuId      String   @db.ObjectId
   tags        String[]
   price       Float?
+  menu     Menu      @relation(fields: [menuId], references: [id])
+  category Category? @relation(fields: [categoryId], references: [id])
+  type     Type?     @relation(fields: [typeId], references: [id])
 }
 
 model Feedback {
@@ -87,6 +93,7 @@ model Feedback {
   rating      Int
   comment     String?
   createdAt   DateTime @default(now())
+  profile Profile @relation(fields: [profileId], references: [id])
 }
 
 model Subscription {
@@ -96,6 +103,7 @@ model Subscription {
   expiresAt   DateTime
   active      Boolean  @default(true)
   paymentRef  String?
+  user User @relation(fields: [userId], references: [id])
 }
 
 model Analytics {
@@ -103,6 +111,7 @@ model Analytics {
   menuId    String   @db.ObjectId
   date      DateTime
   scans     Int      @default(0)
+  menu Menu @relation(fields: [menuId], references: [id])
 }
 
 enum Role {
