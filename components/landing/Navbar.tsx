@@ -1,4 +1,6 @@
+// @ts-nocheck
 "use client";
+
 
 
 

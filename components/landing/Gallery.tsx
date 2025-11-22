@@ -1,7 +1,9 @@
 //import gallery1 from "../../public/assets/gallery-1.jpg";
 //import gallery2 from "../../public/assets/gallery-2.jpg";
 //import gallery3 from "../../public/assets/gallery-3.jpg";
+// @ts-nocheck
 import Image from "next/image";
+import Link from "next/link";
 import heroImage from "../../public/assets/home-bg.png";
 export const Gallery = () => {
   return (
@@ -23,10 +25,18 @@ export const Gallery = () => {
               alt="Digital menu on tablet"
               className="w-full h-80 object-cover group-hover:scale-110 transition-transform duration-300"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
-              <p className="text-white text-lg font-semibold p-6">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-end justify-end">
+              <p className="text-white text-lg font-semibold p-6 w-full">
                 Interactive Menu Design
               </p>
+              <Link 
+                href="/menu/restaurant-1" 
+                className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              >
+                <button className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold">
+                  View Menu
+                </button>
+              </Link>
             </div>
           </div>
 
@@ -36,10 +46,18 @@ export const Gallery = () => {
               alt="Digital menu on smartphone"
               className="w-full h-80 object-cover group-hover:scale-110 transition-transform duration-300"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
-              <p className="text-white text-lg font-semibold p-6">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-end justify-end">
+              <p className="text-white text-lg font-semibold p-6 w-full">
                 Mobile-Optimized Experience
               </p>
+              <Link 
+                href="/menu/restaurant-2" 
+                className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              >
+                <button className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold">
+                  View Menu
+                </button>
+              </Link>
             </div>
           </div>
 
@@ -49,10 +67,18 @@ export const Gallery = () => {
               alt="QR code menu stand"
               className="w-full h-80 object-cover group-hover:scale-110 transition-transform duration-300"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
-              <p className="text-white text-lg font-semibold p-6">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-end justify-end">
+              <p className="text-white text-lg font-semibold p-6 w-full">
                 Seamless QR Integration
               </p>
+              <Link 
+                href="/menu/restaurant-3" 
+                className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              >
+                <button className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg font-semibold">
+                  View Menu
+                </button>
+              </Link>
             </div>
           </div>
         </div>

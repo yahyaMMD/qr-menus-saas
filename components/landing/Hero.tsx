@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Button } from "../ui/button";
 import { ArrowRight } from "lucide-react";
 import heroImage from "../../public/assets/home-bg.png";

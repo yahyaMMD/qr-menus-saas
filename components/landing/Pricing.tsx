@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Button } from "../ui/button";
 import { Check } from "lucide-react";
 

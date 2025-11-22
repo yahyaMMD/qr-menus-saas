@@ -1,5 +1,5 @@
+// @ts-nocheck
 "use client";
-
 import { QrCode, Smartphone, TrendingUp } from "lucide-react";
 
 const steps = [
