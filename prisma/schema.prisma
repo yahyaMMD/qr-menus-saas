@@ -8,20 +8,20 @@ datasource db {
 }
 
 model User {
-  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  id            String          @id @default(auto()) @map("_id") @db.ObjectId
   name          String
-  email         String        @unique
+  email         String          @unique
   password      String
-  role          Role          @default(USER)
+  role          Role            @default(USER)
   profiles      Profile[]
   subscriptions Subscription[]
-  createdAt     DateTime      @default(now())
+  createdAt     DateTime        @default(now())
 }
 
 model Profile {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  ownerId     String    @db.ObjectId
-  owner       User      @relation(fields: [ownerId], references: [id])
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  ownerId     String     @db.ObjectId
+  owner       User       @relation(fields: [ownerId], references: [id])
   name        String
   description String?
   logo        String?
@@ -29,89 +29,94 @@ model Profile {
   location    Json?
   menus       Menu[]
   feedbacks   Feedback[]
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime   @default(now())
 }
 
 model Menu {
-  id          String     @id @default(auto()) @map("_id") @db.ObjectId
-  profileId   String     @db.ObjectId
-  profile     Profile    @relation(fields: [profileId], references: [id])
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  profileId   String      @db.ObjectId
+  profile     Profile     @relation(fields: [profileId], references: [id])
   name        String
   description String?
   types       Type[]
   categories  Category[]
   tags        Tag[]
   items       Item[]
-  isActive    Boolean    @default(false)
+  isActive    Boolean     @default(false)
   analytics   Analytics[]
-  createdAt   DateTime   @default(now())
+  createdAt   DateTime    @default(now())
 }
 
 model Type {
-  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
   name    String
   image   String?
-  menuId  String @db.ObjectId
-  menu Menu @relation(fields: [menuId], references: [id])
+  menuId  String  @db.ObjectId
+  menu    Menu    @relation(fields: [menuId], references: [id])
+
+  items   Item[]  // back relation from Item.type
 }
 
 model Category {
-  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
   name    String
   image   String?
-  menuId  String @db.ObjectId
-  menu Menu @relation(fields: [menuId], references: [id])
+  menuId  String  @db.ObjectId
+  menu    Menu    @relation(fields: [menuId], references: [id])
+
+  items   Item[]  // back relation from Item.category
 }
 
 model Tag {
-  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
   name    String
   color   String
-  menuId  String @db.ObjectId
-  menu Menu @relation(fields: [menuId], references: [id])
+  menuId  String  @db.ObjectId
+  menu    Menu    @relation(fields: [menuId], references: [id])
 }
 
 model Item {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
   name        String
   description String?
   image       String?
-  categoryId  String?
-  typeId      String?
-  menuId      String   @db.ObjectId
+  categoryId  String?   @db.ObjectId
+  typeId      String?   @db.ObjectId
+  menuId      String    @db.ObjectId
   tags        String[]
   price       Float?
+
   menu     Menu      @relation(fields: [menuId], references: [id])
   category Category? @relation(fields: [categoryId], references: [id])
   type     Type?     @relation(fields: [typeId], references: [id])
 }
 
 model Feedback {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  profileId   String   @db.ObjectId
-  userName    String
-  rating      Int
-  comment     String?
-  createdAt   DateTime @default(now())
-  profile Profile @relation(fields: [profileId], references: [id])
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  profileId String   @db.ObjectId
+  profile   Profile  @relation(fields: [profileId], references: [id])
+  userName  String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
 }
 
 model Subscription {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String   @db.ObjectId
-  plan        Plan
-  expiresAt   DateTime
-  active      Boolean  @default(true)
-  paymentRef  String?
-  user User @relation(fields: [userId], references: [id])
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId
+  user       User     @relation(fields: [userId], references: [id])
+  plan       Plan
+  expiresAt  DateTime
+  active     Boolean  @default(true)
+  paymentRef String?
 }
 
 model Analytics {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  menuId    String   @db.ObjectId
-  date      DateTime
-  scans     Int      @default(0)
-  menu Menu @relation(fields: [menuId], references: [id])
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  menuId  String   @db.ObjectId
+  date    DateTime
+  scans   Int      @default(0)
+  menu    Menu     @relation(fields: [menuId], references: [id])
 }
 
 enum Role {
