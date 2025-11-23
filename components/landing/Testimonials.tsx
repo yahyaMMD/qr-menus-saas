@@ -3,58 +3,68 @@ import { Star } from "lucide-react";
 
 const testimonials = [
   {
-    name: "Sarah Johnson",
-    role: "Owner, The Garden Bistro",
-    content: "Switching to digital menus was the best decision we made. Our customers love how easy it is to browse, and we save thousands on printing costs.",
+    name: "Maya Priya",
+    role: "Chef",
+    content: "Nomen adipiscing amet est nunc lorem rhoncus tVeh non odio tellus ipsum. Nunc eget fermentum lorem felis nec handrerit eget. Eu sit.",
     rating: 5,
+    avatar: "MP",
   },
   {
-    name: "Michael Chen",
-    role: "Manager, Urban Eats",
-    content: "The analytics feature is incredible! We now know exactly which dishes are popular and can adjust our menu accordingly. Game changer!",
+    name: "American Burger",
+    role: "Manager",
+    content: "Nomen adipiscing amet est nunc lorem rhoncus tVeh non odio tellus ipsum. Nunc eget fermentum lorem felis nec handrerit eget. Eu sit.",
     rating: 5,
+    avatar: "AB",
   },
   {
-    name: "Elena Rodriguez",
-    role: "Chef & Owner, La Mesa",
-    content: "I can update our daily specials in seconds. No more reprinting menus every day. Our customers appreciate the real-time updates.",
+    name: "LVRS org",
+    role: "Owner",
+    content: "Nomen adipiscing amet est nunc lorem rhoncus tVeh non odio tellus ipsum. Nunc eget fermentum lorem felis nec handrerit eget. Eu sit.",
     rating: 5,
+    avatar: "L",
   },
 ];
 
 export const Testimonials = () => {
   return (
-    <section className="py-20 bg-secondary">
+    <section className="py-20 bg-gray-50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             What Our Clients Say
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Join thousands of restaurants already loving their digital menus
-          </p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {testimonials.map((testimonial, index) => (
             <div
               key={index}
-              className="bg-card rounded-2xl p-8 shadow-lg"
+              className="bg-white rounded-xl p-8 shadow-md border border-gray-200"
             >
-              <div className="flex gap-1 mb-4">
-                {[...Array(testimonial.rating)].map((_, i) => (
-                  <Star key={i} className="h-5 w-5 fill-primary text-primary" />
-                ))}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center text-white font-bold">
+                  {testimonial.avatar}
+                </div>
+                <div>
+                  <p className="font-bold text-gray-900">{testimonial.name}</p>
+                  <div className="flex gap-1">
+                    {[...Array(testimonial.rating)].map((_, i) => (
+                      <Star key={i} className="h-4 w-4 fill-orange-400 text-orange-400" />
+                    ))}
+                  </div>
+                </div>
               </div>
-              <p className="text-foreground mb-6 leading-relaxed">
-                "{testimonial.content}"
+              <p className="text-gray-700 leading-relaxed text-sm">
+                {testimonial.content}
               </p>
-              <div>
-                <p className="font-bold text-foreground">{testimonial.name}</p>
-                <p className="text-sm text-muted-foreground">{testimonial.role}</p>
-              </div>
             </div>
           ))}
+        </div>
+        
+        <div className="text-center mt-8">
+          <a href="#" className="text-orange-500 hover:text-orange-600 font-semibold">
+            See All Reviews
+          </a>
         </div>
       </div>
     </section>

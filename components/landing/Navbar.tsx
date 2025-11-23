@@ -1,9 +1,6 @@
 // @ts-nocheck
 "use client";
 
-
-
-
 import { Button } from "../ui/button";
 import { Menu } from "lucide-react";
 import { useState } from "react";
@@ -12,37 +9,40 @@ export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <a href="/" className="text-2xl font-bold text-primary">
-            QResto
+          <a href="/" className="text-2xl font-bold text-orange-500">
+            MenuLix
           </a>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-foreground hover:text-primary transition-colors">
-              Features
+            <a href="/" className="text-gray-700 hover:text-orange-500 transition-colors">
+              Home
             </a>
-            <a href="#pricing" className="text-foreground hover:text-primary transition-colors">
+            <a href="#pricing" className="text-gray-700 hover:text-orange-500 transition-colors">
               Pricing
             </a>
-            <a href="#testimonials" className="text-foreground hover:text-primary transition-colors">
-              Testimonials
+            <a href="#about" className="text-gray-700 hover:text-orange-500 transition-colors">
+              About
             </a>
-            <a href="#contact" className="text-foreground hover:text-primary transition-colors">
+            <a href="#support" className="text-gray-700 hover:text-orange-500 transition-colors">
+              Support
+            </a>
+            <a href="#contact" className="text-gray-700 hover:text-orange-500 transition-colors">
               Contact
             </a>
           </div>
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-4">
-            <Button variant="ghost">
-              Log In
+            <Button variant="ghost" className="text-gray-700">
+              Login
             </Button>
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              Get Started
+            <Button className="bg-orange-500 hover:bg-orange-600 text-white">
+              Register
             </Button>
           </div>
 
