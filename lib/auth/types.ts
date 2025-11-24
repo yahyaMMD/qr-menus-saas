@@ -1,6 +1,7 @@
 export enum Role {
   USER = 'USER',
   ADMIN = 'ADMIN',
+  RESTAURANT_OWNER = 'RESTAURANT_OWNER',
 }
 
 export interface JWTPayload {
