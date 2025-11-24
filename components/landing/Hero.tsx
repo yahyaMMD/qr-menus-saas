@@ -1,7 +1,8 @@
 // @ts-nocheck
 import { Button } from "../ui/button";
-import heroImage from "../../public/assets/home-bg.png";
+import heroImage from "@/public/assets/home-bg.png";
 import Image from "next/image";
+import Link from "next/link";
 
 export const Hero = () => {
   return (
@@ -28,16 +29,20 @@ export const Hero = () => {
             BUILD STYLISH CONTACTLESS DIGITAL MENUS FOR YOUR RESTAURANT IN MINUTES. SAVE TIME, REDUCE PRINTING COSTS, AND GIVE YOUR CUSTOMERS A MODERN EXPERIENCE WITH MENULIX.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="text-base px-8 py-6 bg-orange-500 hover:bg-orange-600 text-white uppercase font-semibold">
-              Get Started
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="text-base px-8 py-6 border-2 border-white text-white hover:bg-white hover:text-gray-900 uppercase font-semibold"
-            >
-              View Pricing
-            </Button>
+            <Link href="/menu/restaurant-1">
+              <Button size="lg" className="text-base px-8 py-6 bg-orange-500 hover:bg-orange-600 text-white uppercase font-semibold">
+                Get Started Free
+              </Button>
+            </Link>
+            <Link href="/pricing">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="text-base px-8 py-6 border-2 border-white text-white hover:bg-white hover:text-gray-900 uppercase font-semibold"
+              >
+                View Pricing
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

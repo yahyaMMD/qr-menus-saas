@@ -4,6 +4,7 @@
 import { Button } from "../ui/button";
 import { Menu } from "lucide-react";
 import { useState } from "react";
+import Link from "next/link";
 
 export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -38,12 +39,16 @@ export const Navbar = () => {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-4">
-            <Button variant="ghost" className="text-gray-700">
-              Login
-            </Button>
-            <Button className="bg-orange-500 hover:bg-orange-600 text-white">
-              Register
-            </Button>
+            <Link href="/auth/login">
+              <Button variant="ghost" className="text-gray-700">
+                Login
+              </Button>
+            </Link>
+            <Link href="/auth/register">
+              <Button className="bg-orange-500 hover:bg-orange-600 text-white">
+                Register
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -72,12 +77,16 @@ export const Navbar = () => {
                 Contact
               </a>
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
-                <Button variant="ghost" className="w-full">
-                  Log In
-                </Button>
-                <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-                  Get Started
-                </Button>
+                <Link href="/auth/login">
+                  <Button variant="ghost" className="w-full">
+                    Log In
+                  </Button>
+                </Link>
+                <Link href="/auth/register">
+                  <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+                    Get Started
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
