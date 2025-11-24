@@ -6,7 +6,14 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:push": "prisma db push",
+    "db:seed": "prisma db seed",
+    "prisma:generate": "prisma generate",
+    "prisma:studio": "prisma studio"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -29,12 +36,12 @@
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.552.0",
     "mongodb": "^6.20.0",
-    "next": "15.5.6",
+    "next": "^15.5.6",
     "next-auth": "^4.24.13",
     "prisma": "^6.17.1",
     "qrcode": "^1.5.4",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "react-hook-form": "^7.66.0",
     "recharts": "^3.3.0",
     "sonner": "^2.0.7",
@@ -54,6 +61,7 @@
     "eslint-config-next": "15.5.6",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.13",
-    "typescript": "^5"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   }
 }

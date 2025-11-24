@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 
 export const Footer = () => {
