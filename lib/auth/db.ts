@@ -1,5 +1,5 @@
-import { Role } from './types';
-
+import { Role } from '@/lib/auth/types';
+import { prisma } from '@/lib/prisma';
 /**
  * User data structure matching Prisma User model
  */
@@ -37,6 +37,14 @@ export async function createUser(data: {
   role?: Role;
 }): Promise<UserData> {
   // for later:  implement DB query
+  throw new Error('Database operation not implemented');
+}
+
+export async function updateUser(
+  id: string,
+  data: Partial<Pick<UserData, 'name' | 'email' | 'password'>>
+): Promise<UserData> {
+  // for later: implement DB query
   throw new Error('Database operation not implemented');
 }
 
