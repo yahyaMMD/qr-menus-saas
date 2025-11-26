@@ -190,5 +190,5 @@ export const RestaurantProfile = ({ profileId }: { profileId: string }) => {
         </div>
       </div>
     </DashboardLayout>
-  );
+  ); 
 };
