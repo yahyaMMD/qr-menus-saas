@@ -1,124 +1,118 @@
 // @ts-nocheck
-import { Button } from "../ui/button";
-import { Check } from "lucide-react";
+'use client'
 
-const plans = [
-  {
-    name: "Free",
-    price: "0",
-    period: "/Month",
-    description: "Get started for free!",
-    features: [
-      "1 Profile",
-      "Basic Customization",
-      "Up to 10 Menu Items",
-      "QR Code Generation",
-      "Maximum of 10 scans",
-    ],
-    buttonText: "Start For Free",
-    buttonVariant: "outline",
-  },
-  {
-    name: "Standard",
-    price: "999",
-    period: "DZD/Month",
-    description: "Best value with all features",
-    features: [
-      "Unlimited Profiles",
-      "Advanced Customization",
-      "Unlimited Menu Items",
-      "QR Code Generation",
-      "Unlimited Scans",
-      "Menu Analytics",
-      "Advanced Reporting",
-    ],
-    highlighted: true,
-    badge: "Most Popular",
-    buttonText: "Subscribe Now",
-    buttonVariant: "primary",
-  },
-  {
-    name: "Custom",
-    price: "Contact Us",
-    period: "",
-    description: "For unique and specific operations",
-    features: [
-      "Custom Standard Plan, plus:",
-      "Fully tailored system for your restaurant",
-      "Dedicated Account Manager",
-    ],
-    buttonText: "Contact Achref",
-    buttonVariant: "outline",
-  },
-];
+import React from 'react'
+import { Check } from 'lucide-react'
 
-export const Pricing = () => {
+export default function Pricing() {
+  const plans = [
+    {
+      name: 'Free',
+      price: 'Free',
+      period: 'Forever',
+      features: [
+        '1 Restaurant Profile',
+        '1 Menu',
+        'QR Code Generation',
+      ],
+      buttonText: 'Get Started',
+      buttonStyle: 'border-2 border-gray-300 text-gray-900 hover:bg-gray-50',
+      popular: false,
+    },
+    {
+      name: 'Standard',
+      price: '2,500 DZD',
+      period: 'per month',
+      features: [
+        '3 Restaurant Profiles',
+        '3 Menus per Restaurant',
+        'QR Code Generation',
+        'Advanced Analytics',
+        'Priority Support',
+      ],
+      buttonText: 'Get This Plan',
+      buttonStyle: 'bg-orange-500 text-white hover:bg-orange-600',
+      popular: true,
+    },
+    {
+      name: 'Custom',
+      price: 'Custom',
+      period: 'pricing',
+      features: [
+        'Unlimited Profiles',
+        'Unlimited Menus',
+        'QR Code Generation',
+        'Custom Website',
+        'Dedicated Support',
+      ],
+      buttonText: 'Contact Sales',
+      buttonStyle: 'border-2 border-gray-300 text-gray-900 hover:bg-gray-50',
+      popular: false,
+    },
+  ]
+
   return (
     <section className="py-20 bg-gray-50" id="pricing">
-      <div className="container mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Section Header */}
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Find Your Perfect Plan
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            Simple, Transparent Pricing
           </h2>
           <p className="text-lg text-gray-600">
-            all plans include our core digital menu features. Upgrade for more advanced tools to delight your customers and grow your business
+            Choose the plan that fits your restaurant
           </p>
         </div>
 
+        {/* Pricing Cards */}
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {plans.map((plan, index) => (
+          {plans.map((plan) => (
             <div
-              key={index}
-              className={`rounded-xl p-8 border-2 transition-all relative ${
-                plan.highlighted
-                  ? "bg-white border-orange-500 shadow-2xl transform md:-translate-y-2"
-                  : "bg-white border-gray-200 shadow-lg"
+              key={plan.name}
+              className={`bg-white rounded-xl p-8 shadow-lg relative ${
+                plan.popular ? 'border-2 border-orange-500 scale-105' : 'border border-gray-200'
               }`}
             >
-              {plan.badge && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+              {plan.popular && (
+                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                   <span className="bg-orange-500 text-white px-4 py-1 rounded-full text-sm font-semibold">
-                    {plan.badge}
+                    Most Popular
                   </span>
                 </div>
               )}
-              
+
               <div className="text-center mb-6">
-                <h3 className="text-2xl font-bold mb-2 text-gray-900">{plan.name}</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
                 <div className="mb-2">
-                  <span className="text-4xl font-bold text-gray-900">{plan.price === "Contact Us" ? "" : plan.price}</span>
-                  {plan.price !== "Contact Us" && plan.period && (
-                    <span className="text-gray-600 ml-1">{plan.period}</span>
-                  )}
-                  {plan.price === "Contact Us" && (
-                    <span className="text-2xl font-bold text-gray-900">{plan.price}</span>
-                  )}
+                  <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
                 </div>
-                <p className="text-gray-600">{plan.description}</p>
+                <p className="text-gray-600 text-sm">{plan.period}</p>
               </div>
 
-              <Button
-                className={`w-full mb-6 ${
-                  plan.buttonVariant === "primary"
-                    ? "bg-orange-500 text-white hover:bg-orange-600"
-                    : "bg-white text-orange-500 border-2 border-orange-500 hover:bg-orange-50"
-                }`}
-              >
-                {plan.buttonText}
-              </Button>
-
-              <ul className="space-y-3">
-                {plan.features.map((feature, featureIndex) => (
-                  <li key={featureIndex} className="flex items-start gap-3">
-                    <Check className="h-5 w-5 flex-shrink-0 mt-0.5 text-orange-500" />
+              <ul className="space-y-4 mb-8">
+                {plan.features.map((feature) => (
+                  <li key={feature} className="flex items-start gap-3">
+                    <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-700">{feature}</span>
                   </li>
                 ))}
               </ul>
+
+              <button
+                className={`w-full py-3 px-6 rounded-lg font-semibold transition ${plan.buttonStyle}`}
+              >
+                {plan.buttonText}
+              </button>
             </div>
           ))}
         </div>
+
+        <div className="text-center mt-12">
+          <button className="text-orange-500 font-semibold hover:underline">
+            View All Plans
+          </button>
+        </div>
       </div>
     </section>
-  );
-};
+  )
+}

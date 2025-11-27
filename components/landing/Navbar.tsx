@@ -1,97 +1,62 @@
 // @ts-nocheck
-"use client";
+'use client'
 
-import { Button } from "../ui/button";
-import { Menu } from "lucide-react";
-import { useState } from "react";
-import Link from "next/link";
+import Link from 'next/link'
+import { useState } from 'react'
+import { Menu, X } from 'lucide-react'
 
-export const Navbar = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+export default function Navbar() {
+  const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+    <nav className="bg-white border-b border-gray-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <a href="/" className="text-2xl font-bold text-orange-500">
-            MenuLix
-          </a>
+          <div className="flex items-center gap-2">
+            <button className="lg:hidden" onClick={() => setIsOpen(!isOpen)}>
+              {isOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+            <Link href="/" className="text-xl font-bold text-gray-900">
+              MenuMaster
+            </Link>
+          </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
-            <a href="/" className="text-gray-700 hover:text-orange-500 transition-colors">
-              Home
-            </a>
-            <a href="#pricing" className="text-gray-700 hover:text-orange-500 transition-colors">
+          <div className="hidden lg:flex items-center gap-8">
+            <Link href="#pricing" className="text-gray-700 hover:text-gray-900">
               Pricing
-            </a>
-            <a href="#about" className="text-gray-700 hover:text-orange-500 transition-colors">
-              About
-            </a>
-            <a href="#support" className="text-gray-700 hover:text-orange-500 transition-colors">
-              Support
-            </a>
-            <a href="#contact" className="text-gray-700 hover:text-orange-500 transition-colors">
-              Contact
-            </a>
-          </div>
-
-          {/* Desktop CTA */}
-          <div className="hidden md:flex items-center gap-4">
-            <Link href="/auth/login">
-              <Button variant="ghost" className="text-gray-700">
-                Login
-              </Button>
             </Link>
-            <Link href="/auth/register">
-              <Button className="bg-orange-500 hover:bg-orange-600 text-white">
-                Register
-              </Button>
+            <Link href="#signin" className="text-gray-700 hover:text-gray-900">
+              Sign in
+            </Link>
+            <Link
+              href="#get-started"
+              className="bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-800 transition"
+            >
+              Get Started
             </Link>
           </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            <Menu className="h-6 w-6" />
-          </button>
         </div>
 
         {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-border">
-            <div className="flex flex-col gap-4">
-              <a href="#features" className="text-foreground hover:text-primary transition-colors">
-                Features
-              </a>
-              <a href="#pricing" className="text-foreground hover:text-primary transition-colors">
-                Pricing
-              </a>
-              <a href="#testimonials" className="text-foreground hover:text-primary transition-colors">
-                Testimonials
-              </a>
-              <a href="#contact" className="text-foreground hover:text-primary transition-colors">
-                Contact
-              </a>
-              <div className="flex flex-col gap-2 pt-4 border-t border-border">
-                <Link href="/auth/login">
-                  <Button variant="ghost" className="w-full">
-                    Log In
-                  </Button>
-                </Link>
-                <Link href="/auth/register">
-                  <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-                    Get Started
-                  </Button>
-                </Link>
-              </div>
-            </div>
+        {isOpen && (
+          <div className="lg:hidden py-4 space-y-4">
+            <Link href="#pricing" className="block text-gray-700 hover:text-gray-900">
+              Pricing
+            </Link>
+            <Link href="#signin" className="block text-gray-700 hover:text-gray-900">
+              Sign in
+            </Link>
+            <Link
+              href="#get-started"
+              className="block bg-gray-900 text-white px-4 py-2 rounded-md hover:bg-gray-800 transition text-center"
+            >
+              Get Started
+            </Link>
           </div>
         )}
       </div>
     </nav>
-  );
-};
+  )
+}

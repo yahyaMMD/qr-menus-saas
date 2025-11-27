@@ -1,36 +1,24 @@
 // @ts-nocheck
-import { Navbar } from "../../components/landing/Navbar";
-import { Hero } from "../../components/landing/Hero";
-import { HowItWorks } from "../../components/landing/HowItWorks";
-import { Pricing } from "../../components/landing/Pricing";
-import { Gallery } from "../../components/landing/Gallery";
-import { Testimonials } from "../../components/landing/Testimonials";
-import { Contact } from "../../components/landing/Contact";
-import { Footer } from "../../components/landing/Footer";
+import Hero from '@/components/landing/Hero'
+import HowItWorks from '@/components/landing/HowItWorks'
+import Pricing from '@/components/landing/Pricing'
+import MenuShowcase from '@/components/landing/MenuShowcase'
+import Testimonials from '@/components/landing/Testimonials'
+import CTA from '@/components/landing/CTA'
+import Footer from '@/components/landing/Footer'
+import Navbar from '@/components/landing/Navbar'
 
-const Homepage = () => {
+export default function Home() {
   return (
-    <div className="min-h-screen">
+    <main className="min-h-screen bg-white">
       <Navbar />
-      <main className="pt-16">
-        <Hero />
-        <div id="features">
-          <HowItWorks />
-        </div>
-        <div id="pricing">
-          <Pricing />
-        </div>
-        <Gallery />
-        <div id="testimonials">
-          <Testimonials />
-        </div>
-        <div id="contact">
-          <Contact />
-        </div>
-      </main>
+      <Hero />
+      <HowItWorks />
+      <Pricing />
+      <MenuShowcase />
+      <Testimonials />
+      <CTA />
       <Footer />
-    </div>
-  );
-};
-
-export default Homepage;
+    </main>
+  )
+}

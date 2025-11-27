@@ -1,51 +1,50 @@
 // @ts-nocheck
-import { Button } from "../ui/button";
-import heroImage from "@/public/assets/home-bg.png";
-import Image from "next/image";
-import Link from "next/link";
+import Link from 'next/link'
+import Image from 'next/image'
+import heroImage from '@/public/assets/hero-image.png'
 
-export const Hero = () => {
+export default function Hero() {
   return (
-    <section className="relative min-h-[600px] flex items-center overflow-hidden">
-      {/* Background Image with Overlay */}
-      <div className="absolute inset-0 z-0">
-        <Image
-          src={heroImage}
-          alt="Elegant restaurant interior"
-          className="w-full h-full object-cover"
-          fill
-          priority
-        />
-        <div className="absolute inset-0 bg-black/60" />
-      </div>
-
-      {/* Content */}
-      <div className="container relative z-10 mx-auto px-4 py-20">
-        <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight uppercase">
-            SAY GOODBYE TO PAPER MENUS
-          </h1>
-          <p className="text-base md:text-lg text-white/90 mb-8 leading-relaxed max-w-2xl mx-auto">
-            BUILD STYLISH CONTACTLESS DIGITAL MENUS FOR YOUR RESTAURANT IN MINUTES. SAVE TIME, REDUCE PRINTING COSTS, AND GIVE YOUR CUSTOMERS A MODERN EXPERIENCE WITH MENULIX.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/menu/restaurant-1">
-              <Button size="lg" className="text-base px-8 py-6 bg-orange-500 hover:bg-orange-600 text-white uppercase font-semibold">
+    <section className="bg-orange-50 py-20 lg:py-32">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          {/* Left Content */}
+          <div className="space-y-8">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
+              Transform Your Restaurant Menu. Digitally.
+            </h1>
+            <p className="text-lg text-gray-700">
+              Upload your digital menus, generate QR codes, and get real-time analytics - all in one
+              platform.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Link
+                href="/dashboard"
+                className="bg-orange-500 text-white px-8 py-4 rounded-lg hover:bg-orange-600 transition font-semibold text-center"
+              >
                 Get Started Free
-              </Button>
-            </Link>
-            <Link href="/pricing">
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="text-base px-8 py-6 border-2 border-white text-white hover:bg-white hover:text-gray-900 uppercase font-semibold"
+              </Link>
+              <Link
+                href="/pricing"
+                className="border-2 border-gray-900 text-gray-900 px-8 py-4 rounded-lg hover:bg-gray-900 hover:text-white transition font-semibold text-center"
               >
                 View Pricing
-              </Button>
-            </Link>
+              </Link>
+            </div>
+          </div>
+
+          {/* Right Image - Leave space for your image */}
+          <div className="relative h-[400px] lg:h-[500px] rounded-2xl overflow-hidden shadow-2xl bg-gray-100">
+            <Image
+              src={heroImage}
+              alt="Restaurant Menu"
+              fill
+              className="object-cover"
+              priority
+            />
           </div>
         </div>
       </div>
     </section>
-  );
-};
+  )
+}
