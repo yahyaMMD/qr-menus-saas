@@ -1,0 +1,211 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  email         String         @unique
+  password      String
+  role          Role           @default(USER)
+  isActive      Boolean        @default(true)
+  refreshTokens RefreshToken[]
+  profiles      Profile[]
+  subscriptions Subscription[]
+  payments      Payment[]
+  tickets       SupportTicket[]
+  createdAt     DateTime       @default(now())
+}
+
+model Profile {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  ownerId     String     @db.ObjectId
+  owner       User       @relation(fields: [ownerId], references: [id])
+  name        String
+  status      ProfileStatus @default(ACTIVE)
+  description String?
+  logo        String?
+  socialLinks Json?
+  location    Json?
+  menus       Menu[]
+  feedbacks   Feedback[]
+  createdAt   DateTime   @default(now())
+}
+
+model Menu {
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  profileId   String      @db.ObjectId
+  profile     Profile     @relation(fields: [profileId], references: [id])
+  name        String
+  description String?
+  types       Type[]
+  categories  Category[]
+  tags        Tag[]
+  items       Item[]
+  isActive    Boolean     @default(false)
+  analytics   Analytics[]
+  createdAt   DateTime    @default(now())
+}
+
+model Type {
+  id     String  @id @default(auto()) @map("_id") @db.ObjectId
+  name   String
+  image  String?
+  menuId String  @db.ObjectId
+  menu   Menu    @relation(fields: [menuId], references: [id])
+  items  Item[]
+}
+
+model Category {
+  id     String  @id @default(auto()) @map("_id") @db.ObjectId
+  name   String
+  image  String?
+  menuId String  @db.ObjectId
+  menu   Menu    @relation(fields: [menuId], references: [id])
+  items  Item[]
+}
+
+model Tag {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  name   String
+  color  String
+  menuId String @db.ObjectId
+  menu   Menu   @relation(fields: [menuId], references: [id])
+}
+
+model Item {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  image       String?
+  categoryId  String?
+  typeId      String?
+  menuId      String    @db.ObjectId
+  tags        String[]
+  price       Float?
+  menu        Menu      @relation(fields: [menuId], references: [id])
+  category    Category? @relation(fields: [categoryId], references: [id])
+  type        Type?     @relation(fields: [typeId], references: [id])
+}
+
+model Feedback {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  profileId String   @db.ObjectId
+  userName  String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  profile   Profile  @relation(fields: [profileId], references: [id])
+}
+
+model Subscription {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId
+  plan       Plan
+  status     SubscriptionStatus @default(ACTIVE)
+  expiresAt  DateTime
+  active     Boolean  @default(true)
+  paymentRef String?
+  priceCents Int?
+  currency   String?  @default("USD")
+  user       User     @relation(fields: [userId], references: [id])
+  payments   Payment[]
+}
+
+model Analytics {
+  id     String   @id @default(auto()) @map("_id") @db.ObjectId
+  menuId String   @db.ObjectId
+  date   DateTime
+  scans  Int      @default(0)
+  menu   Menu     @relation(fields: [menuId], references: [id])
+}
+
+model RefreshToken {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  token     String   @unique
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model TokenBlacklist {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  USER
+  RESTAURANT_OWNER
+  ADMIN
+}
+
+enum ProfileStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum Plan {
+  FREE
+  STANDARD
+  CUSTOM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELED
+}
+
+model PlanCatalog {
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  plan        Plan   @unique
+  priceCents  Int
+  currency    String @default("USD")
+  description String?
+  updatedAt   DateTime @default(now())
+}
+
+model Payment {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String   @db.ObjectId
+  subscriptionId  String?  @db.ObjectId
+  amountCents     Int
+  currency        String   @default("USD")
+  status          PaymentStatus
+  reference       String?
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id])
+  subscription    Subscription? @relation(fields: [subscriptionId], references: [id])
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model SupportTicket {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  subject     String
+  message     String
+  status      TicketStatus @default(OPEN)
+  response    String?
+  respondedAt DateTime?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+enum TicketStatus {
+  OPEN
+  RESOLVED
+}
