@@ -13,9 +13,12 @@ model User {
   email         String         @unique
   password      String
   role          Role           @default(USER)
+  isActive      Boolean        @default(true)
   refreshTokens RefreshToken[]
   profiles      Profile[]
   subscriptions Subscription[]
+  payments      Payment[]
+  tickets       SupportTicket[]
   createdAt     DateTime       @default(now())
 }
 
@@ -24,6 +27,7 @@ model Profile {
   ownerId     String     @db.ObjectId
   owner       User       @relation(fields: [ownerId], references: [id])
   name        String
+  status      ProfileStatus @default(ACTIVE)
   description String?
   logo        String?
   socialLinks Json?
@@ -103,10 +107,14 @@ model Subscription {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
   userId     String   @db.ObjectId
   plan       Plan
+  status     SubscriptionStatus @default(ACTIVE)
   expiresAt  DateTime
   active     Boolean  @default(true)
   paymentRef String?
+  priceCents Int?
+  currency   String?  @default("USD")
   user       User     @relation(fields: [userId], references: [id])
+  payments   Payment[]
 }
 
 model Analytics {
@@ -139,8 +147,65 @@ enum Role {
   ADMIN
 }
 
+enum ProfileStatus {
+  ACTIVE
+  SUSPENDED
+}
+
 enum Plan {
   FREE
   STANDARD
   CUSTOM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELED
+}
+
+model PlanCatalog {
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  plan        Plan   @unique
+  priceCents  Int
+  currency    String @default("USD")
+  description String?
+  updatedAt   DateTime @default(now())
+}
+
+model Payment {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String   @db.ObjectId
+  subscriptionId  String?  @db.ObjectId
+  amountCents     Int
+  currency        String   @default("USD")
+  status          PaymentStatus
+  reference       String?
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id])
+  subscription    Subscription? @relation(fields: [subscriptionId], references: [id])
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model SupportTicket {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  subject     String
+  message     String
+  status      TicketStatus @default(OPEN)
+  response    String?
+  respondedAt DateTime?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+enum TicketStatus {
+  OPEN
+  RESOLVED
 }

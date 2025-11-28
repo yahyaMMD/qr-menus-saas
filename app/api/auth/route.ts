@@ -117,6 +117,12 @@ async function handleLogin(request: NextRequest): Promise<NextResponse> {
         { status: 401 }
       );
     }
+    if (!user.isActive) {
+      return NextResponse.json(
+        { error: 'Account is suspended' },
+        { status: 403 }
+      );
+    }
     // Verify password
     const isPasswordValid = await verifyPassword(user.password, validatedData.password);
     if (!isPasswordValid) {
@@ -376,4 +382,3 @@ export async function GET(request: NextRequest) {
     { status: 400 }
   );
 }
-
