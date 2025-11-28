@@ -131,7 +131,7 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
                   <div className="w-5 h-0.5 bg-gray-600"></div>
                 </div>
               </button>
-              <h1 className="text-xl font-semibold text-gray-900">MenuMaster</h1>
+              <h1 className="text-xl font-semibold text-gray-900">MenuLix</h1>
             </div>
             
             <div className="flex items-center gap-3">
@@ -142,7 +142,7 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
               </button>
               <div className="flex items-center gap-2">
                 <div className="text-right">
-                  <div className="text-sm font-medium text-gray-900">John Doe</div>
+                  <div className="text-sm font-medium text-gray-900">L3aziz Mariné</div>
                   <div className="text-xs text-gray-500">Standard Plan</div>
                 </div>
                 <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-semibold text-sm">

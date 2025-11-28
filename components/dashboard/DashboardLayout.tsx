@@ -10,7 +10,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
       <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
         <div className="flex items-center justify-between px-6 py-4">
           <Link href="/" className="text-xl font-bold text-gray-900">
-            MenuMaster
+            MenuLix
           </Link>
 
           <div className="flex items-center gap-4">
@@ -20,7 +20,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
             </button>
             <div className="flex items-center gap-3">
               <div className="text-right">
-                <p className="text-sm font-semibold text-gray-900">John Doe</p>
+                <p className="text-sm font-semibold text-gray-900">L3aziz Mariné</p>
                 <p className="text-xs text-gray-600">Standard Plan</p>
               </div>
               <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold">
