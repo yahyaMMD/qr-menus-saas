@@ -1,5 +1,10 @@
+/// <reference types="node" />
 // /prisma/seed.ts
-import { PrismaClient, Role, Plan } from '@prisma/client';
+import { PrismaClient, Role, Plan, SubscriptionStatus, PaymentStatus, TicketStatus, ProfileStatus } from '@prisma/client';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const { hashPassword } = require('../lib/auth/password');
 
 const prisma = new PrismaClient();
 
@@ -7,13 +12,18 @@ async function main() {
   console.log('🌱 Starting database seed...');
 
   // 1. Clean database (order matters because of relations)
+  await prisma.payment.deleteMany();
+  await prisma.supportTicket.deleteMany();
   await prisma.feedback.deleteMany();
   await prisma.analytics.deleteMany();
+  await prisma.tokenBlacklist.deleteMany();
+  await prisma.refreshToken.deleteMany();
   await prisma.item.deleteMany();
   await prisma.tag.deleteMany();
   await prisma.category.deleteMany();
   await prisma.type.deleteMany();
   await prisma.menu.deleteMany();
+  await prisma.planCatalog.deleteMany();
   await prisma.subscription.deleteMany();
   await prisma.profile.deleteMany();
   await prisma.user.deleteMany();
@@ -22,12 +32,17 @@ async function main() {
 
   // 2. Create users
   // Note: in production, you should hash passwords before storing them.
+  const adminPassword = await hashPassword('admin123');
+  const owner1Password = await hashPassword('password123');
+  const owner2Password = await hashPassword('password123');
+
   const admin = await prisma.user.create({
     data: {
       name: 'Admin User',
       email: 'admin@qrmenus.test',
-      password: 'admin123',
+      password: adminPassword,
       role: Role.ADMIN,
+      isActive: true,
     },
   });
 
@@ -35,8 +50,9 @@ async function main() {
     data: {
       name: 'Yahya Mahdi',
       email: 'yahya@qrmenus.test',
-      password: 'password123',
+      password: owner1Password,
       role: Role.USER,
+      isActive: true,
     },
   });
 
@@ -44,12 +60,23 @@ async function main() {
     data: {
       name: 'Second Owner',
       email: 'owner2@qrmenus.test',
-      password: 'password123',
+      password: owner2Password,
       role: Role.USER,
+      isActive: true,
     },
   });
 
   console.log('✅ Created users');
+
+  // 3. Plan catalog
+  await prisma.planCatalog.createMany({
+    data: [
+      { plan: Plan.FREE, priceCents: 0, description: 'Basic access for testing' },
+      { plan: Plan.STANDARD, priceCents: 4900, description: 'Standard monthly plan' },
+      { plan: Plan.CUSTOM, priceCents: 12900, description: 'Custom tailored plan' },
+    ],
+  });
+  console.log('✅ Created plan catalog');
 
   // 3. Create profiles (restaurants / businesses)
   const profile1 = await prisma.profile.create({
@@ -462,33 +489,88 @@ async function main() {
   const inOneMonth = new Date();
   inOneMonth.setMonth(inOneMonth.getMonth() + 1);
 
-  await prisma.subscription.createMany({
+  const adminSub = await prisma.subscription.create({
+    data: {
+      userId: admin.id,
+      plan: Plan.CUSTOM,
+      status: SubscriptionStatus.ACTIVE,
+      expiresAt: inSixMonths,
+      active: true,
+      paymentRef: 'ADMIN-CUSTOM-PLAN-001',
+      priceCents: 12900,
+      currency: 'USD',
+    },
+  });
+  const owner1Sub = await prisma.subscription.create({
+    data: {
+      userId: owner1.id,
+      plan: Plan.STANDARD,
+      status: SubscriptionStatus.ACTIVE,
+      expiresAt: inSixMonths,
+      active: true,
+      paymentRef: 'STD-OWNER1-2025-001',
+      priceCents: 4900,
+      currency: 'USD',
+    },
+  });
+  const owner2Sub = await prisma.subscription.create({
+    data: {
+      userId: owner2.id,
+      plan: Plan.FREE,
+      status: SubscriptionStatus.ACTIVE,
+      expiresAt: inOneMonth,
+      active: true,
+      paymentRef: 'FREE-TRIAL-OWNER2-2025-001',
+      priceCents: 0,
+      currency: 'USD',
+    },
+  });
+
+  console.log('✅ Created subscriptions');
+
+  // 10. Payments
+  await prisma.payment.createMany({
     data: [
       {
         userId: admin.id,
-        plan: Plan.CUSTOM,
-        expiresAt: inSixMonths,
-        active: true,
-        paymentRef: 'ADMIN-CUSTOM-PLAN-001',
+        subscriptionId: adminSub.id,
+        amountCents: 12900,
+        currency: 'USD',
+        status: PaymentStatus.PAID,
+        reference: 'PAY-ADMIN-001',
       },
       {
         userId: owner1.id,
-        plan: Plan.STANDARD,
-        expiresAt: inSixMonths,
-        active: true,
-        paymentRef: 'STD-OWNER1-2025-001',
-      },
-      {
-        userId: owner2.id,
-        plan: Plan.FREE,
-        expiresAt: inOneMonth,
-        active: true,
-        paymentRef: 'FREE-TRIAL-OWNER2-2025-001',
+        subscriptionId: owner1Sub.id,
+        amountCents: 4900,
+        currency: 'USD',
+        status: PaymentStatus.PAID,
+        reference: 'PAY-OWNER1-001',
       },
     ],
   });
 
-  console.log('✅ Created subscriptions');
+  console.log('✅ Created payments');
+
+  // 11. Support tickets
+  await prisma.supportTicket.createMany({
+    data: [
+      {
+        userId: owner1.id,
+        subject: 'QR code not scanning',
+        message: 'Some customers cannot scan the QR on table 5.',
+        status: TicketStatus.OPEN,
+      },
+      {
+        userId: owner2.id,
+        subject: 'Plan upgrade question',
+        message: 'Can I switch to Standard plan mid-cycle?',
+        status: TicketStatus.OPEN,
+      },
+    ],
+  });
+
+  console.log('✅ Created support tickets');
 
   // 10. Create analytics data (last 7 days of scans for each menu)
   const menus = [mainMenu1, drinksMenu1, mainMenu2];
