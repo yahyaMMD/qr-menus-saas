@@ -1,15 +1,20 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import React, { useState, useEffect, use } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Store, Clock, Phone, Users, Trash2, Save, ArrowLeft, Mail, 
   Globe, Wifi, MapPin, Info, Image as ImageIcon, AlertCircle, CheckCircle
 } from 'lucide-react';
 
-export default function ProfileSettingsPage() {
-  const params = useParams();
+export default function ProfileSettingsPage({ 
+  params 
+}: { 
+  params: Promise<{ profileId: string }> 
+}) {
+  const { profileId } = use(params); // Unwrap params with React.use()
   const router = useRouter();
+  
   const [activeTab, setActiveTab] = useState<'general' | 'hours' | 'contact' | 'extra' | 'team' | 'danger'>('general');
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,13 +52,15 @@ export default function ProfileSettingsPage() {
 
   // Load existing profile data
   useEffect(() => {
-    fetchProfileData();
-  }, [params.profileId]);
+    if (profileId) {
+      fetchProfileData();
+    }
+  }, [profileId]);
 
   const fetchProfileData = async () => {
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`/api/profiles/${params.profileId}`, {
+      const response = await fetch(`/api/profiles/${profileId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -134,7 +141,7 @@ export default function ProfileSettingsPage() {
         };
       }
 
-      const response = await fetch(`/api/profiles/${params.profileId}`, {
+      const response = await fetch(`/api/profiles/${profileId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -178,7 +185,7 @@ export default function ProfileSettingsPage() {
       {/* Header */}
       <div className="mb-8">
         <button 
-          onClick={() => router.push(`/dashboard/profiles/${params.profileId}`)}
+          onClick={() => router.push(`/dashboard/profiles/${profileId}`)}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />

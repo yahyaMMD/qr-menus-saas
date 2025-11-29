@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { 
   ArrowLeft, 
   Plus, 
@@ -70,10 +70,15 @@ const mockCategories: Category[] = [
   }
 ];
 
-
-export default function MenuBuilderPage({ params }: { params: { profileId: string; menuId: string } }) {
+export default function MenuBuilderPage({ 
+  params 
+}: { 
+  params: Promise<{ profileId: string; menuId: string }> 
+}) {
+  const { profileId, menuId } = use(params); // Unwrap params with React.use()
   const router = useRouter();
-  const [categories, setCategories] = useState(mockCategories);
+  
+  const [categories, setCategories] = useState<Category[]>(mockCategories);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -96,7 +101,7 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch(`/api/menus/${params.menuId}/categories`);
+        const response = await fetch(`/api/menus/${menuId}/categories`);
         const data = await response.json();
         
         if (response.ok) {
@@ -124,7 +129,7 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
     };
 
     fetchCategories();
-  }, [params.menuId]);
+  }, [menuId]);
 
   const allItems = categories.flatMap(cat => 
     cat.items.map(item => ({ ...item, category: cat.name }))
@@ -145,7 +150,7 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
     }
 
     try {
-      const response = await fetch(`/api/menus/${params.menuId}/categories`, {
+      const response = await fetch(`/api/menus/${menuId}/categories`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -187,7 +192,7 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
 
     try {
       const response = await fetch(
-        `/api/menus/${params.menuId}/categories/${editingCategory.id}`,
+        `/api/menus/${menuId}/categories/${editingCategory.id}`,
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -228,7 +233,7 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
 
     try {
       const response = await fetch(
-        `/api/menus/${params.menuId}/categories/${categoryId}`,
+        `/api/menus/${menuId}/categories/${categoryId}`,
         {
           method: 'DELETE',
         }
@@ -255,7 +260,7 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
     setShowQRModal(true);
     
     try {
-      const response = await fetch(`/api/qr/${params.menuId}?format=svg`);
+      const response = await fetch(`/api/qr/${menuId}?format=svg`);
       const svg = await response.text();
       setQrCodeSvg(svg);
     } catch (error) {
@@ -269,12 +274,12 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
   // Download QR Code
   const handleDownloadQR = async (format: 'svg' | 'png') => {
     try {
-      const response = await fetch(`/api/qr/${params.menuId}?format=${format}&size=1000`);
+      const response = await fetch(`/api/qr/${menuId}?format=${format}&size=1000`);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `menu-qr-${params.menuId}.${format}`;
+      a.download = `menu-qr-${menuId}.${format}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -290,7 +295,7 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const menuUrl = `${window.location.origin}/menu/${params.profileId}?menuId=${params.menuId}`;
+    const menuUrl = `${window.location.origin}/menu/${profileId}?menuId=${menuId}`;
     
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -378,7 +383,7 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
 
   // Copy URL
   const handleCopyURL = () => {
-    const menuUrl = `${window.location.origin}/menu/${params.profileId}?menuId=${params.menuId}`;
+    const menuUrl = `${window.location.origin}/menu/${profileId}?menuId=${menuId}`;
     navigator.clipboard.writeText(menuUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -415,7 +420,7 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
               <p className="text-sm text-blue-900 font-medium mb-2">Menu URL:</p>
               <div className="flex items-center gap-2">
                 <code className="flex-1 text-sm bg-white px-3 py-2 rounded border border-blue-200 overflow-x-auto">
-                  {`${window.location.origin}/menu/${params.profileId}?menuId=${params.menuId}`}
+                  {`${window.location.origin}/menu/${profileId}?menuId=${menuId}`}
                 </code>
                 <button
                   onClick={handleCopyURL}

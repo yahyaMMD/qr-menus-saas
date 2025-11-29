@@ -32,11 +32,13 @@ async function getAuthenticatedUser(request: NextRequest) {
 // GET single profile by ID (public access)
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     const profile = await prisma.profile.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         menus: {
           where: { isActive: true },
@@ -72,7 +74,6 @@ export async function GET(
   }
 }
 
-// PATCH update profile (authenticated, owner only)
 const updateProfileSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional(),
@@ -90,8 +91,10 @@ const updateProfileSchema = z.object({
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+  
   const result = await getAuthenticatedUser(request);
   if ('response' in result) {
     return result.response;
@@ -102,7 +105,7 @@ export async function PATCH(
   try {
     // Verify ownership
     const profile = await prisma.profile.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!profile) {
@@ -140,7 +143,7 @@ export async function PATCH(
     const data = parseResult.data;
 
     const updatedProfile = await prisma.profile.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(data.name && { name: data.name }),
         ...(data.description !== undefined && { description: data.description }),
@@ -173,11 +176,12 @@ export async function PATCH(
   }
 }
 
-// DELETE profile (authenticated, owner only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+  
   const result = await getAuthenticatedUser(request);
   if ('response' in result) {
     return result.response;
@@ -187,7 +191,7 @@ export async function DELETE(
 
   try {
     const profile = await prisma.profile.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!profile) {
@@ -205,7 +209,7 @@ export async function DELETE(
     }
 
     await prisma.profile.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json(

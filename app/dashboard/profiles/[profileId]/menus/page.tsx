@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import React, { useState, useEffect, use } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Plus, 
   Search, 
@@ -28,34 +28,39 @@ interface Menu {
   };
 }
 
-export default function RestaurantMenusPage() {
-  const params = useParams();
+export default function RestaurantMenusPage({ 
+  params 
+}: { 
+  params: Promise<{ profileId: string }> 
+}) {
+  const { profileId } = use(params); // Unwrap params with React.use()
   const router = useRouter();
+  
   const [menus, setMenus] = useState<Menu[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showMenu, setShowMenu] = useState<string | null>(null);
 
   useEffect(() => {
-  const fetchMenus = async () => {
-    try {
-      const response = await fetch(`/api/profiles/${params.profileId}/menus`);
-      const data = await response.json();
-      
-      if (response.ok) {
-        setMenus(data.menus);
-      } else {
-        console.error('Failed to fetch menus:', data.error);
+    const fetchMenus = async () => {
+      try {
+        const response = await fetch(`/api/profiles/${profileId}/menus`);
+        const data = await response.json();
+        
+        if (response.ok) {
+          setMenus(data.menus);
+        } else {
+          console.error('Failed to fetch menus:', data.error);
+        }
+      } catch (error) {
+        console.error('Error fetching menus:', error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error fetching menus:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  fetchMenus();
-}, [params.profileId]);
+    fetchMenus();
+  }, [profileId]);
 
   const filteredMenus = menus.filter(menu =>
     menu.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -92,7 +97,7 @@ export default function RestaurantMenusPage() {
       {/* Header */}
       <div className="mb-8">
         <button 
-          onClick={() => router.push(`/dashboard/profiles/${params.profileId}`)}
+          onClick={() => router.push(`/dashboard/profiles/${profileId}`)}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -104,7 +109,7 @@ export default function RestaurantMenusPage() {
             <p className="text-gray-600">Manage your restaurant's digital menus</p>
           </div>
           <button
-            onClick={() => router.push(`/dashboard/profiles/${params.profileId}/menus/new`)}
+            onClick={() => router.push(`/dashboard/profiles/${profileId}/menus/new`)}
             className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
           >
             <Plus className="w-5 h-5" />
@@ -159,7 +164,7 @@ export default function RestaurantMenusPage() {
           </p>
           {!searchQuery && (
             <button
-              onClick={() => router.push(`/dashboard/profiles/${params.profileId}/menus/new`)}
+              onClick={() => router.push(`/dashboard/profiles/${profileId}/menus/new`)}
               className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
             >
               Create Menu
@@ -193,7 +198,7 @@ export default function RestaurantMenusPage() {
                       <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-10">
                         <button
                           onClick={() => {
-                            router.push(`/dashboard/profiles/${params.profileId}/menus/${menu.id}/settings`);
+                            router.push(`/dashboard/profiles/${profileId}/menus/${menu.id}/settings`);
                             setShowMenu(null);
                           }}
                           className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
@@ -271,14 +276,14 @@ export default function RestaurantMenusPage() {
                 {/* Actions */}
                 <div className="flex gap-2">
                   <button
-                    onClick={() => router.push(`/dashboard/profiles/${params.profileId}/menus/${menu.id}`)}
+                    onClick={() => router.push(`/dashboard/profiles/${profileId}/menus/${menu.id}`)}
                     className="flex-1 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm flex items-center justify-center gap-2"
                   >
                     <Edit className="w-4 h-4" />
                     Edit
                   </button>
                   <button
-                    onClick={() => router.push(`/dashboard/profiles/${params.profileId}/menus/${menu.id}/analytics`)}
+                    onClick={() => router.push(`/dashboard/profiles/${profileId}/menus/${menu.id}/analytics`)}
                     className="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors font-medium text-sm"
                     title="Analytics"
                   >
