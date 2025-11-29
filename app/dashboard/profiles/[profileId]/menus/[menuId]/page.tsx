@@ -13,7 +13,8 @@ import {
   Download,
   Printer,
   Copy,
-  Check
+  Check,
+  Folder
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -58,6 +59,11 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
   const [qrCodeSvg, setQrCodeSvg] = useState<string>('');
   const [isLoadingQR, setIsLoadingQR] = useState(false);
   const [copied, setCopied] = useState(false);
+  
+  const [newCategory, setNewCategory] = useState({
+    name: '',
+    image: '',
+  });
 
   const allItems = categories.flatMap(cat => 
     cat.items.map(item => ({ ...item, category: cat.name }))
@@ -69,6 +75,32 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
         item.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
       )
     : null;
+
+  // Handle Add Category
+  const handleAddCategory = async () => {
+    if (!newCategory.name.trim()) {
+      alert('Please enter a category name');
+      return;
+    }
+
+    // TODO: Call API to create category
+    // const response = await fetch(`/api/menus/${params.menuId}/categories`, {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify(newCategory),
+    // });
+
+    // For now, just locally
+    const newCat = {
+      id: String(categories.length + 1),
+      name: newCategory.name,
+      items: [],
+    };
+
+    setCategories([...categories, newCat]);
+    setNewCategory({ name: '', image: '' });
+    setShowAddCategory(false);
+  };
 
   // Generate QR Code
   const handleGenerateQR = async () => {
@@ -225,7 +257,6 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
           </div>
         ) : (
           <>
-            {/* QR Code Display */}
             <div className="bg-gray-50 rounded-xl p-8 mb-6 flex items-center justify-center">
               <div 
                 className="bg-white p-6 rounded-lg shadow-lg"
@@ -233,13 +264,12 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
               />
             </div>
 
-            {/* URL Display */}
             <div className="bg-blue-50 rounded-lg p-4 mb-6">
               <p className="text-sm text-blue-900 font-medium mb-2">Menu URL:</p>
               <div className="flex items-center gap-2">
-                <code className="flex-1 text-sm bg-white px-3 py-2 rounded border border-blue-200 overflow-x-auto">
-                  {`${window.location.origin}/menu/${params.profileId}?menuId=${params.menuId}`}
-                </code>
+                  <code className="flex-1 text-sm bg-white px-3 py-2 rounded border border-blue-200 overflow-x-auto">
+                    {`${window.location.origin}/menu/${params.profileId}?menuId=${params.menuId}`}
+                  </code>
                 <button
                   onClick={handleCopyURL}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm flex items-center gap-2"
@@ -259,7 +289,6 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="grid grid-cols-3 gap-3">
               <button
                 onClick={() => handleDownloadQR('svg')}
@@ -284,7 +313,6 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
               </button>
             </div>
 
-            {/* Tips */}
             <div className="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
               <p className="text-sm text-yellow-900">
                 <strong>💡 Tip:</strong> For best results, print the QR code at least 2x2 inches (5x5 cm) in size. 
@@ -297,10 +325,80 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
     </div>
   );
 
+  // Add Category Modal Component
+  const AddCategoryModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl max-w-lg w-full p-6">
+        <h3 className="text-2xl font-bold text-gray-900 mb-6">Add New Category</h3>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Category Name <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <Folder className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="e.g., Appetizers, Main Courses, Desserts"
+                value={newCategory.name}
+                onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                autoFocus
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Choose a clear, descriptive name for your menu category
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Category Image (Optional)
+            </label>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-orange-500 transition-colors cursor-pointer">
+              <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
+              <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB</p>
+            </div>
+          </div>
+
+          <div className="bg-blue-50 rounded-lg p-4">
+            <p className="text-sm text-blue-900">
+              <strong>💡 Tip:</strong> Organize your menu items into logical categories to help customers browse easily. Common categories include Appetizers, Entrees, Desserts, and Beverages.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={() => {
+              setShowAddCategory(false);
+              setNewCategory({ name: '', image: '' });
+            }}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleAddCategory}
+            disabled={!newCategory.name.trim()}
+            className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Add Category
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
       {/* QR Code Modal */}
       {showQRModal && <QRCodeModal />}
+
+      {/* Add Category Modal */}
+      {showAddCategory && <AddCategoryModal />}
 
       {/* Header */}
       <div className="mb-8">
@@ -490,9 +588,9 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
                   <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-orange-500">
-                    <option>Breakfast</option>
-                    <option>Salads</option>
-                    <option>Beverages</option>
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
                   </select>
                 </div>
                 <div>

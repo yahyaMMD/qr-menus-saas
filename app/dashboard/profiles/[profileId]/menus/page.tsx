@@ -36,40 +36,26 @@ export default function RestaurantMenusPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showMenu, setShowMenu] = useState<string | null>(null);
 
-  // Mock data - replace with actual API call
   useEffect(() => {
-    // TODO: Fetch menus from API
-    // fetch(`/api/profiles/${params.profileId}/menus`)
-    setTimeout(() => {
-      setMenus([
-        {
-          id: '1',
-          name: 'Spring Menu 2024',
-          description: 'Fresh seasonal items',
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          _count: { items: 24, categories: 6 },
-        },
-        {
-          id: '2',
-          name: 'Drinks & Beverages',
-          description: 'Coffee, tea, smoothies and more',
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          _count: { items: 15, categories: 3 },
-        },
-        {
-          id: '3',
-          name: 'Winter Specials',
-          description: 'Seasonal comfort food',
-          isActive: false,
-          createdAt: new Date().toISOString(),
-          _count: { items: 12, categories: 4 },
-        },
-      ]);
+  const fetchMenus = async () => {
+    try {
+      const response = await fetch(`/api/profiles/${params.profileId}/menus`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        setMenus(data.menus);
+      } else {
+        console.error('Failed to fetch menus:', data.error);
+      }
+    } catch (error) {
+      console.error('Error fetching menus:', error);
+    } finally {
       setLoading(false);
-    }, 500);
-  }, [params.profileId]);
+    }
+  };
+
+  fetchMenus();
+}, [params.profileId]);
 
   const filteredMenus = menus.filter(menu =>
     menu.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
