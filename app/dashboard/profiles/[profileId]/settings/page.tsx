@@ -12,7 +12,7 @@ export default function ProfileSettingsPage({
 }: { 
   params: Promise<{ profileId: string }> 
 }) {
-  const { profileId } = use(params); // Unwrap params with React.use()
+  const { profileId } = use(params);
   const router = useRouter();
   
   const [activeTab, setActiveTab] = useState<'general' | 'hours' | 'contact' | 'extra' | 'team' | 'danger'>('general');
@@ -24,7 +24,6 @@ export default function ProfileSettingsPage({
   const [generalInfo, setGeneralInfo] = useState({
     name: '',
     description: '',
-    cuisine: '',
     logo: ''
   });
 
@@ -66,18 +65,23 @@ export default function ProfileSettingsPage({
         }
       });
       
-      if (!response.ok) throw new Error('Failed to load profile');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to load profile');
+      }
       
       const data = await response.json();
+      
+      console.log('Profile data:', data); // Debug log
       
       setGeneralInfo({
         name: data.name || '',
         description: data.description || '',
-        cuisine: data.cuisine || '',
         logo: data.logo || ''
       });
 
-      if (data.location) {
+      // Handle location JSON field
+      if (data.location && typeof data.location === 'object') {
         setLocationInfo({
           address: data.location.address || '',
           city: data.location.city || '',
@@ -85,16 +89,19 @@ export default function ProfileSettingsPage({
           latitude: data.location.latitude || 0,
           longitude: data.location.longitude || 0
         });
-        setExtraInfo({
-          phone: data.location.phone || '',
-          email: data.location.email || '',
-          wifi: data.location.wifi || '',
-          openingHours: data.location.openingHours || '',
-          mapUrl: data.location.mapUrl || ''
-        });
       }
 
-      if (data.socialLinks) {
+      // Handle extra info from flat fields
+      setExtraInfo({
+        phone: data.phone || '',
+        email: data.email || '',
+        wifi: data.wifiName ? `Network: ${data.wifiName} | Password: ${data.wifiPassword || ''}` : '',
+        openingHours: data.businessHours ? JSON.stringify(data.businessHours, null, 2) : '',
+        mapUrl: data.mapUrl || ''
+      });
+
+      // Handle socialLinks JSON field
+      if (data.socialLinks && typeof data.socialLinks === 'object') {
         setSocialLinks({
           facebook: data.socialLinks.facebook || '',
           instagram: data.socialLinks.instagram || '',
@@ -103,9 +110,9 @@ export default function ProfileSettingsPage({
       }
 
       setIsLoading(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load profile:', err);
-      setError('Failed to load profile data');
+      setError(err.message || 'Failed to load profile data');
       setIsLoading(false);
     }
   };
@@ -123,22 +130,43 @@ export default function ProfileSettingsPage({
       if (activeTab === 'general') {
         updateData.name = generalInfo.name;
         updateData.description = generalInfo.description;
-        updateData.cuisine = generalInfo.cuisine;
         updateData.logo = generalInfo.logo;
       } else if (activeTab === 'contact') {
+        // Update location JSON field
         updateData.location = {
-          ...locationInfo,
-          ...extraInfo
+          address: locationInfo.address,
+          city: locationInfo.city,
+          country: locationInfo.country,
+          latitude: locationInfo.latitude,
+          longitude: locationInfo.longitude
         };
       } else if (activeTab === 'extra') {
-        updateData.location = {
-          ...locationInfo,
-          phone: extraInfo.phone,
-          email: extraInfo.email,
-          wifi: extraInfo.wifi,
-          openingHours: extraInfo.openingHours,
-          mapUrl: extraInfo.mapUrl
-        };
+        // Update flat fields
+        updateData.phone = extraInfo.phone;
+        updateData.email = extraInfo.email;
+        updateData.mapUrl = extraInfo.mapUrl;
+        
+        // Parse wifi string
+        if (extraInfo.wifi) {
+          const wifiMatch = extraInfo.wifi.match(/Network:\s*(.+?)\s*\|\s*Password:\s*(.+)/);
+          if (wifiMatch) {
+            updateData.wifiName = wifiMatch[1].trim();
+            updateData.wifiPassword = wifiMatch[2].trim();
+          } else {
+            updateData.wifiName = extraInfo.wifi;
+            updateData.wifiPassword = '';
+          }
+        }
+        
+        // Parse opening hours as JSON
+        if (extraInfo.openingHours) {
+          try {
+            updateData.businessHours = JSON.parse(extraInfo.openingHours);
+          } catch {
+            // If not valid JSON, store as string in an object
+            updateData.businessHours = { text: extraInfo.openingHours };
+          }
+        }
       }
 
       const response = await fetch(`/api/profiles/${profileId}`, {
@@ -268,13 +296,13 @@ export default function ProfileSettingsPage({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cuisine Type
+                  Logo URL
                 </label>
                 <input
                   type="text"
-                  value={generalInfo.cuisine}
-                  onChange={(e) => setGeneralInfo({ ...generalInfo, cuisine: e.target.value })}
-                  placeholder="Italian, Asian Fusion, American"
+                  value={generalInfo.logo}
+                  onChange={(e) => setGeneralInfo({ ...generalInfo, logo: e.target.value })}
+                  placeholder="https://example.com/logo.png"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                 />
               </div>
