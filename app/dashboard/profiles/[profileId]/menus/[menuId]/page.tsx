@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, 
   Plus, 
@@ -18,43 +18,68 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-const mockCategories = [
+interface Category {
+  id: string;
+  name: string;
+  image?: string | null;
+  items: Array<{
+    id: string;
+    name: string;
+    price: number;
+    image: string;
+    tags: string[];
+  }>;
+  _count?: {
+    items: number;
+  };
+}
+
+const mockCategories: Category[] = [
   {
     id: '1',
     name: 'Breakfast',
+    image: null,
     items: [
       { id: '1', name: 'Avocado Toast', price: 12.99, image: 'https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?w=150', tags: ['Vegan', 'Popular'] },
       { id: '2', name: 'Organic Oatmeal', price: 8.99, image: 'https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=150', tags: ['Vegan', 'Gluten-Free'] },
       { id: '3', name: 'Chia Pudding', price: 9.99, image: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=150', tags: ['Vegan'] }
-    ]
+    ],
+    _count: { items: 3 }
   },
   {
     id: '2',
     name: 'Salads',
+    image: null,
     items: [
       { id: '4', name: 'Caesar Salad', price: 14.99, image: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=150', tags: ['Popular'] },
       { id: '5', name: 'Greek Salad', price: 13.99, image: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=150', tags: ['Vegetarian'] },
       { id: '6', name: 'Quinoa Bowl', price: 15.99, image: 'https://images.unsplash.com/photo-1505576399279-565b52d4ac71?w=150', tags: ['Vegan', 'Popular'] }
-    ]
+    ],
+    _count: { items: 3 }
   },
   {
     id: '3',
     name: 'Beverages',
+    image: null,
     items: [
       { id: '7', name: 'Green Smoothie', price: 7.99, image: 'https://images.unsplash.com/photo-1610970881699-44a5587cabec?w=150', tags: ['Vegan'] },
       { id: '8', name: 'Cold Brew Coffee', price: 5.99, image: 'https://images.unsplash.com/photo-1517487881594-2787fef5ebf7?w=150', tags: ['Popular'] },
       { id: '9', name: 'Fresh Orange Juice', price: 6.99, image: 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=150', tags: [] }
-    ]
+    ],
+    _count: { items: 3 }
   }
 ];
+
 
 export default function MenuBuilderPage({ params }: { params: { profileId: string; menuId: string } }) {
   const router = useRouter();
   const [categories, setCategories] = useState(mockCategories);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [showAddItem, setShowAddItem] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
+  const [showEditCategory, setShowEditCategory] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [qrCodeSvg, setQrCodeSvg] = useState<string>('');
   const [isLoadingQR, setIsLoadingQR] = useState(false);
@@ -64,6 +89,42 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
     name: '',
     image: '',
   });
+
+  const [editingCategory, setEditingCategory] = useState<any>(null);
+
+  // Fetch categories on mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(`/api/menus/${params.menuId}/categories`);
+        const data = await response.json();
+        
+        if (response.ok) {
+          // Transform to match your UI structure
+          const transformedCategories = data.categories.map((cat: any) => ({
+            id: cat.id,
+            name: cat.name,
+            image: cat.image,
+            items: [], // Will be populated separately if needed
+            _count: cat._count,
+          }));
+          setCategories(transformedCategories);
+        } else {
+          console.error('Failed to fetch categories:', data.error);
+          // Fallback to mock data if API fails
+          setCategories(mockCategories);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        // Fallback to mock data if API fails
+        setCategories(mockCategories);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, [params.menuId]);
 
   const allItems = categories.flatMap(cat => 
     cat.items.map(item => ({ ...item, category: cat.name }))
@@ -83,23 +144,109 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
       return;
     }
 
-    // TODO: Call API to create category
-    // const response = await fetch(`/api/menus/${params.menuId}/categories`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(newCategory),
-    // });
+    try {
+      const response = await fetch(`/api/menus/${params.menuId}/categories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newCategory.name,
+          image: newCategory.image || null,
+        }),
+      });
 
-    // For now, just locally
-    const newCat = {
-      id: String(categories.length + 1),
-      name: newCategory.name,
-      items: [],
-    };
+      const data = await response.json();
 
-    setCategories([...categories, newCat]);
-    setNewCategory({ name: '', image: '' });
-    setShowAddCategory(false);
+      if (response.ok) {
+        // Add new category to state
+        setCategories([...categories, {
+          id: data.category.id,
+          name: data.category.name,
+          image: data.category.image,
+          items: [],
+          _count: { items: 0 },
+        }]);
+        
+        setNewCategory({ name: '', image: '' });
+        setShowAddCategory(false);
+        alert('Category created successfully!');
+      } else {
+        alert(`Failed to create category: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Create category error:', error);
+      alert('Failed to create category. Please try again.');
+    }
+  };
+
+  // Handle Edit Category
+  const handleEditCategory = async () => {
+    if (!editingCategory?.name.trim()) {
+      alert('Please enter a category name');
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/menus/${params.menuId}/categories/${editingCategory.id}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: editingCategory.name,
+            image: editingCategory.image || null,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Update category in state
+        setCategories(categories.map(cat => 
+          cat.id === editingCategory.id 
+            ? { ...cat, name: data.category.name, image: data.category.image }
+            : cat
+        ));
+        
+        setShowEditCategory(false);
+        setEditingCategory(null);
+        alert('Category updated successfully!');
+      } else {
+        alert(`Failed to update category: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Update category error:', error);
+      alert('Failed to update category. Please try again.');
+    }
+  };
+
+  // Handle Delete Category
+  const handleDeleteCategory = async (categoryId: string, categoryName: string) => {
+    if (!confirm(`Are you sure you want to delete "${categoryName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/menus/${params.menuId}/categories/${categoryId}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Remove category from state
+        setCategories(categories.filter(cat => cat.id !== categoryId));
+        alert('Category deleted successfully!');
+      } else {
+        alert(`Failed to delete category: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Delete category error:', error);
+      alert('Failed to delete category. Please try again.');
+    }
   };
 
   // Generate QR Code
@@ -267,9 +414,9 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
             <div className="bg-blue-50 rounded-lg p-4 mb-6">
               <p className="text-sm text-blue-900 font-medium mb-2">Menu URL:</p>
               <div className="flex items-center gap-2">
-                  <code className="flex-1 text-sm bg-white px-3 py-2 rounded border border-blue-200 overflow-x-auto">
-                    {`${window.location.origin}/menu/${params.profileId}?menuId=${params.menuId}`}
-                  </code>
+                <code className="flex-1 text-sm bg-white px-3 py-2 rounded border border-blue-200 overflow-x-auto">
+                  {`${window.location.origin}/menu/${params.profileId}?menuId=${params.menuId}`}
+                </code>
                 <button
                   onClick={handleCopyURL}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm flex items-center gap-2"
@@ -392,6 +539,78 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
     </div>
   );
 
+  // Edit Category Modal Component
+  const EditCategoryModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl max-w-lg w-full p-6">
+        <h3 className="text-2xl font-bold text-gray-900 mb-6">Edit Category</h3>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Category Name <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <Folder className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="e.g., Appetizers, Main Courses, Desserts"
+                value={editingCategory?.name || ''}
+                onChange={(e) => setEditingCategory({ 
+                  ...editingCategory, 
+                  name: e.target.value 
+                })}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                autoFocus
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Category Image (Optional)
+            </label>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-orange-500 transition-colors cursor-pointer">
+              <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
+              <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={() => {
+              setShowEditCategory(false);
+              setEditingCategory(null);
+            }}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleEditCategory}
+            disabled={!editingCategory?.name.trim()}
+            className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Update Category
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (loading) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading menu...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
       {/* QR Code Modal */}
@@ -399,6 +618,9 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
 
       {/* Add Category Modal */}
       {showAddCategory && <AddCategoryModal />}
+
+      {/* Edit Category Modal */}
+      {showEditCategory && <EditCategoryModal />}
 
       {/* Header */}
       <div className="mb-8">
@@ -500,13 +722,28 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-2xl font-bold text-white">{category.name}</h2>
-                    <p className="text-orange-100 text-sm mt-1">{category.items.length} items</p>
+                    <p className="text-orange-100 text-sm mt-1">
+                      {category._count?.items || category.items.length} items
+                    </p>
                   </div>
                   <div className="flex gap-2">
-                    <button className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors">
+                    <button 
+                      onClick={() => {
+                        setEditingCategory({
+                          id: category.id,
+                          name: category.name,
+                          image: category.image || '',
+                        });
+                        setShowEditCategory(true);
+                      }}
+                      className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
+                    >
                       <Edit className="w-5 h-5 text-white" />
                     </button>
-                    <button className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors">
+                    <button 
+                      onClick={() => handleDeleteCategory(category.id, category.name)}
+                      className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
+                    >
                       <Trash2 className="w-5 h-5 text-white" />
                     </button>
                   </div>
