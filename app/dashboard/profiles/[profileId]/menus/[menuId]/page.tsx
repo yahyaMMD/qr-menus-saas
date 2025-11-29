@@ -1,7 +1,20 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ArrowLeft, Plus, Search, Edit, Trash2, Image as ImageIcon, DollarSign, Tag } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Plus, 
+  Search, 
+  Edit, 
+  Trash2, 
+  Image as ImageIcon, 
+  DollarSign,
+  QrCode,
+  Download,
+  Printer,
+  Copy,
+  Check
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const mockCategories = [
@@ -41,6 +54,10 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [showAddItem, setShowAddItem] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [qrCodeSvg, setQrCodeSvg] = useState<string>('');
+  const [isLoadingQR, setIsLoadingQR] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const allItems = categories.flatMap(cat => 
     cat.items.map(item => ({ ...item, category: cat.name }))
@@ -53,8 +70,238 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
       )
     : null;
 
+  // Generate QR Code
+  const handleGenerateQR = async () => {
+    setIsLoadingQR(true);
+    setShowQRModal(true);
+    
+    try {
+      const response = await fetch(`/api/qr/${params.menuId}?format=svg`);
+      const svg = await response.text();
+      setQrCodeSvg(svg);
+    } catch (error) {
+      console.error('Failed to generate QR code:', error);
+      alert('Failed to generate QR code. Please try again.');
+    } finally {
+      setIsLoadingQR(false);
+    }
+  };
+
+  // Download QR Code
+  const handleDownloadQR = async (format: 'svg' | 'png') => {
+    try {
+      const response = await fetch(`/api/qr/${params.menuId}?format=${format}&size=1000`);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `menu-qr-${params.menuId}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download QR code:', error);
+      alert('Failed to download QR code. Please try again.');
+    }
+  };
+
+  // Print QR Code
+  const handlePrintQR = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const menuUrl = `${window.location.origin}/menu/${params.profileId}?menuId=${params.menuId}`;
+    
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>QR Code - Menu</title>
+          <style>
+            @media print {
+              @page { margin: 2cm; }
+              body { margin: 0; }
+            }
+            body {
+              font-family: Arial, sans-serif;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              min-height: 100vh;
+              padding: 2rem;
+            }
+            .qr-container {
+              text-align: center;
+              max-width: 600px;
+            }
+            .qr-code {
+              margin: 2rem 0;
+            }
+            h1 { color: #f97316; font-size: 2rem; margin-bottom: 0.5rem; }
+            p { color: #666; font-size: 1.1rem; margin: 0.5rem 0; }
+            .instructions {
+              margin-top: 2rem;
+              padding: 1.5rem;
+              background: #f3f4f6;
+              border-radius: 8px;
+            }
+            .instructions h2 {
+              font-size: 1.2rem;
+              margin-bottom: 1rem;
+              color: #111;
+            }
+            .instructions ol {
+              text-align: left;
+              padding-left: 1.5rem;
+            }
+            .instructions li {
+              margin: 0.5rem 0;
+              color: #555;
+            }
+            .url {
+              margin-top: 1rem;
+              padding: 0.5rem;
+              background: #fff;
+              border: 1px solid #ddd;
+              border-radius: 4px;
+              font-family: monospace;
+              word-break: break-all;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="qr-container">
+            <h1>Scan to View Menu</h1>
+            <p>The Green Leaf Café</p>
+            <div class="qr-code">
+              ${qrCodeSvg}
+            </div>
+            <div class="instructions">
+              <h2>How to use this QR code:</h2>
+              <ol>
+                <li>Open your phone's camera app</li>
+                <li>Point it at this QR code</li>
+                <li>Tap the notification to view the menu</li>
+              </ol>
+              <div class="url">
+                <strong>Direct link:</strong><br>${menuUrl}
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+  };
+
+  // Copy URL
+  const handleCopyURL = () => {
+    const menuUrl = `${window.location.origin}/menu/${params.profileId}?menuId=${params.menuId}`;
+    navigator.clipboard.writeText(menuUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // QR Code Modal Component
+  const QRCodeModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl max-w-2xl w-full p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-2xl font-bold text-gray-900">QR Code</h3>
+          <button
+            onClick={() => setShowQRModal(false)}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <span className="text-2xl text-gray-500">×</span>
+          </button>
+        </div>
+
+        {isLoadingQR ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        ) : (
+          <>
+            {/* QR Code Display */}
+            <div className="bg-gray-50 rounded-xl p-8 mb-6 flex items-center justify-center">
+              <div 
+                className="bg-white p-6 rounded-lg shadow-lg"
+                dangerouslySetInnerHTML={{ __html: qrCodeSvg }}
+              />
+            </div>
+
+            {/* URL Display */}
+            <div className="bg-blue-50 rounded-lg p-4 mb-6">
+              <p className="text-sm text-blue-900 font-medium mb-2">Menu URL:</p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-sm bg-white px-3 py-2 rounded border border-blue-200 overflow-x-auto">
+                  {`${window.location.origin}/menu/${params.profileId}?menuId=${params.menuId}`}
+                </code>
+                <button
+                  onClick={handleCopyURL}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm flex items-center gap-2"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      Copy
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-3 gap-3">
+              <button
+                onClick={() => handleDownloadQR('svg')}
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              >
+                <Download className="w-5 h-5" />
+                SVG
+              </button>
+              <button
+                onClick={() => handleDownloadQR('png')}
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              >
+                <Download className="w-5 h-5" />
+                PNG
+              </button>
+              <button
+                onClick={handlePrintQR}
+                className="flex items-center justify-center gap-2 px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
+              >
+                <Printer className="w-5 h-5" />
+                Print
+              </button>
+            </div>
+
+            {/* Tips */}
+            <div className="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+              <p className="text-sm text-yellow-900">
+                <strong>💡 Tip:</strong> For best results, print the QR code at least 2x2 inches (5x5 cm) in size. 
+                Test it with your phone before distributing.
+              </p>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
+      {/* QR Code Modal */}
+      {showQRModal && <QRCodeModal />}
+
       {/* Header */}
       <div className="mb-8">
         <button
@@ -70,6 +317,13 @@ export default function MenuBuilderPage({ params }: { params: { profileId: strin
             <p className="text-gray-600">The Green Leaf Café • Spring Menu 2024</p>
           </div>
           <div className="flex gap-3">
+            <button
+              onClick={handleGenerateQR}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+            >
+              <QrCode className="w-5 h-5" />
+              QR Code
+            </button>
             <button
               onClick={() => setShowAddCategory(true)}
               className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"

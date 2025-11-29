@@ -35,6 +35,13 @@ model Profile {
   menus       Menu[]
   feedbacks   Feedback[]
   createdAt   DateTime   @default(now())
+  phone       String?
+  email       String?
+  website     String?
+  wifiName    String?
+  wifiPassword String?
+  mapUrl      String?
+  businessHours Json?
 }
 
 model Menu {
@@ -50,6 +57,8 @@ model Menu {
   isActive    Boolean     @default(false)
   analytics   Analytics[]
   createdAt   DateTime    @default(now())
+  qrCodeUrl   String?
+  qrCodeSvg   String?
 }
 
 model Type {
