@@ -23,7 +23,10 @@ export interface AuthResult {
  */
 export async function authenticateRequest(request: NextRequest): Promise<AuthResult> {
   const authHeader = request.headers.get('Authorization');
+  console.log('Middleware - Raw auth header:', authHeader);
+  
   const token = extractTokenFromHeader(authHeader);
+  console.log('Middleware - Extracted token:', token ? token.substring(0, 30) + '...' : 'null');
 
   if (!token) {
     return {
@@ -32,26 +35,44 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthRes
     };
   }
 
-  const isBlacklisted = await isTokenBlacklisted(token);
-  if (isBlacklisted) {
+  // Check blacklist with error handling
+  try {
+    const isBlacklisted = await isTokenBlacklisted(token);
+    if (isBlacklisted) {
+      return {
+        success: false,
+        error: 'Token has been revoked',
+      };
+    }
+  } catch (err) {
+    console.error('Error checking token blacklist:', err);
     return {
       success: false,
-      error: 'Token has been revoked',
+      error: 'Internal server error',
     };
   }
 
-  const payload = verifyAccessToken(token);
-  if (!payload) {
+  // Verify token and validate payload shape
+  try {
+    const payload = verifyAccessToken(token);
+    if (!payload) {
+      return {
+        success: false,
+        error: 'Invalid or expired token',
+      };
+    }
+
+    return {
+      success: true,
+      payload,
+    };
+  } catch (err) {
+    console.error('Token verification error:', err);
     return {
       success: false,
       error: 'Invalid or expired token',
     };
   }
-
-  return {
-    success: true,
-    payload,
-  };
 }
 
 export async function getAuthenticatedUser(request: NextRequest): Promise<JWTPayload | null> {
