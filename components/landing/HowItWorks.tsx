@@ -16,7 +16,7 @@ export default function HowItWorks() {
       number: '1',
       title: 'Create Your Menu',
       description:
-        'Build your menu with our intuitive interface. Add items, photos, and customize everything to match your brand.',
+        'Build your menu with our intuitive interface. customize everything to match your brand.',
       icon: menuIcon,
       image: imageMenu,
     },

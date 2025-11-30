@@ -5,6 +5,7 @@ import Pricing from '@/components/landing/Pricing'
 import MenuShowcase from '@/components/landing/MenuShowcase'
 import Testimonials from '@/components/landing/Testimonials'
 import CTA from '@/components/landing/CTA'
+import { Contact } from '@/components/landing/Contact'
 import Footer from '@/components/landing/Footer'
 import Navbar from '@/components/landing/Navbar'
 
@@ -16,6 +17,7 @@ export default function Home() {
       <HowItWorks />
       <Pricing />
       <MenuShowcase />
+      <Contact />
       <Testimonials />
       <CTA />
       <Footer />
