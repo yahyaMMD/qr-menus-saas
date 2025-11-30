@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function SignUpForm() {
   const [name, setName] = useState('');
@@ -8,27 +9,59 @@ export default function SignUpForm() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    setError(null);
+
     if (password !== confirmPassword) {
-      alert('Passwords do not match');
+      setError('Passwords do not match');
       return;
     }
-    
+
     setIsLoading(true);
-    
-    // same, will be implemented later
-    console.log('Sign Up:', { name, email, password });
-    
-    setTimeout(() => {
+
+    try {
+      const res = await fetch(`/api/auth?action=register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data?.error || 'Registration failed');
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        localStorage.setItem('auth', JSON.stringify(data));
+      } catch (err) {
+        console.warn('Could not save auth to localStorage', err);
+      }
+
+      router.push('/dashboard');
+    } catch (err) {
+      console.error('Sign up error:', err);
+      setError('Network error');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {error && (
+        <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+          {typeof error === 'string' ? error : <pre className="whitespace-pre-wrap">{JSON.stringify(error, null, 2)}</pre>}
+        </div>
+      )}
+
       <div>
         <label htmlFor="name" className="block text-sm font-medium mb-1 text-gray-900">
           Name
@@ -40,9 +73,7 @@ export default function SignUpForm() {
           onChange={(e) => setName(e.target.value)}
           required
           placeholder="Your name"
-          className="w-full px-4 py-2 bg-white text-gray-900 placeholder:text-gray-500 
-                    border border-gray-300 rounded-lg focus:outline-none 
-                    focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          className="w-full px-4 py-2 bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
         />
       </div>
 
@@ -57,9 +88,7 @@ export default function SignUpForm() {
           onChange={(e) => setEmail(e.target.value)}
           required
           placeholder="your@email.com"
-          className="w-full px-4 py-2 bg-white text-gray-900 placeholder:text-gray-500 
-                    border border-gray-300 rounded-lg focus:outline-none 
-                    focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          className="w-full px-4 py-2 bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
         />
       </div>
 
@@ -74,9 +103,7 @@ export default function SignUpForm() {
           onChange={(e) => setPassword(e.target.value)}
           required
           placeholder="••••••••"
-          className="w-full px-4 py-2 bg-white text-gray-900 placeholder:text-gray-500 
-                    border border-gray-300 rounded-lg focus:outline-none 
-                    focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          className="w-full px-4 py-2 bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
         />
       </div>
 
@@ -91,9 +118,7 @@ export default function SignUpForm() {
           onChange={(e) => setConfirmPassword(e.target.value)}
           required
           placeholder="••••••••"
-          className="w-full px-4 py-2 bg-white text-gray-900 placeholder:text-gray-500 
-                    border border-gray-300 rounded-lg focus:outline-none 
-                    focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          className="w-full px-4 py-2 bg-white text-gray-900 placeholder:text-gray-500 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
         />
       </div>
 
