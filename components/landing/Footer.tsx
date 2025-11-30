@@ -9,7 +9,7 @@ export default function Footer() {
         <div className="grid md:grid-cols-4 gap-8">
           {/* Brand */}
           <div>
-            <h3 className="text-xl font-bold mb-4">MenuMaster</h3>
+            <h3 className="text-xl font-bold mb-4">Qresto</h3>
             <p className="text-gray-400">
               Transform your restaurant menu digitally
             </p>
@@ -47,7 +47,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>© 2025 MenuMaster. All rights reserved.</p>
+          <p>© 2025 Qresto. All rights reserved.</p>
         </div>
       </div>
     </footer>

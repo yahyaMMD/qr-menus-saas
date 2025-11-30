@@ -79,8 +79,8 @@ export default function Navbar() {
             <button className="lg:hidden" onClick={() => setIsOpen(!isOpen)}>
               {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
-            <Link href="/" className="text-xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
-              MenuMaster
+            <Link href="/" className="text-xl font-bold text-gray-900">
+              Qresto
             </Link>
           </div>
 

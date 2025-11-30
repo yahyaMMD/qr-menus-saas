@@ -9,7 +9,7 @@ export default function CTA() {
           Ready to Transform Your Restaurant?
         </h2>
         <p className="text-xl text-orange-100 mb-8">
-          Join hundreds of restaurants already using MenuMaster
+          Join hundreds of restaurants already using Qresto
         </p>
         <button className="bg-white text-orange-500 px-8 py-4 rounded-lg hover:bg-orange-50 transition font-semibold text-lg">
           Start Free Trial

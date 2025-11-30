@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 export default function Testimonials() {
   const [testimonials, setTestimonials] = useState([
     {
-      text: 'MenuMaster transformed how we present our items. Customers love our digital experience and we\'re saving costs!',
+      text: 'Qresto transformed how we present our items. Customers love our digital experience and we\'re saving costs!',
       author: 'Sarah Johnson',
       role: 'The Green Leaf Cafe - Algeria',
       rating: 5,
