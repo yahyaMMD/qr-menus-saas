@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { hashPassword, verifyPassword } from '@/lib/auth/password';
 import { generateTokens, verifyRefreshToken, verifyAccessToken } from '@/lib/auth/jwt';
 import {
-  findUserByEmail, createUser, saveRefreshToken, findRefreshToken, deleteRefreshToken, blacklistToken,} from '@/lib/auth/db';
+  findUserByEmail, createUser, saveRefreshToken, findRefreshToken, deleteRefreshToken, blacklistToken,
+} from '@/lib/auth/db';
 import { Role, RegisterRequest, LoginRequest, RefreshRequest, AuthResponse } from '@/lib/auth/types';
 import { authenticateRequest } from '@/lib/auth/middleware';
-import {z} from 'zod';
+import { z } from 'zod';
 
 async function generateAndSaveTokens(user: { id: string; email: string; role: Role }) {
   const tokens = generateTokens({
@@ -18,13 +19,11 @@ async function generateAndSaveTokens(user: { id: string; email: string; role: Ro
   return tokens;
 }
 
-
 // Register a new user
 async function handleRegister(request: NextRequest): Promise<NextResponse> {
-  try {
-    const body: RegisterRequest = await request.json();
 
-    // Name, Email and Password format validation (using zod)
+  // Name, Email and Password format validation (using zod)
+
 
     /* For the password there will be:
       - at least 8 chars length
@@ -32,25 +31,30 @@ async function handleRegister(request: NextRequest): Promise<NextResponse> {
       because if we make it too complicated, users are non-tech related so it will be inconveinient for them
      */
 
+  try {
+    const body: RegisterRequest = await request.json();
+
     const registerSchema = z.object({
-    name: z.string().min(1, { message: 'Name is required' }),
-    email: z.email({ message: 'Invalid email format' }),
-    password: z.string()
-      .min(8, { message: 'Password must be at least 8 characters long' })
-      .refine((val) => /[A-Z]/.test(val), { message: 'Password must contain at least one uppercase letter' })
-      .refine((val) => /[0-9]/.test(val), { message: 'Password must contain at least one number' })
-      .refine((val) => /[!@#$%^&*()_\-+=\[{\]}:;"'<>,.?\/]/.test(val), { message: 'Password must contain at least one special character' }
-      ),
-   });
+      name: z.string().min(1, { message: 'Name is required' }),
+      email: z.email({ message: 'Invalid email format' }),
+      password: z.string()
+        .min(8, { message: 'Password must be at least 8 characters long' })
+        .refine((val) => /[A-Z]/.test(val), { message: 'Password must contain at least one uppercase letter' })
+        .refine((val) => /[0-9]/.test(val), { message: 'Password must contain at least one number' })
+        .refine((val) => /[!@#$%^&*()_\-+=\[{\]}:;"'<>,.?\/]/.test(val), { 
+          message: 'Password must contain at least one special character' 
+        }),
+    });
 
     const parseResult = registerSchema.safeParse(body);
 
     if (!parseResult.success) {
-      return NextResponse.json({ error: z.treeifyError(parseResult.error) }, { status: 400 });
+      // Use .format() instead of treeifyError (which doesn't exist in current Zod versions)
+      return NextResponse.json({ error: parseResult.error.format() }, { status: 400 });
     }
     const validatedData = parseResult.data;
 
-   // Check if user already exists
+    // Check if user already exists
     const existingUser = await findUserByEmail(validatedData.email);
     if (existingUser) {
       return NextResponse.json(
@@ -65,7 +69,7 @@ async function handleRegister(request: NextRequest): Promise<NextResponse> {
       name: validatedData.name,
       email: validatedData.email,
       password: hashedPassword,
-      role: Role.USER, // This is the default role
+      role: Role.USER,
     });
 
     // Generate tokens and save refresh token to DB
@@ -104,7 +108,7 @@ async function handleLogin(request: NextRequest): Promise<NextResponse> {
     const parseResult = loginSchema.safeParse(body);
 
     if (!parseResult.success) {
-      return NextResponse.json({ error: z.treeifyError(parseResult.error) }, { status: 400 });
+      return NextResponse.json({ error: parseResult.error.format() }, { status: 400 });
     }
 
     const validatedData = parseResult.data;
@@ -123,6 +127,7 @@ async function handleLogin(request: NextRequest): Promise<NextResponse> {
         { status: 403 }
       );
     }
+    
     // Verify password
     const isPasswordValid = await verifyPassword(user.password, validatedData.password);
     if (!isPasswordValid) {
@@ -134,7 +139,7 @@ async function handleLogin(request: NextRequest): Promise<NextResponse> {
 
     // Generate tokens and save refresh token to DB
     const tokens = await generateAndSaveTokens(user);
-    // Prepare response
+    
     const response: AuthResponse = {
       user: {
         id: user.id,
@@ -155,7 +160,6 @@ async function handleLogin(request: NextRequest): Promise<NextResponse> {
   }
 }
 
-
 // Logout user
 async function handleLogout(request: NextRequest): Promise<NextResponse> {
   try {
@@ -175,8 +179,8 @@ async function handleLogout(request: NextRequest): Promise<NextResponse> {
           const accessToken = body.accessToken;
           if (accessToken) {
             const accessPayload = verifyAccessToken(accessToken);
-            if (accessPayload) {
-              const expiresAt = new Date(accessPayload.exp ? accessPayload.exp * 1000 : Date.now() + 15 * 60 * 1000);
+            if (accessPayload && accessPayload.exp) {
+              const expiresAt = new Date(accessPayload.exp * 1000);
               await blacklistToken(accessToken, expiresAt);
             }
           }
@@ -191,9 +195,9 @@ async function handleLogout(request: NextRequest): Promise<NextResponse> {
         
         // Try as access token
         payload = verifyAccessToken(token);
-        if (payload) {
+        if (payload && payload.exp) {
           // Just blacklist the access token
-          const expiresAt = new Date(payload.exp ? payload.exp * 1000 : Date.now() + 15 * 60 * 1000);
+          const expiresAt = new Date(payload.exp * 1000);
           await blacklistToken(token, expiresAt);
           
           return NextResponse.json(
@@ -233,8 +237,8 @@ async function handleLogout(request: NextRequest): Promise<NextResponse> {
     // Blacklist access token if provided
     if (body.accessToken) {
       const accessPayload = verifyAccessToken(body.accessToken);
-      if (accessPayload) {
-        const expiresAt = new Date(accessPayload.exp ? accessPayload.exp * 1000 : Date.now() + 15 * 60 * 1000);
+      if (accessPayload && accessPayload.exp) {
+        const expiresAt = new Date(accessPayload.exp * 1000);
         await blacklistToken(body.accessToken, expiresAt);
       }
     }
@@ -264,7 +268,7 @@ async function handleRefresh(request: NextRequest): Promise<NextResponse> {
     const parseResult = refreshSchema.safeParse(body);
 
     if (!parseResult.success) {
-      return NextResponse.json({ error: z.treeifyError(parseResult.error) }, { status: 400 });
+      return NextResponse.json({ error: parseResult.error.format() }, { status: 400 });
     }
 
     const { refreshToken } = parseResult.data;
@@ -304,7 +308,6 @@ async function handleRefresh(request: NextRequest): Promise<NextResponse> {
   }
 }
 
-
 // Get current user info
 async function handleMe(request: NextRequest): Promise<NextResponse> {
   try {
@@ -316,16 +319,6 @@ async function handleMe(request: NextRequest): Promise<NextResponse> {
         { status: 401 }
       );
     }
-
-    // Will be implemented later: Fetch user from database
-    // just eg:
-    /* const user = await findUserById(authResult.payload.userId);
-    if (!user) {
-     return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }*/
 
     return NextResponse.json(
       {

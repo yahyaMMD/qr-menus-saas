@@ -6,9 +6,12 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { Upload, Facebook, Instagram, Music } from "lucide-react";
+import { useAuth } from '@/lib/auth/context';
 
 export const CreateRestaurantForm = () => {
   const router = useRouter();
+  const { user } = useAuth(); // Access authenticated user
+  
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -23,6 +26,8 @@ export const CreateRestaurantForm = () => {
   });
 
   const [charCount, setCharCount] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
@@ -36,10 +41,58 @@ export const CreateRestaurantForm = () => {
     router.push("/dashboard");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log("Form submitted:", formData);
+    setIsSubmitting(true);
+    setError("");
+
+    try {
+      const token = localStorage.getItem('accessToken');
+      
+      // Prepare the data to send to API
+      const profileData = {
+        name: formData.name,
+        description: formData.description,
+        logo: formData.logo,
+        location: {
+          address: formData.address,
+          city: formData.commune,
+          country: "Algeria",
+          wilaya: formData.wilaya,
+          latitude: 0, // You'll need to get this from Google Maps API
+          longitude: 0,
+        },
+        socialLinks: {
+          facebook: formData.facebook,
+          instagram: formData.instagram,
+          tiktok: formData.tiktok,
+        },
+      };
+
+      const response = await fetch('/api/profiles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(profileData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create profile');
+      }
+
+      const data = await response.json();
+      
+      // Redirect to the new profile
+      router.push(`/dashboard/profiles/${data.profile.id}`);
+    } catch (err: any) {
+      console.error('Create profile error:', err);
+      setError(err.message || 'Failed to create profile');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -54,6 +107,13 @@ export const CreateRestaurantForm = () => {
             Add your restaurant details to create a digital menu profile
           </p>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+            {error}
+          </div>
+        )}
 
         {/* Restaurant Name */}
         <div className="mb-6">
@@ -225,14 +285,16 @@ export const CreateRestaurantForm = () => {
             variant="outline"
             className="px-8 py-2 border-gray-300 text-gray-700 hover:bg-gray-50"
             onClick={handleCancel}
+            disabled={isSubmitting}
           >
             Cancel
           </Button>
           <Button
             type="submit"
             className="px-8 py-2 bg-orange-500 hover:bg-orange-600 text-white"
+            disabled={isSubmitting}
           >
-            Create Profile
+            {isSubmitting ? 'Creating...' : 'Create Profile'}
           </Button>
         </div>
       </form>
