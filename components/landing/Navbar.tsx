@@ -18,12 +18,24 @@ export default function Navbar() {
 
   const checkAuth = async () => {
     try {
+      // Try to load a cached user first
+      const cached = localStorage.getItem('authUser') || localStorage.getItem('auth')
+      if (cached) {
+        try {
+          setUser(JSON.parse(cached))
+        } catch {}
+      }
+
+      // Determine an access token from common storage shapes
       let token = localStorage.getItem('accessToken')
       if (!token) {
-        const authRaw = localStorage.getItem('auth')
+        const authRaw = localStorage.getItem('authTokens') || localStorage.getItem('auth')
         if (authRaw) {
-          const auth = JSON.parse(authRaw)
-          token = auth?.tokens?.accessToken
+          try {
+            const parsed = JSON.parse(authRaw)
+            // support two shapes: { accessToken, refreshToken } or { tokens: { accessToken } }
+            token = parsed?.accessToken ?? parsed?.tokens?.accessToken
+          } catch {}
         }
       }
 
@@ -32,7 +44,8 @@ export default function Navbar() {
         return
       }
 
-      const response = await fetch('/api/profiles', {
+      // Fetch current authenticated user using the auth API
+      const response = await fetch('/api/auth?action=me', {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -41,6 +54,17 @@ export default function Navbar() {
       if (response.ok) {
         const data = await response.json()
         setUser(data.user)
+        try {
+          localStorage.setItem('authUser', JSON.stringify(data.user))
+        } catch {}
+      } else {
+        // invalid token — clear stale values
+        localStorage.removeItem('accessToken')
+        localStorage.removeItem('refreshToken')
+        localStorage.removeItem('auth')
+        localStorage.removeItem('authTokens')
+        localStorage.removeItem('authUser')
+        setUser(null)
       }
     } catch (error) {
       console.error('Auth check failed:', error)
@@ -101,11 +125,11 @@ export default function Navbar() {
                 {user ? (
                   <div className="flex items-center gap-3">
                     <Link
-                      href="/dashboard"
+                      href={user?.role === 'ADMIN' ? '/admin' : '/dashboard'}
                       className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition font-medium"
                     >
                       <User className="w-4 h-4" />
-                      Dashboard
+                      {user?.role === 'ADMIN' ? 'Admin Panel' : 'Dashboard'}
                     </Link>
                     <button
                       onClick={handleLogout}
@@ -151,11 +175,11 @@ export default function Navbar() {
                 {user ? (
                   <div className="space-y-2 pt-2 border-t border-gray-100">
                     <Link
-                      href="/dashboard"
+                      href={user?.role === 'ADMIN' ? '/admin' : '/dashboard'}
                       className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition font-medium"
                     >
                       <User className="w-4 h-4" />
-                      Dashboard
+                      {user?.role === 'ADMIN' ? 'Admin Panel' : 'Dashboard'}
                     </Link>
                     <button
                       onClick={handleLogout}
