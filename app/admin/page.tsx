@@ -129,6 +129,8 @@ type AnalyticsSummary = {
 
 const TOKEN_KEY = "authTokens";
 const USER_KEY = "authUser";
+const ACCESS_KEY = "accessToken";
+const REFRESH_KEY = "refreshToken";
 const ADMIN_ROLE = "ADMIN";
 
 export default function AdminPage() {
@@ -167,20 +169,48 @@ export default function AdminPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const storedTokens = typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
-    const storedUser = typeof window !== "undefined" ? localStorage.getItem(USER_KEY) : null;
+    if (typeof window === "undefined") return;
+
+    const storedTokens = localStorage.getItem(TOKEN_KEY);
+    const storedUser = localStorage.getItem(USER_KEY);
+
     if (storedTokens) {
       try {
         setTokens(JSON.parse(storedTokens));
       } catch {
         setTokens(null);
       }
+    } else {
+      const access = localStorage.getItem(ACCESS_KEY);
+      const refresh = localStorage.getItem(REFRESH_KEY);
+      if (access) {
+        setTokens({ accessToken: access, refreshToken: refresh ?? "" });
+      }
     }
+
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
       } catch {
         setUser(null);
+      }
+    } else {
+      // If no user in storage but we have an access token, fetch current user
+      const access = localStorage.getItem(ACCESS_KEY);
+      if (access) {
+        (async () => {
+          try {
+            const res = await fetch("/api/auth?action=me", {
+              headers: { Authorization: `Bearer ${access}` },
+            });
+            if (res.ok) {
+              const data = await res.json();
+              setUser(data.user ?? null);
+            }
+          } catch {
+            // ignore
+          }
+        })();
       }
     }
   }, []);
@@ -205,6 +235,8 @@ export default function AdminPage() {
       if (res.status === 401 || res.status === 403) {
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
+        localStorage.removeItem(ACCESS_KEY);
+        localStorage.removeItem(REFRESH_KEY);
         setTokens(null);
         setUser(null);
         router.replace("/test/login");
@@ -382,6 +414,8 @@ export default function AdminPage() {
     if (typeof window !== "undefined") {
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
+      localStorage.removeItem(ACCESS_KEY);
+      localStorage.removeItem(REFRESH_KEY);
     }
     setTokens(null);
     setUser(null);
@@ -645,7 +679,7 @@ export default function AdminPage() {
       {/* Mobile Header */}
       <div className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200 bg-white/80 backdrop-blur-lg px-4 py-3 lg:hidden">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-rose-600 text-sm font-bold text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 text-sm font-bold text-white">
             QM
           </div>
           <div>
@@ -677,7 +711,7 @@ export default function AdminPage() {
         `}>
           <div className="flex h-full flex-col">
             <div className="mb-8 flex items-center gap-3 px-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500 to-rose-600 text-lg font-bold text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 text-lg font-bold text-white">
                 QM
               </div>
               <div>
@@ -692,7 +726,7 @@ export default function AdminPage() {
                   onClick={() => goToSection(item.key)}
                   className={`flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm font-semibold transition-all duration-200 ${
                     activeSection === item.key 
-                      ? "bg-gradient-to-r from-rose-50 to-rose-100 text-rose-600 shadow-sm ring-1 ring-rose-100" 
+                      ? "bg-gradient-to-r from-orange-50 to-orange-100 text-orange-600 shadow-sm ring-1 ring-orange-100" 
                       : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
@@ -707,7 +741,7 @@ export default function AdminPage() {
             <div className="border-t border-slate-200 pt-4">
               <button
                 onClick={handleLogout}
-                className="flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-sm font-semibold text-rose-500 transition-all duration-200 hover:bg-rose-50 hover:text-rose-600"
+                className="flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-sm font-semibold text-orange-500 transition-all duration-200 hover:bg-orange-50 hover:text-orange-600"
               >
                 <LogOut className="h-4 w-4" />
                 Logout
@@ -718,9 +752,9 @@ export default function AdminPage() {
 
         <main className="flex-1 space-y-8 lg:min-w-0">
           {error && (
-            <div className="rounded-2xl border border-rose-200 bg-gradient-to-r from-rose-50 to-rose-100 px-4 py-3 text-sm text-rose-700 shadow-sm">
+            <div className="rounded-2xl border border-orange-200 bg-gradient-to-r from-orange-50 to-orange-100 px-4 py-3 text-sm text-orange-700 shadow-sm">
               <div className="flex items-center gap-2">
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-xs text-white">!</div>
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-xs text-white">!</div>
                 {error}
               </div>
             </div>
@@ -840,12 +874,12 @@ function DashboardSection({
               onClick={onExport}
               className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-slate-200"
             >
-              <Download className="h-4 w-4 text-rose-500" />
+              <Download className="h-4 w-4 text-orange-500" />
               Export Report
             </button>
             <button
               onClick={onSupport}
-              className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-rose-500 to-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-rose-500/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-rose-500/40"
+              className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-500/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-orange-500/40"
             >
               <TicketCheck className="h-4 w-4" />
               Support
@@ -855,7 +889,7 @@ function DashboardSection({
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard card={{ label: "Total Users", value: totals.totalUsers.toLocaleString(), sub: `${totals.activeUsers} active users`, icon: <Users className="h-5 w-5 text-rose-500" />, tone: "red" }} />
+        <StatCard card={{ label: "Total Users", value: totals.totalUsers.toLocaleString(), sub: `${totals.activeUsers} active users`, icon: <Users className="h-5 w-5 text-orange-500" />, tone: "red" }} />
         <StatCard card={{ label: "Total Restaurants", value: totals.totalRestaurants.toLocaleString(), sub: `${totals.activeRestaurants} active profiles`, icon: <UtensilsCrossed className="h-5 w-5 text-emerald-500" />, tone: "green" }} />
         <StatCard card={{ label: "Platform Scans", value: totals.totalScans.toLocaleString(), sub: "Engagement across QR menus", icon: <QrCode className="h-5 w-5 text-purple-500" />, tone: "purple" }} />
         <StatCard card={{ label: "Active Subscriptions", value: totals.activeSubscriptions.toLocaleString(), sub: `${(totals.revenueCents / 100).toLocaleString()} DZD revenue`, icon: <ShieldCheck className="h-5 w-5 text-blue-500" />, tone: "blue" }} />
@@ -886,10 +920,10 @@ function DashboardSection({
               <button
                 key={item.label}
                 onClick={() => onQuickAction(item.action as "add-user" | "suspend-restaurant" | "upgrade-plan" | "export-data")}
-                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 text-left text-sm font-semibold text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:border-rose-200 hover:bg-rose-50 hover:shadow-md"
+                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 text-left text-sm font-semibold text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:border-orange-200 hover:bg-orange-50 hover:shadow-md"
               >
                 <span>{item.label}</span>
-                <div className="text-rose-500">{item.icon}</div>
+                <div className="text-orange-500">{item.icon}</div>
               </button>
             ))}
           </div>
@@ -961,7 +995,7 @@ function UsersSection({
             <button
               onClick={onCreateUser}
               disabled={actionLoading === "create-user"}
-              className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-rose-500 to-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-rose-500/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-rose-500/40 disabled:opacity-60"
+              className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-500/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-orange-500/40 disabled:opacity-60"
             >
               <UserRoundPlus className="h-4 w-4" />
               {actionLoading === "create-user" ? "Creating..." : "Add New User"}
@@ -971,7 +1005,7 @@ function UsersSection({
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard card={{ label: "Total Users", value: users.length.toLocaleString(), sub: `${users.filter((u) => u.isActive).length} active`, icon: <Users className="h-5 w-5 text-rose-500" />, tone: "red" }} />
+        <StatCard card={{ label: "Total Users", value: users.length.toLocaleString(), sub: `${users.filter((u) => u.isActive).length} active`, icon: <Users className="h-5 w-5 text-orange-500" />, tone: "red" }} />
         <StatCard card={{ label: "Suspended", value: users.filter((u) => !u.isActive).length.toString(), icon: <BellDot className="h-5 w-5 text-amber-500" />, tone: "orange" }} />
         <StatCard card={{ label: "Admins", value: users.filter((u) => u.role === "ADMIN").length.toString(), icon: <ShieldCheck className="h-5 w-5 text-emerald-500" />, tone: "green" }} />
         <StatCard card={{ label: "Avg. Profiles/User", value: (users.length ? (users.reduce((sum, u) => sum + u.profileCount, 0) / users.length).toFixed(1) : "0"), icon: <TrendingUp className="h-5 w-5 text-blue-500" />, tone: "blue" }} />
@@ -986,25 +1020,25 @@ function UsersSection({
             id="create-user-name"
             onChange={(e) => setNewUser((prev) => ({ ...prev, name: e.target.value }))}
             placeholder="Full name"
-            className="rounded-xl border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-400/20"
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
           />
           <input
             value={newUser.email}
             onChange={(e) => setNewUser((prev) => ({ ...prev, email: e.target.value }))}
             placeholder="Email"
-            className="rounded-xl border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-400/20"
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
           />
           <input
             value={newUser.password}
             onChange={(e) => setNewUser((prev) => ({ ...prev, password: e.target.value }))}
             placeholder="Temporary password"
             type="password"
-            className="rounded-xl border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-400/20"
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
           />
           <select
             value={newUser.role}
             onChange={(e) => setNewUser((prev) => ({ ...prev, role: e.target.value }))}
-            className="rounded-xl border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-400/20"
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
           >
             <option value="ADMIN">Admin</option>
             <option value="RESTAURANT_OWNER">Restaurant Owner</option>
@@ -1013,7 +1047,7 @@ function UsersSection({
           <button
             onClick={onCreateUser}
             disabled={actionLoading === "create-user"}
-            className="rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-rose-500/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-rose-500/40 disabled:opacity-60"
+            className="rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-500/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-orange-500/40 disabled:opacity-60"
           >
             {actionLoading === "create-user" ? "Saving..." : "Save User"}
           </button>
@@ -1060,7 +1094,7 @@ function UsersSection({
                 <select
                   value={u.role}
                   onChange={(e) => onChangeRole(u, e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-2 py-1 text-xs transition-all duration-200 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-400/20 sm:w-auto"
+                  className="w-full rounded-lg border border-slate-200 px-2 py-1 text-xs transition-all duration-200 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20 sm:w-auto"
                 >
                   <option value="ADMIN">Admin</option>
                   <option value="RESTAURANT_OWNER">Restaurant Owner</option>
@@ -1084,7 +1118,7 @@ function UsersSection({
                   disabled={actionLoading === `user-active-${u.id}`}
                   title={u.isActive ? "Suspend user" : "Activate user"}
                 >
-                  <ShieldCheck className="h-4 w-4 text-rose-500" />
+                  <ShieldCheck className="h-4 w-4 text-orange-500" />
                 </button>
                 <button
                   onClick={() => onShowUser(u)}
@@ -1095,7 +1129,7 @@ function UsersSection({
                 </button>
                 <button
                   onClick={() => onDeleteUser(u)}
-                  className="rounded-full p-2 text-rose-500 transition-all duration-200 hover:bg-rose-50 hover:shadow-sm disabled:opacity-60"
+                  className="rounded-full p-2 text-orange-500 transition-all duration-200 hover:bg-orange-50 hover:shadow-sm disabled:opacity-60"
                   disabled={actionLoading === `user-delete-${u.id}` || u.profileCount > 0}
                   title={u.profileCount > 0 ? "Reassign or remove profiles first" : "Delete user"}
                 >
@@ -1169,7 +1203,7 @@ function RestaurantsSection({
             onClick={onExport}
             className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-slate-200"
           >
-            <Download className="h-4 w-4 text-rose-500" />
+            <Download className="h-4 w-4 text-orange-500" />
             Export CSV
           </button>
         }
@@ -1238,7 +1272,7 @@ function RestaurantsSection({
                 <button
                   onClick={() => onToggleStatus(p)}
                   disabled={actionLoading === `profile-${p.id}`}
-                  className="rounded-full border border-slate-200 p-2 text-rose-500 transition-all duration-200 hover:bg-rose-50 hover:shadow-sm disabled:opacity-60"
+                  className="rounded-full border border-slate-200 p-2 text-orange-500 transition-all duration-200 hover:bg-orange-50 hover:shadow-sm disabled:opacity-60"
                   title={p.status === "SUSPENDED" ? "Reactivate profile" : "Suspend profile"}
                 >
                   <ShieldCheck className="h-4 w-4" />
@@ -1344,13 +1378,13 @@ function SubscriptionsSection({
               onClick={onExport}
               className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-slate-200"
             >
-              <Download className="h-4 w-4 text-rose-500" />
+              <Download className="h-4 w-4 text-orange-500" />
               Export
             </button>
             <button
               onClick={onUpgrade}
               disabled={actionLoading === "upgrade-sub"}
-              className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-rose-500 to-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-rose-500/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-rose-500/40 disabled:opacity-60"
+              className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-500/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-orange-500/40 disabled:opacity-60"
             >
               <ShieldCheck className="h-4 w-4" />
               {actionLoading === "upgrade-sub" ? "Saving..." : "Upgrade User"}
@@ -1390,13 +1424,13 @@ function SubscriptionsSection({
                 <input
                   type="number"
                   defaultValue={p.priceCents}
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-400/20"
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
                   onBlur={(e) => onUpdatePlan(p, { priceCents: Number(e.target.value) })}
                 />
                 <textarea
                   defaultValue={p.description ?? ""}
                   rows={2}
-                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-400/20"
+                  className="rounded-lg border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
                   onBlur={(e) => onUpdatePlan(p, { description: e.target.value })}
                 />
               </div>
@@ -1413,12 +1447,12 @@ function SubscriptionsSection({
               id="upgrade-user-id"
               onChange={(e) => setUpgradePayload((prev) => ({ ...prev, userId: e.target.value }))}
               placeholder="User ID"
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-400/20"
+              className="rounded-lg border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
             />
             <select
               value={upgradePayload.plan}
               onChange={(e) => setUpgradePayload((prev) => ({ ...prev, plan: e.target.value }))}
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-400/20"
+              className="rounded-lg border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
             >
               <option value="FREE">Free</option>
               <option value="STANDARD">Standard</option>
@@ -1429,18 +1463,18 @@ function SubscriptionsSection({
               value={upgradePayload.priceCents}
               onChange={(e) => setUpgradePayload((prev) => ({ ...prev, priceCents: Number(e.target.value) }))}
               placeholder="Price cents"
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-400/20"
+              className="rounded-lg border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
             />
             <input
               type="date"
               value={upgradePayload.expiresAt}
               onChange={(e) => setUpgradePayload((prev) => ({ ...prev, expiresAt: e.target.value }))}
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-400/20"
+              className="rounded-lg border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
             />
             <select
               value={upgradePayload.role}
               onChange={(e) => setUpgradePayload((prev) => ({ ...prev, role: e.target.value }))}
-              className="rounded-lg border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-400/20"
+              className="rounded-lg border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
             >
               <option value="">Keep current role</option>
               <option value="ADMIN">Admin</option>
@@ -1450,7 +1484,7 @@ function SubscriptionsSection({
             <button
               onClick={onUpgrade}
               disabled={actionLoading === "upgrade-sub"}
-              className="rounded-lg bg-gradient-to-r from-rose-500 to-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-rose-500/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-rose-500/40 disabled:opacity-60"
+              className="rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-500/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-orange-500/40 disabled:opacity-60"
             >
               {actionLoading === "upgrade-sub" ? "Updating..." : "Upgrade / Save"}
             </button>
@@ -1660,14 +1694,14 @@ function AnalyticsSection({
             onClick={onExport}
             className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-slate-200"
           >
-            <Download className="h-4 w-4 text-rose-500" />
+            <Download className="h-4 w-4 text-orange-500" />
             Download
           </button>
         }
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <StatCard card={{ label: "Total Users", value: totals.totalUsers.toLocaleString(), sub: `${totals.activeUsers} active`, icon: <Users className="h-5 w-5 text-rose-500" />, tone: "red" }} />
+        <StatCard card={{ label: "Total Users", value: totals.totalUsers.toLocaleString(), sub: `${totals.activeUsers} active`, icon: <Users className="h-5 w-5 text-orange-500" />, tone: "red" }} />
         <StatCard card={{ label: "Total Restaurants", value: totals.totalRestaurants.toLocaleString(), icon: <UtensilsCrossed className="h-5 w-5 text-emerald-500" />, tone: "green" }} />
         <StatCard card={{ label: "QR Code Scans", value: totals.totalScans.toLocaleString(), icon: <QrCode className="h-5 w-5 text-purple-500" />, tone: "purple" }} />
         <StatCard card={{ label: "Total Revenue", value: `${(totals.revenueCents / 100).toLocaleString()} DZD`, icon: <DollarSign className="h-5 w-5 text-orange-500" />, tone: "orange" }} />
@@ -1761,7 +1795,7 @@ function FeedbackSection({
           <button
             onClick={onExport}
             disabled={actionLoading === "export"}
-            className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-rose-500 to-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-rose-500/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-rose-500/40 disabled:opacity-60"
+            className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-500/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-orange-500/40 disabled:opacity-60"
           >
             <Download className="h-4 w-4" />
             Export Data
@@ -1838,7 +1872,7 @@ function FeedbackSection({
                       <>
                         <button
                           onClick={() => onChangeStatus(f.id, "Removed")}
-                          className="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-600 transition-all duration-200 hover:-translate-y-0.5 hover:bg-rose-50 hover:shadow-sm"
+                          className="rounded-lg border border-orange-200 px-3 py-1.5 text-xs font-semibold text-orange-600 transition-all duration-200 hover:-translate-y-0.5 hover:bg-orange-50 hover:shadow-sm"
                         >
                           Reject
                         </button>
@@ -1854,7 +1888,7 @@ function FeedbackSection({
                       <>
                         <button
                           onClick={() => onChangeStatus(f.id, "Removed")}
-                          className="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-600 transition-all duration-200 hover:-translate-y-0.5 hover:bg-rose-50 hover:shadow-sm"
+                          className="rounded-lg border border-orange-200 px-3 py-1.5 text-xs font-semibold text-orange-600 transition-all duration-200 hover:-translate-y-0.5 hover:bg-orange-50 hover:shadow-sm"
                         >
                           Remove
                         </button>
@@ -1926,13 +1960,13 @@ function FeedbackSection({
                 >
                   <input
                     name="response"
-                    className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-400/20"
+                    className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
                     placeholder="Write a reply..."
                   />
                   <button
                     type="submit"
                     disabled={actionLoading === `ticket-${t.id}`}
-                    className="rounded-lg bg-gradient-to-r from-rose-500 to-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-rose-500/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-rose-500/40 disabled:opacity-60"
+                    className="rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-500/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-orange-500/40 disabled:opacity-60"
                   >
                     {actionLoading === `ticket-${t.id}` ? "Sending..." : "Send response"}
                   </button>
@@ -1948,7 +1982,7 @@ function FeedbackSection({
 
 function StatCard({ card }: { card: { label: string; value: string; sub?: string; icon?: JSX.Element; tone?: "red" | "blue" | "green" | "orange" | "purple" | "slate" } }) {
   const palette: Record<NonNullable<typeof card.tone>, string> = {
-    red: "from-rose-500/20 to-rose-500/5 text-rose-600",
+    red: "from-orange-500/20 to-orange-500/5 text-orange-600",
     blue: "from-blue-500/20 to-blue-500/5 text-blue-600",
     green: "from-emerald-500/20 to-emerald-500/5 text-emerald-600",
     orange: "from-orange-500/20 to-orange-500/5 text-orange-600",
@@ -1962,7 +1996,7 @@ function StatCard({ card }: { card: { label: string; value: string; sub?: string
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{card.label}</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">{card.value}</p>
-          {card.sub && <p className={`mt-1 text-xs font-semibold ${tone === "red" ? "text-rose-600" : "text-emerald-600"}`}>{card.sub}</p>}
+          {card.sub && <p className={`mt-1 text-xs font-semibold ${tone === "red" ? "text-orange-600" : "text-emerald-600"}`}>{card.sub}</p>}
         </div>
         {card.icon && (
           <div className={`rounded-2xl bg-gradient-to-br ${palette[tone]} p-3`}>{card.icon}</div>
@@ -1985,7 +2019,7 @@ function FilterBar({
 }) {
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:px-6 sm:py-4">
-      <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-slate-500 transition-all duration-200 focus-within:bg-white focus-within:ring-2 focus-within:ring-rose-400/20">
+      <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-slate-500 transition-all duration-200 focus-within:bg-white focus-within:ring-2 focus-within:ring-orange-400/20">
         <Search className="h-4 w-4 flex-shrink-0" />
         <input
           className="w-full min-w-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
@@ -2001,7 +2035,7 @@ function FilterBar({
             onClick={filter.onClick}
             className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-md"
           >
-            <Filter className="h-4 w-4 text-rose-500" />
+            <Filter className="h-4 w-4 text-orange-500" />
             {filter.label}
           </button>
         ))}
@@ -2058,7 +2092,7 @@ function Badge({ children, tone = "muted" }: { children: React.ReactNode; tone?:
   const map: Record<typeof tone, string> = {
     muted: "bg-slate-100 text-slate-800",
     success: "bg-emerald-100 text-emerald-700",
-    danger: "bg-rose-100 text-rose-700",
+    danger: "bg-orange-100 text-orange-700",
   };
   return <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${map[tone]}`}>{children}</span>;
 }
