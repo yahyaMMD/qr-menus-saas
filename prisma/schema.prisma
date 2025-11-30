@@ -177,7 +177,7 @@ model PlanCatalog {
   id          String @id @default(auto()) @map("_id") @db.ObjectId
   plan        Plan   @unique
   priceCents  Int
-  currency    String @default("USD")
+  currency    String @default("DA")
   description String?
   updatedAt   DateTime @default(now())
 }

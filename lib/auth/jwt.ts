@@ -33,9 +33,18 @@ export function generateTokens(payload: Omit<JWTPayload, "type">): AuthTokens {
 
 export function verifyAccessToken(token: string): JWTPayload | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
-    return decoded.type === "access" ? decoded : null;
-  } catch {
+    const decoded = jwt.verify(token, JWT_SECRET) as unknown;
+
+    if (!decoded || typeof decoded !== 'object') return null;
+
+    const d = decoded as Partial<JWTPayload>;
+
+    // basic runtime validation
+    if (d.type !== 'access') return null;
+    if (!d.userId || !d.email || !d.role) return null;
+
+    return d as JWTPayload;
+  } catch (err) {
     return null;
   }
 }
@@ -50,6 +59,22 @@ export function verifyRefreshToken(token: string): JWTPayload | null {
 }
 
 export function extractTokenFromHeader(authHeader: string | null): string | null {
-  if (!authHeader || !authHeader.startsWith("Bearer ")) return null;
-  return authHeader.slice(7);
+  if (!authHeader) return null;
+
+  // Accept 'Bearer <token>' case-insensitive and tolerate extra spaces
+  const parts = authHeader.trim().split(/\s+/);
+  
+  // Handle double "Bearer Bearer" case (malformed header)
+  if (parts.length >= 2 && /^Bearer$/i.test(parts[0])) {
+    // If second part is also "Bearer", skip it and get the actual token
+    const startIdx = /^Bearer$/i.test(parts[1]) ? 2 : 1;
+    if (startIdx < parts.length) {
+      return parts[startIdx];
+    }
+  }
+
+  // Sometimes token is provided as the raw token (no scheme)
+  if (parts.length === 1) return parts[0] || null;
+
+  return null;
 }
