@@ -1,0 +1,195 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import {
+  Facebook,
+  Filter,
+  Instagram,
+  MessageCircle,
+} from "lucide-react";
+
+import { Filters, Item, MenuData } from "./menu.types";
+import { mockMenuData } from "./menu.mock";
+import FilterModal from "./components/FilterModal";
+import MenuSection from "./components/MenuSection";
+import Link from "next/link";
+
+const MenuPage: React.FC = () => {
+  const [data, setData] = useState<MenuData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [filters, setFilters] = useState<Filters>({
+    typeIds: [],
+    categoryIds: [],
+    tagIds: [],
+    priceRange: [0, 4500],
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        setData(mockMenuData);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading menu...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) return null;
+
+  // Filter items based on active filters
+  const filteredItems = data.items.filter((item) => {
+    // Type filter
+    if (filters.typeIds.length > 0 && !filters.typeIds.includes(item.typeId || "")) {
+      return false;
+    }
+
+    // Category filter
+    if (
+      filters.categoryIds.length > 0 &&
+      !filters.categoryIds.includes(item.categoryId || "")
+    ) {
+      return false;
+    }
+
+    // Tag filter
+    if (filters.tagIds.length > 0) {
+      const hasMatchingTag = item.tags.some((tag) => filters.tagIds.includes(tag));
+      if (!hasMatchingTag) return false;
+    }
+
+    // Price filter
+    if (item.price !== null) {
+      if (item.price < filters.priceRange[0] || item.price > filters.priceRange[1]) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  // Group items by category
+  const groupedItems: Record<string, Item[]> = {};
+  filteredItems.forEach((item) => {
+    const category = data.categories.find((c) => c.id === item.categoryId);
+    const categoryName = category?.name || "Other";
+    if (!groupedItems[categoryName]) {
+      groupedItems[categoryName] = [];
+    }
+    groupedItems[categoryName].push(item);
+  });
+
+  const activeFilterCount =
+    filters.typeIds.length + filters.categoryIds.length + filters.tagIds.length;
+
+  return (
+    <div className="min-h-screen bg-gray-50 pb-20">
+      {/* Header */}
+      <header className="bg-white shadow-sm sticky top-0 z-40">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <img
+              src={data.menu.logoUrl}
+              alt="Restaurant Logo"
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover"
+            />
+            <span className="text-lg sm:text-xl font-bold text-gray-900">
+              {data.menu.name}
+            </span>
+          </div>
+
+          <button
+            onClick={() => setIsFilterOpen(true)}
+            className="bg-orange-500 text-white px-3 sm:px-4 py-2 rounded-full font-semibold flex items-center gap-2 hover:bg-orange-600 transition relative"
+          >
+            <Filter className="w-4 h-4" />
+            <span className="hidden sm:inline">Filters</span>
+            {activeFilterCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+        </div>
+      </header>
+
+      {/* Page Title */}
+      <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Menu</h1>
+      </div>
+
+      {/* Menu Sections */}
+      <main className="max-w-4xl mx-auto px-4">
+        {Object.keys(groupedItems).length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">
+              No items found matching your filters.
+            </p>
+          </div>
+        ) : (
+          Object.entries(groupedItems).map(([categoryName, items]) => (
+            <MenuSection
+              key={categoryName}
+              title={categoryName}
+              items={items}
+              tags={data.tags}
+            />
+          ))
+        )}
+      </main>
+
+      {/* Footer */}
+      <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-30">
+        <div className="max-w-4xl mx-auto px-4 py-2 sm:py-3 flex items-center justify-center gap-4 sm:gap-6">
+          <button className="text-gray-600 hover:text-blue-600 transition flex items-center gap-1 sm:gap-2">
+            <Facebook className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="text-xs sm:text-sm font-medium hidden sm:inline">
+              Facebook
+            </span>
+          </button>
+          <button className="text-gray-600 hover:text-pink-600 transition flex items-center gap-1 sm:gap-2">
+            <Instagram className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="text-xs sm:text-sm font-medium hidden sm:inline">
+              Instagram
+            </span>
+          </button>
+          <Link
+             href="/feedback"
+             className="bg-orange-500 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-semibold flex items-center gap-1 sm:gap-2 hover:bg-orange-600 transition text-xs sm:text-sm"
+              >
+              <MessageCircle className="w-4 h-4" />
+              <span className="hidden sm:inline">Feedback</span>
+          </Link>
+        </div>
+      </footer>
+
+      {/* Filter Modal */}
+      <FilterModal
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        filters={filters}
+        onApplyFilters={setFilters}
+        types={data.types}
+        categories={data.categories}
+        tags={data.tags}
+      />
+    </div>
+  );
+};
+
+export default MenuPage;

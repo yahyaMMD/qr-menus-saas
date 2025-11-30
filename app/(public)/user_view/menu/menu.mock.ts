@@ -1,0 +1,130 @@
+import { MenuData } from "./menu.types";
+
+export const mockMenuData: MenuData = {
+  menu: {
+    id: "1",
+    logoUrl:
+      "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=200&h=200&fit=crop",
+    name: "Café Gourmet",
+  },
+  types: [
+    { id: "t1", name: "Hot Drinks", image: null, menuId: "1" },
+    { id: "t2", name: "Cold Drinks", image: null, menuId: "1" },
+    { id: "t3", name: "Food", image: null, menuId: "1" },
+    { id: "t4", name: "Desserts", image: null, menuId: "1" },
+  ],
+  categories: [
+    { id: "c1", name: "Coffee", image: null, menuId: "1" },
+    { id: "c2", name: "Tea", image: null, menuId: "1" },
+    { id: "c3", name: "Pastries", image: null, menuId: "1" },
+    { id: "c4", name: "Breakfast", image: null, menuId: "1" },
+    { id: "c5", name: "Lunch", image: null, menuId: "1" },
+    { id: "c6", name: "Dinner", image: null, menuId: "1" },
+  ],
+  tags: [
+    { id: "tag1", name: "Vegan", color: "#10b981", menuId: "1" },
+    { id: "tag2", name: "Vegetarian", color: "#059669", menuId: "1" },
+    { id: "tag3", name: "Gluten-Free", color: "#6366f1", menuId: "1" },
+    { id: "tag4", name: "Spicy", color: "#ef4444", menuId: "1" },
+    { id: "tag5", name: "Popular", color: "#f97316", menuId: "1" },
+    { id: "tag6", name: "New", color: "#3b82f6", menuId: "1" },
+  ],
+  items: [
+    {
+      id: "1",
+      name: "Cappuccino",
+      description: "Classic Italian coffee with steamed milk",
+      price: 350,
+      image:
+        "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=400&h=300&fit=crop",
+      tags: ["tag5"],
+      typeId: "t1",
+      categoryId: "c1",
+      menuId: "1",
+    },
+    {
+      id: "2",
+      name: "Iced Latte",
+      description: "Refreshing iced coffee with milk",
+      price: 400,
+      image:
+        "https://images.unsplash.com/photo-1517487881594-2787fef5ebf7?w=400&h=300&fit=crop",
+      tags: [],
+      typeId: "t2",
+      categoryId: "c1",
+      menuId: "1",
+    },
+    {
+      id: "3",
+      name: "Green Tea",
+      description: "Organic green tea with mint",
+      price: 250,
+      image:
+        "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400&h=300&fit=crop",
+      tags: ["tag1"],
+      typeId: "t1",
+      categoryId: "c2",
+      menuId: "1",
+    },
+    {
+      id: "4",
+      name: "Croissant",
+      description: "Fresh butter croissant baked daily",
+      price: 200,
+      image:
+        "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&h=300&fit=crop",
+      tags: ["tag5", "tag6"],
+      typeId: "t3",
+      categoryId: "c3",
+      menuId: "1",
+    },
+    {
+      id: "5",
+      name: "Vegan Muffin",
+      description: "Delicious vegan blueberry muffin",
+      price: 280,
+      image:
+        "https://images.unsplash.com/photo-1607958996333-41aef7caefaa?w=400&h=300&fit=crop",
+      tags: ["tag1", "tag6"],
+      typeId: "t4",
+      categoryId: "c3",
+      menuId: "1",
+    },
+    {
+      id: "6",
+      name: "Chocolate Cake",
+      description: "Rich chocolate layer cake",
+      price: 450,
+      image:
+        "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&h=300&fit=crop",
+      tags: ["tag5"],
+      typeId: "t4",
+      categoryId: "c3",
+      menuId: "1",
+    },
+    {
+      id: "7",
+      name: "Avocado Toast",
+      description: "Fresh avocado on sourdough toast",
+      price: 550,
+      image:
+        "https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?w=400&h=300&fit=crop",
+      tags: ["tag2", "tag5"],
+      typeId: "t3",
+      categoryId: "c4",
+      menuId: "1",
+    },
+    {
+      id: "8",
+      name: "Spicy Ramen",
+      description: "Japanese noodle soup with vegetables",
+      price: 850,
+      image:
+        "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&h=300&fit=crop",
+      tags: ["tag4", "tag5"],
+      typeId: "t3",
+      categoryId: "c5",
+      menuId: "1",
+    },
+  ],
+};
