@@ -1,12 +1,13 @@
 import { PrismaClient } from '@prisma/client';
-import clean from './seeds/01-clean';
-import users from './seeds/02-users';
-import profiles from './seeds/03-profiles';
-import menus from './seeds/04-menus';
-import tagsTypesCategories from './seeds/05-tags-types-categories';
-import items from './seeds/06-items';
-import subscriptions from './seeds/07-subscriptions';
-import support from './seeds/08-support';
+
+import clean from './seeds/01-clean.js';
+import users from './seeds/02-users.js';
+import profiles from './seeds/03-profiles.js';
+import menus from './seeds/04-menus.js';
+import tagsTypesCategories from './seeds/05-tags-types-categories.js';
+import items from './seeds/06-items.js';
+import subscriptions from './seeds/07-subscriptions.js';
+import support from './seeds/08-support.js';
 
 const prisma = new PrismaClient();
 
@@ -15,9 +16,11 @@ async function main() {
 
   await clean(prisma);
   await users(prisma);
+
   const createdProfiles = await profiles(prisma);
   const createdMenus = await menus(prisma, createdProfiles);
   const createdTagsTypesCats = await tagsTypesCategories(prisma, createdMenus);
+
   await items(prisma, createdTagsTypesCats);
   await subscriptions(prisma);
   await support(prisma);
@@ -25,7 +28,12 @@ async function main() {
   console.log("🌱 Seed finished successfully.");
 }
 
-main().catch(e => {
-  console.error(e);
-  process.exit(1);
-});
+main()
+  .then(async () => {
+    await prisma.$disconnect();
+  })
+  .catch(async (e) => {
+    console.error(e);
+    await prisma.$disconnect();
+    process.exit(1);
+  });
