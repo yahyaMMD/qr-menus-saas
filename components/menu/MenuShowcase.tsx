@@ -33,7 +33,7 @@ export default function MenuShowcase() {
             Beautiful Menus for Every Style
           </h2>
           <p className="text-lg text-gray-600">
-            See how different restaurants use MenuMaster
+            See how different restaurants use Qresto
           </p>
         </div>
 

@@ -86,7 +86,7 @@ export default function MenuShowcase() {
               Unlock the Gallery
             </h3>
             <p className="text-gray-600 mb-8">
-              Sign up as a user to explore real restaurant menus created with MenuMaster and see what's possible for your business
+              Sign up as a user to explore real restaurant menus created with Qresto and see what's possible for your business
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button className="bg-orange-500 text-white px-8 py-3 rounded-lg hover:bg-orange-600 transition font-semibold">

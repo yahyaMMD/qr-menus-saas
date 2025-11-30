@@ -18,7 +18,7 @@ export default function Navbar() {
               {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
             <Link href="/" className="text-xl font-bold text-gray-900">
-              MenuMaster
+              Qresto
             </Link>
           </div>
 
