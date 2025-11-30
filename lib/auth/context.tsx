@@ -104,8 +104,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const data = await response.json();
     localStorage.setItem('accessToken', data.tokens.accessToken);
     localStorage.setItem('refreshToken', data.tokens.refreshToken);
+    // persist convenient shapes for other parts of the app
+    try {
+      localStorage.setItem('authUser', JSON.stringify(data.user));
+    } catch {}
+    try {
+      localStorage.setItem('authTokens', JSON.stringify(data.tokens));
+    } catch {}
     setUser(data.user);
-    router.push('/dashboard');
+    router.push('/');
   };
 
   const register = async (name: string, email: string, password: string) => {
@@ -123,8 +130,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const data = await response.json();
     localStorage.setItem('accessToken', data.tokens.accessToken);
     localStorage.setItem('refreshToken', data.tokens.refreshToken);
+    // persist convenient shapes for other parts of the app
+    try {
+      localStorage.setItem('authUser', JSON.stringify(data.user));
+    } catch {}
+    try {
+      localStorage.setItem('authTokens', JSON.stringify(data.tokens));
+    } catch {}
     setUser(data.user);
-    router.push('/dashboard');
+    router.push('/');
   };
 
   const logout = async () => {
