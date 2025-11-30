@@ -6,13 +6,10 @@ import MenuShowcase from '@/components/landing/MenuShowcase'
 import Testimonials from '@/components/landing/Testimonials'
 import CTA from '@/components/landing/CTA'
 import { Contact } from '@/components/landing/Contact'
-import Footer from '@/components/landing/Footer'
-import Navbar from '@/components/landing/Navbar'
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-white">
-      <Navbar />
       <Hero />
       <HowItWorks />
       <Pricing />
@@ -20,7 +17,6 @@ export default function Home() {
       <Contact />
       <Testimonials />
       <CTA />
-      <Footer />
     </main>
   )
 }

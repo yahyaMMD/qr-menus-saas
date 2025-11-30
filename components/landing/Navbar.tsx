@@ -9,19 +9,35 @@ import { useRouter } from 'next/navigation'
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [userRole, setUserRole] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
-    // Check if user is authenticated
+    // Check if user is authenticated and get role
     const checkAuth = () => {
       try {
         const authRaw = localStorage.getItem('auth')
         if (authRaw) {
           const auth = JSON.parse(authRaw)
-          setIsAuthenticated(!!auth?.tokens?.accessToken)
+          if (auth?.tokens?.accessToken && auth?.user) {
+            setIsAuthenticated(true)
+            setUserRole(auth.user.role)
+            
+            // Redirect admin users to admin page
+            if (auth.user.role === 'ADMIN' && window.location.pathname === '/') {
+              router.push('/admin')
+            }
+          } else {
+            setIsAuthenticated(false)
+            setUserRole(null)
+          }
+        } else {
+          setIsAuthenticated(false)
+          setUserRole(null)
         }
       } catch (err) {
         setIsAuthenticated(false)
+        setUserRole(null)
       }
     }
 
@@ -34,6 +50,7 @@ export default function Navbar() {
   const handleSignOut = () => {
     localStorage.removeItem('auth')
     setIsAuthenticated(false)
+    setUserRole(null)
     router.push('/')
   }
 
@@ -71,9 +88,16 @@ export default function Navbar() {
             
             {isAuthenticated ? (
               <>
-                <Link href="/dashboard" className="text-gray-700 hover:text-orange-500 transition-colors">
-                  Dashboard
-                </Link>
+                {(userRole === 'RESTAURANT_OWNER' || userRole === 'USER') && (
+                  <Link href="/dashboard" className="text-gray-700 hover:text-orange-500 transition-colors">
+                    Dashboard
+                  </Link>
+                )}
+                {userRole === 'ADMIN' && (
+                  <Link href="/admin" className="text-gray-700 hover:text-orange-500 transition-colors">
+                    Admin
+                  </Link>
+                )}
                 <button
                   onClick={handleSignOut}
                   className="flex items-center gap-2 text-gray-700 hover:text-orange-500 transition-colors"
@@ -86,6 +110,9 @@ export default function Navbar() {
               <>
                 <Link href="/auth/login" className="text-gray-700 hover:text-orange-500 transition-colors">
                   Sign in
+                </Link>
+                <Link href="/auth/register" className="text-gray-700 hover:text-orange-500 transition-colors">
+                  Sign up
                 </Link>
                 <Link
                   href="/dashboard"
@@ -119,9 +146,16 @@ export default function Navbar() {
             
             {isAuthenticated ? (
               <>
-                <Link href="/dashboard" className="block text-gray-700 hover:text-orange-500 transition-colors">
-                  Dashboard
-                </Link>
+                {(userRole === 'RESTAURANT_OWNER' || userRole === 'USER') && (
+                  <Link href="/dashboard" className="block text-gray-700 hover:text-orange-500 transition-colors">
+                    Dashboard
+                  </Link>
+                )}
+                {userRole === 'ADMIN' && (
+                  <Link href="/admin" className="block text-gray-700 hover:text-orange-500 transition-colors">
+                    Admin
+                  </Link>
+                )}
                 <button
                   onClick={handleSignOut}
                   className="flex items-center gap-2 text-gray-700 hover:text-orange-500 transition-colors w-full"
@@ -134,6 +168,9 @@ export default function Navbar() {
               <>
                 <Link href="/auth/login" className="block text-gray-700 hover:text-orange-500 transition-colors">
                   Sign in
+                </Link>
+                <Link href="/auth/register" className="block text-gray-700 hover:text-orange-500 transition-colors">
+                  Sign up
                 </Link>
                 <Link
                   href="/dashboard"
