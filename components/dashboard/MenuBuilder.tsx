@@ -54,6 +54,8 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
   const [menuName, setMenuName] = useState("Menu Builder");
   const [menuDescription, setMenuDescription] = useState("Build and customize your digital menu");
   const [activeTab, setActiveTab] = useState<'types' | 'categories' | 'tags' | 'items'>('items');
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   
   const [menuItems, setMenuItems] = useState<MenuItem[]>([
     {
@@ -255,9 +257,63 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
     alert("Menu saved as draft!");
   };
 
-  const handlePublish = () => {
-    console.log("Publishing menu...");
-    alert("Menu published successfully!");
+  const handlePublish = async () => {
+    if (!profileId) {
+      alert("Error: No profile ID provided");
+      return;
+    }
+
+    if (!menuName.trim()) {
+      alert("Please enter a menu name before publishing");
+      return;
+    }
+
+    setIsPublishing(true);
+
+    try {
+      let token = localStorage.getItem('accessToken');
+      if (!token) {
+        const authRaw = localStorage.getItem('auth');
+        if (authRaw) {
+          const auth = JSON.parse(authRaw);
+          token = auth?.tokens?.accessToken;
+        }
+      }
+
+      const response = await fetch(`/api/profiles/${profileId}/menus`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          name: menuName,
+          description: menuDescription,
+          isActive: true,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to publish menu');
+      }
+
+      const data = await response.json();
+      
+      // Show success alert
+      setShowSuccessAlert(true);
+
+      // Redirect after 2 seconds
+      setTimeout(() => {
+        window.location.href = `/dashboard/profiles/${profileId}/menus/${data.menu.id}`;
+      }, 2000);
+
+    } catch (error: any) {
+      console.error('Publish menu error:', error);
+      alert(`Failed to publish menu: ${error.message}`);
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const tabs = [
@@ -277,8 +333,44 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
     return colors[tag] || 'bg-gray-500 text-white';
   };
 
+  // Success Alert Component
+  const SuccessAlert = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl animate-in fade-in zoom-in duration-300">
+        <div className="text-center">
+          {/* Success Icon */}
+          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
+            <Check className="h-8 w-8 text-green-600" />
+          </div>
+          
+          {/* Title */}
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">
+            Menu Published Successfully!
+          </h3>
+          
+          {/* Description */}
+          <p className="text-gray-600 mb-6">
+            Your menu "<span className="font-semibold text-orange-600">{menuName}</span>" is now live and ready to be shared with customers.
+          </p>
+          
+          {/* Loading bar */}
+          <div className="w-full bg-gray-200 rounded-full h-1.5 mb-4 overflow-hidden">
+            <div className="bg-gradient-to-r from-orange-500 to-orange-600 h-1.5 rounded-full animate-pulse" style={{width: '100%'}}></div>
+          </div>
+          
+          <p className="text-sm text-gray-500">
+            Redirecting to menu editor...
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Success Alert */}
+      {showSuccessAlert && <SuccessAlert />}
+      
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="px-6 md:px-8 py-4">
@@ -460,10 +552,21 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
                       Save Draft
                     </Button>
                     <Button 
-                      className="bg-orange-500 hover:bg-orange-600 text-white gap-2"
+                      className="bg-orange-500 hover:bg-orange-600 text-white gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       onClick={handlePublish}
+                      disabled={isPublishing}
                     >
-                      Publish Menu
+                      {isPublishing ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          Publishing...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="h-4 w-4" />
+                          Publish Menu
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>

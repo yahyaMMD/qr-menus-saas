@@ -130,7 +130,7 @@ export default function Pricing() {
     }
   };
 
-  const plans = [
+  const [plans, setPlans] = useState([
     {
       id: 'FREE',
       name: 'Free',
@@ -177,7 +177,42 @@ export default function Pricing() {
       buttonStyle: 'border-2 border-gray-300 text-gray-900 hover:bg-gray-50',
       popular: false,
     },
-  ]
+  ]);
+
+  // Fetch real plan pricing from database
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const response = await fetch('/api/admin/plans');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.plans && data.plans.length > 0) {
+            // Update plans with real pricing data
+            setPlans(prevPlans => prevPlans.map(plan => {
+              const dbPlan = data.plans.find((p: any) => p.plan === plan.id);
+              if (dbPlan && plan.id !== 'CUSTOM') {
+                const priceDisplay = plan.id === 'FREE' 
+                  ? 'Free' 
+                  : `${(dbPlan.priceCents / 100).toLocaleString()} ${dbPlan.currency}`;
+                return {
+                  ...plan,
+                  price: priceDisplay,
+                  priceCents: dbPlan.priceCents,
+                  currency: dbPlan.currency,
+                };
+              }
+              return plan;
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching plans:', error);
+        // Continue with default hardcoded prices if fetch fails
+      }
+    };
+
+    fetchPlans();
+  }, [])
 
   const currentPlan = plans.find(p => p.id === selectedPlan);
 

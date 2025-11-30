@@ -85,6 +85,7 @@ model Tag {
   color  String
   menuId String @db.ObjectId
   menu   Menu   @relation(fields: [menuId], references: [id])
+  itemTags ItemTag[]
 }
 
 model Item {
@@ -95,12 +96,23 @@ model Item {
   categoryId  String?
   typeId      String?
   menuId      String    @db.ObjectId
-  tags        String[]
   price       Float?
   menu        Menu      @relation(fields: [menuId], references: [id])
   category    Category? @relation(fields: [categoryId], references: [id])
   type        Type?     @relation(fields: [typeId], references: [id])
+  itemTags    ItemTag[]
 }
+
+model ItemTag {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  itemId String @db.ObjectId
+  tagId  String @db.ObjectId
+  item   Item   @relation(fields: [itemId], references: [id])
+  tag    Tag    @relation(fields: [tagId], references: [id])
+
+  @@unique([itemId, tagId])
+}
+
 
 model Feedback {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -132,6 +144,9 @@ model Analytics {
   date   DateTime
   scans  Int      @default(0)
   menu   Menu     @relation(fields: [menuId], references: [id])
+  @@unique([menuId, date])
+  @@index([menuId])
+  @@index([date])
 }
 
 model RefreshToken {

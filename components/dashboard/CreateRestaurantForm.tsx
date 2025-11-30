@@ -6,9 +6,12 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { Upload, Facebook, Instagram, Music } from "lucide-react";
+import { useAuth } from '@/lib/auth/context';
 
 export const CreateRestaurantForm = () => {
   const router = useRouter();
+  const { user } = useAuth(); // Access authenticated user
+  
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -16,13 +19,16 @@ export const CreateRestaurantForm = () => {
     wilaya: "",
     commune: "",
     address: "",
-    mapLocation: "",
+    latitude: 0,
+    longitude: 0,
     facebook: "",
     instagram: "",
     tiktok: "",
   });
 
   const [charCount, setCharCount] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
@@ -36,10 +42,58 @@ export const CreateRestaurantForm = () => {
     router.push("/dashboard");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log("Form submitted:", formData);
+    setIsSubmitting(true);
+    setError("");
+
+    try {
+      const token = localStorage.getItem('accessToken');
+      
+      // Prepare the data to send to API
+      const profileData = {
+        name: formData.name,
+        description: formData.description,
+        logo: formData.logo,
+        location: {
+          address: formData.address,
+          city: formData.commune,
+          country: "Algeria",
+          wilaya: formData.wilaya,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
+        },
+        socialLinks: {
+          facebook: formData.facebook,
+          instagram: formData.instagram,
+          tiktok: formData.tiktok,
+        },
+      };
+
+      const response = await fetch('/api/profiles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(profileData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create profile');
+      }
+
+      const data = await response.json();
+      
+      // Redirect to the new profile
+      router.push(`/dashboard/profiles/${data.profile.id}`);
+    } catch (err: any) {
+      console.error('Create profile error:', err);
+      setError(err.message || 'Failed to create profile');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -54,6 +108,13 @@ export const CreateRestaurantForm = () => {
             Add your restaurant details to create a digital menu profile
           </p>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+            {error}
+          </div>
+        )}
 
         {/* Restaurant Name */}
         <div className="mb-6">
@@ -156,14 +217,59 @@ export const CreateRestaurantForm = () => {
           />
         </div>
 
-        {/* Google Maps Location */}
+        {/* Map Coordinates */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-900 mb-2">
-            Google Maps Location
+          <label className="block text-sm font-medium text-gray-900 mb-4">
+            Map Location (Optional)
           </label>
-          <div className="border border-gray-300 rounded-lg p-12 bg-gray-50 text-center">
-            <p className="text-sm text-gray-500">Map preview will appear here</p>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-2">
+                Latitude
+              </label>
+              <Input
+                type="number"
+                step="0.000001"
+                placeholder="36.7538"
+                value={formData.latitude || ''}
+                onChange={(e) => setFormData({ ...formData, latitude: parseFloat(e.target.value) || 0 })}
+                className="w-full"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-2">
+                Longitude
+              </label>
+              <Input
+                type="number"
+                step="0.000001"
+                placeholder="3.0588"
+                value={formData.longitude || ''}
+                onChange={(e) => setFormData({ ...formData, longitude: parseFloat(e.target.value) || 0 })}
+                className="w-full"
+              />
+            </div>
           </div>
+          
+          {/* Map Preview */}
+          {formData.latitude !== 0 && formData.longitude !== 0 ? (
+            <div className="border border-gray-300 rounded-lg overflow-hidden">
+              <div className="bg-gray-50 px-4 py-2 border-b border-gray-300">
+                <p className="text-sm font-medium text-gray-700">Map Preview</p>
+              </div>
+              <iframe
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=${formData.longitude - 0.01},${formData.latitude - 0.01},${formData.longitude + 0.01},${formData.latitude + 0.01}&layer=mapnik&marker=${formData.latitude},${formData.longitude}`}
+                width="100%"
+                height="300"
+                style={{ border: 0 }}
+                loading="lazy"
+              ></iframe>
+            </div>
+          ) : (
+            <div className="border border-gray-300 rounded-lg p-12 bg-gray-50 text-center">
+              <p className="text-sm text-gray-500">Enter latitude and longitude to see map preview</p>
+            </div>
+          )}
         </div>
 
         {/* Social Media Links */}
@@ -225,14 +331,16 @@ export const CreateRestaurantForm = () => {
             variant="outline"
             className="px-8 py-2 border-gray-300 text-gray-700 hover:bg-gray-50"
             onClick={handleCancel}
+            disabled={isSubmitting}
           >
             Cancel
           </Button>
           <Button
             type="submit"
             className="px-8 py-2 bg-orange-500 hover:bg-orange-600 text-white"
+            disabled={isSubmitting}
           >
-            Create Profile
+            {isSubmitting ? 'Creating...' : 'Create Profile'}
           </Button>
         </div>
       </form>

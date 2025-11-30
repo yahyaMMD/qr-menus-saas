@@ -1,83 +1,93 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Star, ThumbsUp, Filter, Search, MoreVertical } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-const mockFeedbacks = [
-  {
-    id: '1',
-    userName: 'Sarah Johnson',
-    avatar: 'https://i.pravatar.cc/150?img=1',
-    rating: 5,
-    date: '2 days ago',
-    comment: 'Absolutely amazing! The organic salad bowl was fresh and delicious. The staff were so friendly and the atmosphere was perfect. Will definitely be coming back!',
-    helpful: 12
-  },
-  {
-    id: '2',
-    userName: 'Mike Chen',
-    avatar: 'https://i.pravatar.cc/150?img=2',
-    rating: 4,
-    date: '5 days ago',
-    comment: 'Great food quality and nice presentation. The avocado toast was a bit small for the price though. Overall good experience!',
-    helpful: 8
-  },
-  {
-    id: '3',
-    userName: 'Emma Wilson',
-    avatar: 'https://i.pravatar.cc/150?img=3',
-    rating: 5,
-    date: '1 week ago',
-    comment: 'Love this place! Best smoothies in town. Coffee was good too and they have plenty of vegetarian options. Highly recommend!',
-    helpful: 15
-  },
-  {
-    id: '4',
-    userName: 'John Smith',
-    avatar: 'https://i.pravatar.cc/150?img=4',
-    rating: 3,
-    date: '1 week ago',
-    comment: 'Food is good but service was a bit slow during lunch rush. Maybe need more staff?',
-    helpful: 5
-  },
-  {
-    id: '5',
-    userName: 'Fatima Boutros',
-    avatar: 'https://i.pravatar.cc/150?img=5',
-    rating: 5,
-    date: '2 weeks ago',
-    comment: 'Such a cozy place with amazing food. The chia pudding for breakfast was to die for. Portions are generous!',
-    helpful: 10
-  },
-  {
-    id: '6',
-    userName: 'Ryan Lee',
-    avatar: 'https://i.pravatar.cc/150?img=6',
-    rating: 4,
-    date: '2 weeks ago',
-    comment: 'Been here a few times now. Consistently good food and the menu changes seasonally which I love. Wish they had more vegan options though.',
-    helpful: 7
-  }
-];
-
 export default function CustomerFeedbackPage({ params }: { params: { profileId: string } }) {
   const router = useRouter();
-  const [feedbacks] = useState(mockFeedbacks);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<any>(null);
   const [filterRating, setFilterRating] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const stats = {
-    avgRating: 4.4,
-    totalReviews: 60,
-    distribution: {
-      5: 45,
-      4: 8,
-      3: 4,
-      2: 2,
-      1: 1
+  useEffect(() => {
+    fetchFeedbacks();
+  }, []);
+
+  const fetchFeedbacks = async () => {
+    try {
+      setLoading(true);
+      
+      let token = localStorage.getItem('accessToken');
+      if (!token) {
+        const authRaw = localStorage.getItem('auth');
+        if (authRaw) {
+          try {
+            const auth = JSON.parse(authRaw);
+            token = auth?.tokens?.accessToken;
+          } catch (e) {
+            console.error('Failed to parse auth', e);
+          }
+        }
+      }
+
+      const response = await fetch(`/api/profiles/${params.profileId}/feedbacks`, {
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch feedbacks');
+      }
+
+      const result = await response.json();
+      setData(result);
+    } catch (err: any) {
+      console.error('Error fetching feedbacks:', err);
+      setError(err.message || 'Failed to load feedbacks');
+    } finally {
+      setLoading(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="p-8 bg-gray-50 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading feedbacks...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="p-8 bg-gray-50 min-h-screen">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Back
+        </button>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-700">{error || 'Failed to load feedbacks'}</p>
+          <button 
+            onClick={fetchFeedbacks}
+            className="mt-2 text-red-600 hover:text-red-800 underline"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const { profile, stats, feedbacks } = data;
 
   const filteredFeedbacks = feedbacks.filter(f => {
     const matchesRating = filterRating === 'all' || f.rating.toString() === filterRating;
@@ -100,7 +110,7 @@ export default function CustomerFeedbackPage({ params }: { params: { profileId: 
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Customer Feedback</h1>
-            <p className="text-gray-600">The Green Leaf Café • Manage customer reviews and ratings</p>
+            <p className="text-gray-600">{profile.name} • Manage customer reviews and ratings</p>
           </div>
         </div>
       </div>
@@ -189,53 +199,62 @@ export default function CustomerFeedbackPage({ params }: { params: { profileId: 
         </div>
 
         <div className="divide-y divide-gray-200">
-          {filteredFeedbacks.map((feedback) => (
-            <div key={feedback.id} className="p-6 hover:bg-gray-50 transition-colors">
-              <div className="flex items-start gap-4">
-                <img
-                  src={feedback.avatar}
-                  alt={feedback.userName}
-                  className="w-12 h-12 rounded-full"
-                />
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <div className="font-semibold text-gray-900">{feedback.userName}</div>
-                      <div className="text-sm text-gray-500">{feedback.date}</div>
+          {filteredFeedbacks.length === 0 ? (
+            <div className="p-12 text-center text-gray-500">
+              <p className="text-lg mb-2">No feedbacks found</p>
+              <p className="text-sm">
+                {searchQuery || filterRating !== 'all' 
+                  ? 'Try adjusting your filters' 
+                  : 'No customer feedback yet. Feedbacks will appear here once customers leave reviews.'}
+              </p>
+            </div>
+          ) : (
+            filteredFeedbacks.map((feedback: any) => {
+              // Generate avatar URL based on first letter of name
+              const initial = feedback.userName.charAt(0).toUpperCase();
+              const avatarColor = ['#f97316', '#3b82f6', '#10b981', '#ec4899', '#8b5cf6'][
+                initial.charCodeAt(0) % 5
+              ];
+
+              return (
+                <div key={feedback.id} className="p-6 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-start gap-4">
+                    <div 
+                      className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
+                      style={{ backgroundColor: avatarColor }}
+                    >
+                      {initial}
                     </div>
-                    <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                      <MoreVertical className="w-5 h-5 text-gray-400" />
-                    </button>
-                  </div>
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <div className="font-semibold text-gray-900">{feedback.userName}</div>
+                          <div className="text-sm text-gray-500">{feedback.date}</div>
+                        </div>
+                      </div>
 
-                  <div className="flex items-center gap-1 mb-3">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className={`w-5 h-5 ${
-                          star <= feedback.rating
-                            ? 'fill-yellow-400 text-yellow-400'
-                            : 'text-gray-300'
-                        }`}
-                      />
-                    ))}
-                  </div>
+                      <div className="flex items-center gap-1 mb-3">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`w-5 h-5 ${
+                              star <= feedback.rating
+                                ? 'fill-yellow-400 text-yellow-400'
+                                : 'text-gray-300'
+                            }`}
+                          />
+                        ))}
+                      </div>
 
-                  <p className="text-gray-700 mb-4">{feedback.comment}</p>
-
-                  <div className="flex items-center gap-4">
-                    <button className="flex items-center gap-2 text-sm text-gray-600 hover:text-teal-600 transition-colors">
-                      <ThumbsUp className="w-4 h-4" />
-                      Helpful ({feedback.helpful})
-                    </button>
-                    <button className="text-sm text-teal-600 hover:text-teal-700 font-medium">
-                      Reply
-                    </button>
+                      {feedback.comment && (
+                        <p className="text-gray-700 mb-4">{feedback.comment}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          ))}
+              );
+            })
+          )}
         </div>
       </div>
     </div>

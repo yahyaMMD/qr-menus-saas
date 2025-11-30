@@ -1,18 +1,23 @@
 import { Role } from './types';
 
-// Check if a user has a specific role
-// returns true if user has the required role or higher
-export function hasRole(userRole: Role, requiredRole: Role): boolean {
-  const roleHierarchy: Record<Role, number> = {
-    [Role.USER]: 1,
-    [Role.ADMIN]: 2,
-  };
+// Role hierarchy: USER < RESTAURANT_OWNER < ADMIN
+const roleHierarchy: Record<Role, number> = {
+  [Role.USER]: 1,
+  [Role.RESTAURANT_OWNER]: 2,
+  [Role.ADMIN]: 3,
+};
 
+// Check if a user has a specific role or higher
+export function hasRole(userRole: Role, requiredRole: Role): boolean {
   return roleHierarchy[userRole] >= roleHierarchy[requiredRole];
 }
 
 export function isAdmin(userRole: Role): boolean {
   return userRole === Role.ADMIN;
+}
+
+export function isRestaurantOwner(userRole: Role): boolean {
+  return userRole === Role.RESTAURANT_OWNER || userRole === Role.ADMIN;
 }
 
 export function requireRole(userRole: Role, requiredRole: Role): void {
@@ -27,3 +32,8 @@ export function requireAdmin(userRole: Role): void {
   }
 }
 
+export function requireRestaurantOwner(userRole: Role): void {
+  if (!isRestaurantOwner(userRole)) {
+    throw new Error('Access denied. Restaurant owner role required.');
+  }
+}

@@ -52,7 +52,7 @@ async function verifyMenuOwnership(menuId: string, userId: string) {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { menuId: string } }
+  { params }: { params: Promise<{ menuId: string }> }
 ) {
   const result = await getAuthenticatedUser(request);
   if ('response' in result) {
@@ -60,9 +60,10 @@ export async function GET(
   }
 
   const { user } = result;
+  const { menuId } = await params;
 
   try {
-    const verification = await verifyMenuOwnership(params.menuId, user.id);
+    const verification = await verifyMenuOwnership(menuId, user.id);
     if ('error' in verification) {
       return NextResponse.json(
         { error: verification.error },
@@ -71,7 +72,7 @@ export async function GET(
     }
 
     const categories = await prisma.category.findMany({
-      where: { menuId: params.menuId },
+      where: { menuId },
       include: {
         _count: {
           select: { items: true },
@@ -97,7 +98,7 @@ const createCategorySchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { menuId: string } }
+  { params }: { params: Promise<{ menuId: string }> }
 ) {
   const result = await getAuthenticatedUser(request);
   if ('response' in result) {
@@ -105,9 +106,10 @@ export async function POST(
   }
 
   const { user } = result;
+  const { menuId } = await params;
 
   try {
-    const verification = await verifyMenuOwnership(params.menuId, user.id);
+    const verification = await verifyMenuOwnership(menuId, user.id);
     if ('error' in verification) {
       return NextResponse.json(
         { error: verification.error },
@@ -139,7 +141,7 @@ export async function POST(
       data: {
         name,
         image: image || null,
-        menuId: params.menuId,
+        menuId,
       },
     });
 

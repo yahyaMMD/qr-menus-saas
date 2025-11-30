@@ -1,48 +1,102 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Calendar, TrendingUp, Users, Eye } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function RestaurantAnalyticsPage({ params }: { params: { profileId: string } }) {
   const router = useRouter();
-  const [timeRange, setTimeRange] = useState('Last 30 days');
+  const [timeRange, setTimeRange] = useState('30');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
 
-  // Mock data
-  const stats = {
-    avgDailyScans: 95,
-    topRating: 4.8,
-    peakHours: '6pm - 9pm',
-    avgFeedback: 127,
-    totalScans: 2847,
-    newReviews: 34
+  useEffect(() => {
+    fetchAnalytics();
+  }, [timeRange]);
+
+  const fetchAnalytics = async () => {
+    try {
+      setLoading(true);
+      
+      let token = localStorage.getItem('accessToken');
+      if (!token) {
+        const authRaw = localStorage.getItem('auth');
+        if (authRaw) {
+          try {
+            const auth = JSON.parse(authRaw);
+            token = auth?.tokens?.accessToken;
+          } catch (e) {
+            console.error('Failed to parse auth', e);
+          }
+        }
+      }
+
+      const response = await fetch(`/api/profiles/${params.profileId}/analytics?range=${timeRange}`, {
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch analytics');
+      }
+
+      const data = await response.json();
+      setAnalyticsData(data);
+    } catch (err: any) {
+      console.error('Error fetching analytics:', err);
+      setError(err.message || 'Failed to load analytics');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const dailyScans = [
-    45, 52, 48, 61, 55, 67, 72, 65, 58, 63, 70, 75, 80, 72, 68, 
-    74, 79, 85, 82, 77, 81, 88, 92, 87, 84, 90, 95, 89, 93, 96
-  ];
+  if (loading) {
+    return (
+      <div className="p-8 bg-gray-50 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading analytics...</p>
+        </div>
+      </div>
+    );
+  }
 
+  if (error || !analyticsData) {
+    return (
+      <div className="p-8 bg-gray-50 min-h-screen">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Back
+        </button>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-700">{error || 'Failed to load analytics'}</p>
+          <button 
+            onClick={fetchAnalytics}
+            className="mt-2 text-red-600 hover:text-red-800 underline"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const { profile, stats, dailyScans, hourlyData, heatmapData, mostViewedItems } = analyticsData;
   const maxDailyScan = Math.max(...dailyScans);
-
-  const hourlyData = [
-    { hour: '12am', value: 5 }, { hour: '3am', value: 2 }, { hour: '6am', value: 8 },
-    { hour: '9am', value: 25 }, { hour: '12pm', value: 65 }, { hour: '3pm', value: 45 },
-    { hour: '6pm', value: 95 }, { hour: '9pm', value: 70 }
-  ];
-
-  const heatmapData = [
-    [5, 8, 12, 15, 22, 28, 18],
-    [3, 6, 10, 14, 25, 32, 20],
-    [8, 12, 18, 25, 35, 45, 30],
-    [6, 10, 15, 20, 30, 38, 25],
-    [4, 7, 11, 16, 24, 30, 19],
-    [2, 4, 8, 12, 18, 22, 14],
-    [1, 3, 5, 8, 12, 15, 10]
-  ];
 
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const hours = ['6am', '9am', '12pm', '3pm', '6pm', '9pm', '12am'];
+
+  const timeRangeLabels: Record<string, string> = {
+    '7': 'Last 7 days',
+    '30': 'Last 30 days',
+    '90': 'Last 90 days',
+  };
 
   const getHeatColor = (value: number) => {
     if (value >= 40) return 'bg-orange-600';
@@ -67,17 +121,16 @@ export default function RestaurantAnalyticsPage({ params }: { params: { profileI
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Restaurant Analytics</h1>
-            <p className="text-gray-600">The Green Leaf Café • {timeRange}</p>
+            <p className="text-gray-600">{profile.name} • {timeRangeLabels[timeRange] || 'Last 30 days'}</p>
           </div>
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
           >
-            <option>Last 7 days</option>
-            <option>Last 30 days</option>
-            <option>Last 90 days</option>
-            <option>All time</option>
+            <option value="7">Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
           </select>
         </div>
       </div>
@@ -90,7 +143,7 @@ export default function RestaurantAnalyticsPage({ params }: { params: { profileI
             <span className="text-sm text-gray-600">Total Scans</span>
           </div>
           <div className="text-3xl font-bold text-gray-900">{stats.totalScans}</div>
-          <div className="text-sm text-green-600 mt-2">+12% from last period</div>
+          <div className="text-sm text-gray-500 mt-2">In selected period</div>
         </div>
 
         <div className="bg-white rounded-xl p-6 border border-gray-200">
@@ -105,16 +158,18 @@ export default function RestaurantAnalyticsPage({ params }: { params: { profileI
         <div className="bg-white rounded-xl p-6 border border-gray-200">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xl">⭐</span>
-            <span className="text-sm text-gray-600">Top Rating</span>
+            <span className="text-sm text-gray-600">Avg Rating</span>
           </div>
-          <div className="text-3xl font-bold text-gray-900">{stats.topRating}</div>
-          <div className="flex items-center gap-1 mt-2">
-            {'★'.repeat(5).split('').map((star, i) => (
-              <span key={i} className={`text-lg ${i < Math.floor(stats.topRating) ? 'text-yellow-400' : 'text-gray-300'}`}>
-                ★
-              </span>
-            ))}
-          </div>
+          <div className="text-3xl font-bold text-gray-900">{stats.avgRating > 0 ? stats.avgRating : 'N/A'}</div>
+          {stats.avgRating > 0 && (
+            <div className="flex items-center gap-1 mt-2">
+              {'★'.repeat(5).split('').map((star, i) => (
+                <span key={i} className={`text-lg ${i < Math.floor(stats.avgRating) ? 'text-yellow-400' : 'text-gray-300'}`}>
+                  ★
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="bg-white rounded-xl p-6 border border-gray-200">
@@ -231,30 +286,41 @@ export default function RestaurantAnalyticsPage({ params }: { params: { profileI
       {/* Most Viewed Items */}
       <div className="bg-white rounded-xl p-6 border border-gray-200">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Most Viewed Items</h3>
-        <p className="text-sm text-gray-500 mb-4">What's hot on your menu this month</p>
+        <p className="text-sm text-gray-500 mb-4">What's hot on your menu this period</p>
         
-        <div className="space-y-3">
-          {[
-            { name: 'Organic Salad Bowl', views: 245, color: 'from-orange-500 to-red-500' },
-            { name: 'Avocado Toast', views: 198, color: 'from-orange-400 to-orange-500' },
-            { name: 'Green Smoothie', views: 167, color: 'from-yellow-400 to-orange-400' },
-            { name: 'Quinoa Buddha Bowl', views: 142, color: 'from-yellow-300 to-yellow-400' },
-            { name: 'Chia Pudding', views: 128, color: 'from-green-300 to-yellow-300' }
-          ].map((item, idx) => (
-            <div key={idx}>
-              <div className="flex items-center justify-between text-sm mb-2">
-                <span className="font-medium text-gray-900">{item.name}</span>
-                <span className="text-gray-600">{item.views} views</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <div
-                  className={`bg-gradient-to-r ${item.color} h-3 rounded-full`}
-                  style={{ width: `${(item.views / 245) * 100}%` }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
+        {mostViewedItems && mostViewedItems.length > 0 ? (
+          <div className="space-y-3">
+            {mostViewedItems.map((item: any, idx: number) => {
+              const maxViews = mostViewedItems[0]?.views || 1;
+              let color = '';
+              if (idx === 0) color = 'from-orange-500 to-red-500';
+              else if (idx === 1) color = 'from-orange-400 to-orange-500';
+              else if (idx === 2) color = 'from-yellow-400 to-orange-400';
+              else if (idx === 3) color = 'from-yellow-300 to-yellow-400';
+              else color = 'from-green-300 to-yellow-300';
+
+              return (
+                <div key={idx}>
+                  <div className="flex items-center justify-between text-sm mb-2">
+                    <span className="font-medium text-gray-900">{item.name}</span>
+                    <span className="text-gray-600">{item.views} views</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div
+                      className={`bg-gradient-to-r ${color} h-3 rounded-full`}
+                      style={{ width: `${(item.views / maxViews) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <p>No item view data available yet</p>
+            <p className="text-sm mt-2">Data will appear once customers view your menu</p>
+          </div>
+        )}
       </div>
     </div>
   );
