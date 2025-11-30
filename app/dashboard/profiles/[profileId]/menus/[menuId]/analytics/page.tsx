@@ -3,6 +3,7 @@
 import React, { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, TrendingUp, Eye, Download } from 'lucide-react';
+import { Toast } from '@/components/ui/Toast';
 import {
   LineChart,
   Line,
@@ -26,10 +27,70 @@ export default function MenuAnalyticsPage({
   const [analytics, setAnalytics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState(30);
+  const [isExporting, setIsExporting] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   useEffect(() => {
     fetchAnalytics();
   }, [menuId, timeRange]);
+
+  const handleExport = async () => {
+    if (!analytics) return;
+
+    setIsExporting(true);
+    try {
+      // Prepare CSV data
+      const csvRows = [];
+      
+      // Headers
+      csvRows.push(['Menu Analytics Report']);
+      csvRows.push(['Menu ID', menuId]);
+      csvRows.push(['Export Date', new Date().toLocaleDateString()]);
+      csvRows.push(['Time Range', `Last ${timeRange} days`]);
+      csvRows.push([]);
+      
+      // Summary Stats
+      csvRows.push(['Summary Statistics']);
+      csvRows.push(['Total Scans', analytics.summary.totalScans]);
+      csvRows.push(['Average Scans per Day', analytics.summary.avgScansPerDay]);
+      csvRows.push(['Active Days', analytics.summary.days]);
+      csvRows.push([]);
+      
+      // Daily Data
+      csvRows.push(['Daily Analytics']);
+      csvRows.push(['Date', 'Scans']);
+      analytics.analytics.forEach((item: any) => {
+        csvRows.push([
+          new Date(item.date).toLocaleDateString(),
+          item.scans
+        ]);
+      });
+
+      // Convert to CSV string
+      const csvContent = csvRows.map(row => row.join(',')).join('\n');
+      
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `menu-analytics-${menuId}-${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Show success message
+      setToast({ message: 'Analytics exported successfully! 🎉', type: 'success' });
+    } catch (error) {
+      console.error('Export error:', error);
+      setToast({ message: 'Failed to export analytics. Please try again.', type: 'error' });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const fetchAnalytics = async () => {
     try {
@@ -74,7 +135,15 @@ export default function MenuAnalyticsPage({
   }
 
   return (
-    <div className="p-8 bg-gray-50 min-h-screen">
+    <>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+      <div className="p-8 bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <button
@@ -99,9 +168,22 @@ export default function MenuAnalyticsPage({
               <option value={30}>Last 30 days</option>
               <option value={90}>Last 90 days</option>
             </select>
-            <button className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors">
-              <Download className="w-4 h-4" />
-              Export
+            <button 
+              onClick={handleExport}
+              disabled={isExporting}
+              className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isExporting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4" />
+                  Export
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -163,5 +245,6 @@ export default function MenuAnalyticsPage({
         </ResponsiveContainer>
       </div>
     </div>
+    </>
   );
 }

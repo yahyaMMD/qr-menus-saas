@@ -31,7 +31,7 @@ async function getAuthenticatedUser(request: NextRequest) {
 // GET all menus for a profile
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const result = await getAuthenticatedUser(request);
   if ('response' in result) {
@@ -39,11 +39,12 @@ export async function GET(
   }
 
   const { user } = result;
+  const { id } = await params;
 
   try {
     // Verify profile ownership
     const profile = await prisma.profile.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!profile) {
@@ -62,7 +63,7 @@ export async function GET(
 
     // Fetch menus
     const menus = await prisma.menu.findMany({
-      where: { profileId: params.id },
+      where: { profileId: id },
       include: {
         _count: {
           select: {
@@ -89,7 +90,7 @@ export async function GET(
 // POST create new menu for a profile
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const result = await getAuthenticatedUser(request);
   if ('response' in result) {
@@ -97,11 +98,12 @@ export async function POST(
   }
 
   const { user } = result;
+  const { id } = await params;
 
   try {
     // Verify profile ownership
     const profile = await prisma.profile.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!profile) {
@@ -143,7 +145,7 @@ export async function POST(
         name,
         description: description || null,
         isActive: isActive || false,
-        profileId: params.id,
+        profileId: id,
       },
     });
 

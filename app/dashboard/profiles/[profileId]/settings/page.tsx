@@ -366,6 +366,64 @@ export default function ProfileSettingsPage({
                   />
                 </div>
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Latitude
+                  </label>
+                  <input
+                    type="number"
+                    step="0.000001"
+                    value={locationInfo.latitude || ''}
+                    onChange={(e) => setLocationInfo({ ...locationInfo, latitude: parseFloat(e.target.value) || 0 })}
+                    placeholder="36.7538"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Longitude
+                  </label>
+                  <input
+                    type="number"
+                    step="0.000001"
+                    value={locationInfo.longitude || ''}
+                    onChange={(e) => setLocationInfo({ ...locationInfo, longitude: parseFloat(e.target.value) || 0 })}
+                    placeholder="3.0588"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Map Preview */}
+              {locationInfo.latitude !== 0 && locationInfo.longitude !== 0 && (
+                <div className="border border-gray-300 rounded-lg overflow-hidden">
+                  <div className="bg-gray-50 px-4 py-2 border-b border-gray-300">
+                    <p className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      Map Preview
+                    </p>
+                  </div>
+                  <iframe
+                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${locationInfo.longitude - 0.01},${locationInfo.latitude - 0.01},${locationInfo.longitude + 0.01},${locationInfo.latitude + 0.01}&layer=mapnik&marker=${locationInfo.latitude},${locationInfo.longitude}`}
+                    width="100%"
+                    height="300"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                  ></iframe>
+                  <div className="bg-gray-50 px-4 py-2 border-t border-gray-300">
+                    <a
+                      href={`https://www.openstreetmap.org/?mlat=${locationInfo.latitude}&mlon=${locationInfo.longitude}#map=15/${locationInfo.latitude}/${locationInfo.longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-teal-600 hover:text-teal-700"
+                    >
+                      View on OpenStreetMap →
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-gray-200">

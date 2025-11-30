@@ -1,8 +1,10 @@
 // @ts-nocheck
+'use client';
 import { Star } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
 export default function Testimonials() {
-  const testimonials = [
+  const [testimonials, setTestimonials] = useState([
     {
       text: 'MenuMaster transformed how we present our items. Customers love our digital experience and we\'re saving costs!',
       author: 'Sarah Johnson',
@@ -21,7 +23,52 @@ export default function Testimonials() {
       role: 'Cafe Constantine',
       rating: 5,
     },
-  ]
+  ]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTestimonials = async () => {
+      try {
+        const response = await fetch('/api/feedbacks?limit=6&minRating=4');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.feedbacks && data.feedbacks.length > 0) {
+            const formattedTestimonials = data.feedbacks.slice(0, 3).map((feedback: any) => ({
+              text: feedback.comment || 'Great experience with MenuMaster!',
+              author: feedback.userName,
+              role: feedback.restaurantName,
+              rating: feedback.rating,
+            }));
+            setTestimonials(formattedTestimonials);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching testimonials:', error);
+        // Keep default testimonials if fetch fails
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTestimonials();
+  }, [])
+
+  if (loading) {
+    return (
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Loved by Restaurant Owners
+            </h2>
+          </div>
+          <div className="flex justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-20 bg-gray-50">

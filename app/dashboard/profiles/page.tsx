@@ -30,7 +30,24 @@ export default function MyRestaurantsPage() {
   useEffect(() => {
     const fetchProfiles = async () => {
       try {
-        const response = await fetch('/api/profiles?list=restaurants');
+        let token = localStorage.getItem('accessToken');
+        if (!token) {
+          const authRaw = localStorage.getItem('auth');
+          if (authRaw) {
+            try {
+              const auth = JSON.parse(authRaw);
+              token = auth?.tokens?.accessToken;
+            } catch (e) {
+              console.error('Failed to parse auth', e);
+            }
+          }
+        }
+
+        const response = await fetch('/api/profiles?list=restaurants', {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
         const data = await response.json();
         
         if (response.ok) {
@@ -181,6 +198,12 @@ export default function MyRestaurantsPage() {
             className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium text-sm"
           >
             Manage
+          </button>
+          <button
+            onClick={() => router.push(`/dashboard/profiles/${restaurant.id}/feedbacks`)}
+            className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm"
+          >
+            Feedbacks
           </button>
         </div>
       </div>

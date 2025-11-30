@@ -19,7 +19,8 @@ export const CreateRestaurantForm = () => {
     wilaya: "",
     commune: "",
     address: "",
-    mapLocation: "",
+    latitude: 0,
+    longitude: 0,
     facebook: "",
     instagram: "",
     tiktok: "",
@@ -59,8 +60,8 @@ export const CreateRestaurantForm = () => {
           city: formData.commune,
           country: "Algeria",
           wilaya: formData.wilaya,
-          latitude: 0, // You'll need to get this from Google Maps API
-          longitude: 0,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
         },
         socialLinks: {
           facebook: formData.facebook,
@@ -216,14 +217,59 @@ export const CreateRestaurantForm = () => {
           />
         </div>
 
-        {/* Google Maps Location */}
+        {/* Map Coordinates */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-900 mb-2">
-            Google Maps Location
+          <label className="block text-sm font-medium text-gray-900 mb-4">
+            Map Location (Optional)
           </label>
-          <div className="border border-gray-300 rounded-lg p-12 bg-gray-50 text-center">
-            <p className="text-sm text-gray-500">Map preview will appear here</p>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-2">
+                Latitude
+              </label>
+              <Input
+                type="number"
+                step="0.000001"
+                placeholder="36.7538"
+                value={formData.latitude || ''}
+                onChange={(e) => setFormData({ ...formData, latitude: parseFloat(e.target.value) || 0 })}
+                className="w-full"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-2">
+                Longitude
+              </label>
+              <Input
+                type="number"
+                step="0.000001"
+                placeholder="3.0588"
+                value={formData.longitude || ''}
+                onChange={(e) => setFormData({ ...formData, longitude: parseFloat(e.target.value) || 0 })}
+                className="w-full"
+              />
+            </div>
           </div>
+          
+          {/* Map Preview */}
+          {formData.latitude !== 0 && formData.longitude !== 0 ? (
+            <div className="border border-gray-300 rounded-lg overflow-hidden">
+              <div className="bg-gray-50 px-4 py-2 border-b border-gray-300">
+                <p className="text-sm font-medium text-gray-700">Map Preview</p>
+              </div>
+              <iframe
+                src={`https://www.openstreetmap.org/export/embed.html?bbox=${formData.longitude - 0.01},${formData.latitude - 0.01},${formData.longitude + 0.01},${formData.latitude + 0.01}&layer=mapnik&marker=${formData.latitude},${formData.longitude}`}
+                width="100%"
+                height="300"
+                style={{ border: 0 }}
+                loading="lazy"
+              ></iframe>
+            </div>
+          ) : (
+            <div className="border border-gray-300 rounded-lg p-12 bg-gray-50 text-center">
+              <p className="text-sm text-gray-500">Enter latitude and longitude to see map preview</p>
+            </div>
+          )}
         </div>
 
         {/* Social Media Links */}

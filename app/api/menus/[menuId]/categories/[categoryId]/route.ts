@@ -65,7 +65,7 @@ const updateCategorySchema = z.object({
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { menuId: string; categoryId: string } }
+  { params }: { params: Promise<{ menuId: string; categoryId: string }> }
 ) {
   const result = await getAuthenticatedUser(request);
   if ('response' in result) {
@@ -73,9 +73,10 @@ export async function PATCH(
   }
 
   const { user } = result;
+  const { menuId, categoryId } = await params;
 
   try {
-    const verification = await verifyCategoryOwnership(params.menuId, params.categoryId, user.id);
+    const verification = await verifyCategoryOwnership(menuId, categoryId, user.id);
     if ('error' in verification) {
       return NextResponse.json(
         { error: verification.error },
@@ -104,7 +105,7 @@ export async function PATCH(
     const data = parseResult.data;
 
     const updatedCategory = await prisma.category.update({
-      where: { id: params.categoryId },
+      where: { id: categoryId },
       data: {
         ...(data.name && { name: data.name }),
         ...(data.image !== undefined && { image: data.image }),
@@ -129,7 +130,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { menuId: string; categoryId: string } }
+  { params }: { params: Promise<{ menuId: string; categoryId: string }> }
 ) {
   const result = await getAuthenticatedUser(request);
   if ('response' in result) {
@@ -137,9 +138,10 @@ export async function DELETE(
   }
 
   const { user } = result;
+  const { menuId, categoryId } = await params;
 
   try {
-    const verification = await verifyCategoryOwnership(params.menuId, params.categoryId, user.id);
+    const verification = await verifyCategoryOwnership(menuId, categoryId, user.id);
     if ('error' in verification) {
       return NextResponse.json(
         { error: verification.error },
@@ -148,7 +150,7 @@ export async function DELETE(
     }
 
     const itemCount = await prisma.item.count({
-      where: { categoryId: params.categoryId },
+      where: { categoryId },
     });
 
     if (itemCount > 0) {
@@ -159,7 +161,7 @@ export async function DELETE(
     }
 
     await prisma.category.delete({
-      where: { id: params.categoryId },
+      where: { id: categoryId },
     });
 
     return NextResponse.json(

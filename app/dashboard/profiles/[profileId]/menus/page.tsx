@@ -44,7 +44,20 @@ export default function RestaurantMenusPage({
   useEffect(() => {
     const fetchMenus = async () => {
       try {
-        const response = await fetch(`/api/profiles/${profileId}/menus`);
+        let token = localStorage.getItem('accessToken');
+        if (!token) {
+          const authRaw = localStorage.getItem('auth');
+          if (authRaw) {
+            const auth = JSON.parse(authRaw);
+            token = auth?.tokens?.accessToken;
+          }
+        }
+
+        const response = await fetch(`/api/profiles/${profileId}/menus`, {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
         const data = await response.json();
         
         if (response.ok) {
@@ -68,17 +81,74 @@ export default function RestaurantMenusPage({
   );
 
   const handleToggleActive = async (menuId: string) => {
-    // TODO: Call API to toggle menu active status
-    setMenus(menus.map(menu => 
-      menu.id === menuId ? { ...menu, isActive: !menu.isActive } : menu
-    ));
+    const menu = menus.find(m => m.id === menuId);
+    if (!menu) return;
+
+    try {
+      let token = localStorage.getItem('accessToken');
+      if (!token) {
+        const authRaw = localStorage.getItem('auth');
+        if (authRaw) {
+          const auth = JSON.parse(authRaw);
+          token = auth?.tokens?.accessToken;
+        }
+      }
+
+      const response = await fetch(`/api/menus/${menuId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          isActive: !menu.isActive,
+        }),
+      });
+
+      if (response.ok) {
+        setMenus(menus.map(m => 
+          m.id === menuId ? { ...m, isActive: !m.isActive } : m
+        ));
+      } else {
+        const data = await response.json();
+        alert(`Failed to update menu: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error toggling menu:', error);
+      alert('Failed to update menu. Please try again.');
+    }
   };
 
   const handleDeleteMenu = async (menuId: string) => {
     if (!confirm('Are you sure you want to delete this menu?')) return;
     
-    // TODO: Call API to delete menu
-    setMenus(menus.filter(menu => menu.id !== menuId));
+    try {
+      let token = localStorage.getItem('accessToken');
+      if (!token) {
+        const authRaw = localStorage.getItem('auth');
+        if (authRaw) {
+          const auth = JSON.parse(authRaw);
+          token = auth?.tokens?.accessToken;
+        }
+      }
+
+      const response = await fetch(`/api/menus/${menuId}`, {
+        method: 'DELETE',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (response.ok) {
+        setMenus(menus.filter(menu => menu.id !== menuId));
+      } else {
+        const data = await response.json();
+        alert(`Failed to delete menu: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error deleting menu:', error);
+      alert('Failed to delete menu. Please try again.');
+    }
   };
 
   if (loading) {
