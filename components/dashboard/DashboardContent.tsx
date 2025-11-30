@@ -35,7 +35,7 @@ export const DashboardContent = () => {
     {
       id: 1,
       name: "The Green Leaf Cafe",
-      location: "Algiers, Algeria",
+      location: "Mahelma 03, Mahelma",
       image: "/assets/menu1-img.png",
       activeMenus: 2,
       totalScans: 1234,
@@ -43,7 +43,7 @@ export const DashboardContent = () => {
     {
       id: 2,
       name: "La Pizzeria",
-      location: "Oran, Algeria",
+      location: "Mahelma 04, Mahelma",
       image: "/assets/menu2-img.png",
       activeMenus: 1,
       totalScans: 856,
@@ -74,7 +74,7 @@ export const DashboardContent = () => {
         {/* Welcome Section */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back, John!
+            Welcome back, 3ziwez!
           </h1>
           <p className="text-gray-600">
             Here's what's happening with your restaurants today.

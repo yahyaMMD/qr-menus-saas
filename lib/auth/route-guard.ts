@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from './middleware';
+import { findUserById } from './db';
 import { requireRole, requireAdmin, hasRole } from './rbac';
 import { Role } from './types';
 
@@ -29,6 +30,15 @@ export function withAuth<T = any>(
     }
 
     const { payload } = authResult;
+
+    // Ensure user still exists and is active
+    const dbUser = await findUserById(payload.userId);
+    if (!dbUser || !dbUser.isActive) {
+      return NextResponse.json(
+        { error: 'Account is inactive or not found' },
+        { status: 403 }
+      );
+    }
 
     // Check role requirements
     if (options.requireAdmin) {

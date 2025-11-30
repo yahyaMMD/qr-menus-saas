@@ -22,7 +22,7 @@ export const RestaurantProfile = ({ profileId }: { profileId: string }) => {
     id: profileId,
     name: "The Green Leaf Cafe",
     description: "A cozy cafe serving organic and locally sourced ingredients",
-    location: "Algiers, Algeria",
+    location: "Lab09, G8",
     image: "/assets/menu1-img.png",
     activeMenus: 2,
     totalScans: 1234,

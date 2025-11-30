@@ -3,6 +3,9 @@ import { z } from 'zod';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { findUserByEmail, findUserById, updateUser } from '@/lib/auth/db';
 import { hashPassword, verifyPassword } from '@/lib/auth/password';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 async function getAuthenticatedUser(request: NextRequest) {
   const authResult = await authenticateRequest(request);
@@ -28,6 +31,50 @@ async function getAuthenticatedUser(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  // Check if this is a restaurant profile request (has query param)
+  const { searchParams } = new URL(request.url);
+  const listProfiles = searchParams.get('list');
+  
+  if (listProfiles === 'restaurants') {
+    // List restaurant profiles for authenticated user
+    const result = await getAuthenticatedUser(request);
+    if ('response' in result) {
+      return result.response;
+    }
+
+    const { user } = result;
+
+    try {
+      const profiles = await prisma.profile.findMany({
+        where: { ownerId: user.id },
+        include: {
+          menus: {
+            select: {
+              id: true,
+              name: true,
+              isActive: true,
+            },
+          },
+          _count: {
+            select: {
+              menus: true,
+              feedbacks: true,
+            },
+          },
+        },
+      });
+
+      return NextResponse.json({ profiles }, { status: 200 });
+    } catch (error) {
+      console.error('Get profiles error:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch profiles' },
+        { status: 500 }
+      );
+    }
+  }
+
+  // Otherwise, we return user profile (default behavior)
   const result = await getAuthenticatedUser(request);
   if ('response' in result) {
     return result.response;
@@ -73,6 +120,7 @@ const updateSchema = z
     }
     if (!data.name && !data.email && !data.newPassword) {
       ctx.addIssue({
+        path: ['root'],
         code:"custom",
         message: 'At least one field must be provided for update',
       });
@@ -99,8 +147,9 @@ export async function PATCH(request: NextRequest) {
 
   const parseResult = updateSchema.safeParse(body);
   if (!parseResult.success) {
+    const formatted = z.treeifyError(parseResult.error);
     return NextResponse.json(
-      { error: z.treeifyError(parseResult.error) },
+      { error: formatted },
       { status: 400 }
     );
   }
@@ -155,5 +204,3 @@ export async function PATCH(request: NextRequest) {
     { status: 200 }
   );
 }
-
-

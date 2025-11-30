@@ -120,11 +120,11 @@ export const CreateRestaurantForm = () => {
               required
             >
               <option value="">Select wilaya</option>
+              <option value="bejaia">Bejaia</option>
               <option value="algiers">Algiers</option>
               <option value="oran">Oran</option>
               <option value="constantine">Constantine</option>
               <option value="annaba">Annaba</option>
-              <option value="blida">Blida</option>
             </select>
           </div>
           <div>
@@ -133,7 +133,7 @@ export const CreateRestaurantForm = () => {
             </label>
             <Input
               type="text"
-              placeholder="e.g., Hydra"
+              placeholder="e.g., Akbou"
               value={formData.commune}
               onChange={(e) => setFormData({ ...formData, commune: e.target.value })}
               className="w-full"
