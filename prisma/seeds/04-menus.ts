@@ -6,28 +6,68 @@ export default async function menus(
 ) {
   console.log("📄 Creating menus...");
 
-  const result: Record<string, any> = {};
+  const menusData = [
+    // La Trattoria Italiana Menus
+    {
+      profileId: profiles[0].id,
+      name: "Main Menu",
+      description: "Our signature Italian dishes",
+      isActive: true
+    },
+    {
+      profileId: profiles[0].id,
+      name: "Wine & Drinks",
+      description: "Premium wines and beverages",
+      isActive: true
+    },
+    {
+      profileId: profiles[0].id,
+      name: "Desserts",
+      description: "Sweet Italian delights",
+      isActive: true
+    },
+    // Sushi Master Menus
+    {
+      profileId: profiles[1].id,
+      name: "Sushi & Sashimi",
+      description: "Fresh sushi and sashimi selection",
+      isActive: true
+    },
+    {
+      profileId: profiles[1].id,
+      name: "Hot Dishes",
+      description: "Traditional Japanese hot meals",
+      isActive: true
+    },
+    {
+      profileId: profiles[1].id,
+      name: "Beverages",
+      description: "Japanese teas and drinks",
+      isActive: false
+    },
+    // Burger Paradise Menus
+    {
+      profileId: profiles[2].id,
+      name: "Burgers & Sandwiches",
+      description: "Gourmet burgers and sandwiches",
+      isActive: true
+    },
+    {
+      profileId: profiles[2].id,
+      name: "Sides & Appetizers",
+      description: "Delicious sides and starters",
+      isActive: true
+    }
+  ];
 
-  for (const profile of profiles) {
-    result[profile.id] = await prisma.menu.createMany({
-      data: [
-        {
-          profileId: profile.id,
-          name: "Main Menu",
-          description: "Our core selection of dishes.",
-          isActive: true
-        },
-        {
-          profileId: profile.id,
-          name: "Drinks",
-          description: "Fresh juices, sodas, and hot drinks.",
-          isActive: true
-        }
-      ]
+  const createdMenus = [];
+  for (const menuData of menusData) {
+    const menu = await prisma.menu.create({
+      data: menuData
     });
+    createdMenus.push(menu);
   }
 
-  const allMenus = await prisma.menu.findMany();
-  console.log("📄 Menus created.");
-  return allMenus;
+  console.log(`📄 Created ${createdMenus.length} menus.`);
+  return createdMenus;
 }

@@ -8,6 +8,8 @@ import tagsTypesCategories from './seeds/05-tags-types-categories.js';
 import items from './seeds/06-items.js';
 import subscriptions from './seeds/07-subscriptions.js';
 import support from './seeds/08-support.js';
+import analytics from './seeds/09-analytics.js';
+import feedbacks from './seeds/10-feedbacks.js';
 
 const prisma = new PrismaClient();
 
@@ -24,6 +26,8 @@ async function main() {
   await items(prisma, createdTagsTypesCats);
   await subscriptions(prisma);
   await support(prisma);
+  await analytics(prisma);
+  await feedbacks(prisma);
 
   console.log("🌱 Seed finished successfully.");
 }
