@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { findUserById } from '@/lib/auth/db';
+import { canCreateMenu } from '@/lib/plan-limits';
 
 const prisma = new PrismaClient();
 
@@ -116,6 +117,20 @@ export async function POST(
     if (profile.ownerId !== user.id) {
       return NextResponse.json(
         { error: 'You do not have permission to create menus for this profile' },
+        { status: 403 }
+      );
+    }
+
+    // Check plan limits for menu creation
+    const menuCheck = await canCreateMenu(user.id, id);
+    if (!menuCheck.allowed) {
+      return NextResponse.json(
+        { 
+          error: menuCheck.message,
+          limitReached: true,
+          current: menuCheck.current,
+          max: menuCheck.max
+        },
         { status: 403 }
       );
     }

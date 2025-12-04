@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { findUserById } from '@/lib/auth/db';
+import { canTrackScan } from '@/lib/plan-limits';
 
 const prisma = new PrismaClient();
 
@@ -50,6 +51,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Menu not found' },
         { status: 404 }
+      );
+    }
+
+    // Check plan limits for QR scans
+    const scanCheck = await canTrackScan(menuId);
+    if (!scanCheck.allowed) {
+      return NextResponse.json(
+        { 
+          error: scanCheck.message,
+          limitReached: true,
+          current: scanCheck.current,
+          max: scanCheck.max
+        },
+        { status: 429 } // Too Many Requests
       );
     }
 

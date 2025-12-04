@@ -4,6 +4,7 @@ import { authenticateRequest } from '@/lib/auth/middleware';
 import { findUserByEmail, findUserById, updateUser } from '@/lib/auth/db';
 import { hashPassword, verifyPassword } from '@/lib/auth/password';
 import { PrismaClient } from '@prisma/client';
+import { canCreateProfile } from '@/lib/plan-limits';
 
 const prisma = new PrismaClient();
 
@@ -116,6 +117,20 @@ export async function POST(request: NextRequest) {
   }
 
   const { user } = result;
+
+  // Check plan limits for profile creation
+  const profileCheck = await canCreateProfile(user.id);
+  if (!profileCheck.allowed) {
+    return NextResponse.json(
+      { 
+        error: profileCheck.message,
+        limitReached: true,
+        current: profileCheck.current,
+        max: profileCheck.max
+      },
+      { status: 403 }
+    );
+  }
 
   let body: unknown;
   try {
