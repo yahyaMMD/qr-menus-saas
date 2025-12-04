@@ -12,6 +12,7 @@ import {
   Loader2,
   Sparkles
 } from 'lucide-react';
+import { getErrorPagePath } from '@/lib/error-redirect';
 
 interface PlanData {
   id: string;
@@ -63,7 +64,14 @@ export default function ChangePlanPage() {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
-      if (!response.ok) throw new Error('Failed to fetch plans');
+      if (!response.ok) {
+        const errorPath = getErrorPagePath(response.status);
+        if (errorPath) {
+          router.push(errorPath);
+          return;
+        }
+        throw new Error('Failed to fetch plans');
+      }
 
       const data = await response.json();
       setPlans(data.plans);
@@ -113,6 +121,14 @@ export default function ChangePlanPage() {
         body: JSON.stringify({ plan: 'FREE', paymentMethod: 'edahabia' }),
       });
 
+      if (!response.ok) {
+        const errorPath = getErrorPagePath(response.status);
+        if (errorPath) {
+          router.push(errorPath);
+          return;
+        }
+      }
+
       const data = await response.json();
 
       if (!response.ok) throw new Error(data.error || 'Failed to activate plan');
@@ -157,6 +173,14 @@ export default function ChangePlanPage() {
           paymentMethod,
         }),
       });
+
+      if (!response.ok) {
+        const errorPath = getErrorPagePath(response.status);
+        if (errorPath) {
+          router.push(errorPath);
+          return;
+        }
+      }
 
       const data = await response.json();
 

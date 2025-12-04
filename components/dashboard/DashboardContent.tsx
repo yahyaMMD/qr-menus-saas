@@ -1,12 +1,15 @@
 // @ts-nocheck
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import { Plus, BarChart3, MessageSquare, TrendingUp, MapPin, Pencil } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { getErrorPagePath } from "@/lib/error-redirect";
 
 export const DashboardContent = () => {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -35,8 +38,7 @@ export const DashboardContent = () => {
       }
 
       if (!token) {
-        setError('Not authenticated. Please log in.');
-        setLoading(false);
+        router.push('/unauthorized');
         return;
       }
 
@@ -46,7 +48,13 @@ export const DashboardContent = () => {
         },
       });
 
+      // Handle error status codes by redirecting to error pages
       if (!response.ok) {
+        const errorPath = getErrorPagePath(response.status);
+        if (errorPath) {
+          router.push(errorPath);
+          return;
+        }
         throw new Error('Failed to fetch dashboard data');
       }
 

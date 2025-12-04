@@ -5,6 +5,7 @@ import { Check, X, Menu as MenuIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from 'next/navigation';
 import { PaymentMethod } from '@/lib/chargily';
+import { getErrorPagePath } from '@/lib/error-redirect';
 
 const faqs = [
   {
@@ -96,12 +97,14 @@ export const PricingPage = () => {
 
       console.log('Payment response status:', response.status);
 
-      // Handle authentication errors returned from server
-      if (response.status === 401) {
-        console.error('Payment API returned 401 Unauthorized');
-        setIsLoading(false);
-        router.push('/auth/login?callbackUrl=/pricing');
-        return;
+      // Handle error status codes by redirecting to error pages
+      if (!response.ok) {
+        const errorPath = getErrorPagePath(response.status);
+        if (errorPath) {
+          setIsLoading(false);
+          router.push(errorPath);
+          return;
+        }
       }
 
       const data = await response.json();
