@@ -8,6 +8,8 @@ export interface Item {
   menuId: string;
   tags: string[];
   price: number | null;
+  originalPrice: number | null;
+  isPromotion: boolean;
 }
 
 export interface Type {

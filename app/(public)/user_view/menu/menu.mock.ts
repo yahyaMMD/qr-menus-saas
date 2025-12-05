@@ -35,6 +35,8 @@ export const mockMenuData: MenuData = {
       name: "Cappuccino",
       description: "Classic Italian coffee with steamed milk",
       price: 350,
+      originalPrice: null,
+      isPromotion: false,
       image:
         "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=400&h=300&fit=crop",
       tags: ["tag5"],
@@ -46,10 +48,12 @@ export const mockMenuData: MenuData = {
       id: "2",
       name: "Iced Latte",
       description: "Refreshing iced coffee with milk",
-      price: 400,
+      price: 320,
+      originalPrice: 400,
+      isPromotion: true,
       image:
         "https://images.unsplash.com/photo-1517487881594-2787fef5ebf7?w=400&h=300&fit=crop",
-      tags: [],
+      tags: ["tag6"],
       typeId: "t2",
       categoryId: "c1",
       menuId: "1",
@@ -59,6 +63,8 @@ export const mockMenuData: MenuData = {
       name: "Green Tea",
       description: "Organic green tea with mint",
       price: 250,
+      originalPrice: null,
+      isPromotion: false,
       image:
         "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400&h=300&fit=crop",
       tags: ["tag1"],
@@ -70,7 +76,9 @@ export const mockMenuData: MenuData = {
       id: "4",
       name: "Croissant",
       description: "Fresh butter croissant baked daily",
-      price: 200,
+      price: 150,
+      originalPrice: 200,
+      isPromotion: true,
       image:
         "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&h=300&fit=crop",
       tags: ["tag5", "tag6"],
@@ -83,6 +91,8 @@ export const mockMenuData: MenuData = {
       name: "Vegan Muffin",
       description: "Delicious vegan blueberry muffin",
       price: 280,
+      originalPrice: null,
+      isPromotion: false,
       image:
         "https://images.unsplash.com/photo-1607958996333-41aef7caefaa?w=400&h=300&fit=crop",
       tags: ["tag1", "tag6"],
@@ -94,7 +104,9 @@ export const mockMenuData: MenuData = {
       id: "6",
       name: "Chocolate Cake",
       description: "Rich chocolate layer cake",
-      price: 450,
+      price: 350,
+      originalPrice: 450,
+      isPromotion: true,
       image:
         "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400&h=300&fit=crop",
       tags: ["tag5"],
@@ -107,6 +119,8 @@ export const mockMenuData: MenuData = {
       name: "Avocado Toast",
       description: "Fresh avocado on sourdough toast",
       price: 550,
+      originalPrice: null,
+      isPromotion: false,
       image:
         "https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?w=400&h=300&fit=crop",
       tags: ["tag2", "tag5"],
@@ -119,6 +133,8 @@ export const mockMenuData: MenuData = {
       name: "Spicy Ramen",
       description: "Japanese noodle soup with vegetables",
       price: 850,
+      originalPrice: null,
+      isPromotion: false,
       image:
         "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&h=300&fit=crop",
       tags: ["tag4", "tag5"],

@@ -7,6 +7,7 @@ import {
   Instagram,
   MessageCircle,
 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 import { Filters, Item, MenuData } from "./menu.types";
 import { mockMenuData } from "./menu.mock";
@@ -15,29 +16,55 @@ import MenuSection from "./components/MenuSection";
 import Link from "next/link";
 
 const MenuPage: React.FC = () => {
+  const searchParams = useSearchParams();
+  const menuId = searchParams.get("menuId");
+  
   const [data, setData] = useState<MenuData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState<Filters>({
     typeIds: [],
     categoryIds: [],
     tagIds: [],
-    priceRange: [0, 4500],
+    priceRange: [0, 50000],
   });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        setData(mockMenuData);
+        setError(null);
+        
+        if (!menuId) {
+          // Fall back to mock data if no menuId
+          setData(mockMenuData);
+          return;
+        }
+
+        const response = await fetch(`/api/public/menu/${menuId}`);
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError("Menu not found or not available");
+          } else {
+            setError("Failed to load menu");
+          }
+          return;
+        }
+
+        const menuData = await response.json();
+        setData(menuData);
+      } catch (err) {
+        console.error("Error fetching menu:", err);
+        setError("Failed to load menu");
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [menuId]);
 
   if (loading) {
     return (
@@ -45,6 +72,20 @@ const MenuPage: React.FC = () => {
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Loading menu...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl">🍽️</span>
+          </div>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">Menu Unavailable</h1>
+          <p className="text-gray-500">{error}</p>
         </div>
       </div>
     );

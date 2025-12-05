@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Percent } from "lucide-react";
 import { Item, Tag } from "../menu.types";
 
 interface MenuItemCardProps {
@@ -21,6 +21,16 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, tags }) => {
           className="w-full h-full object-cover"
         />
 
+        {/* Promotion Badge */}
+        {item.isPromotion && (
+          <div className="absolute top-1 right-1 sm:top-2 sm:right-2">
+            <span className="bg-green-500 text-white px-2 py-0.5 rounded-full text-xs font-bold flex items-center gap-1">
+              <Percent className="w-3 h-3" />
+              SALE
+            </span>
+          </div>
+        )}
+
         {/* Tags */}
         {itemTags.length > 0 && (
           <div className="absolute top-1 left-1 sm:top-2 sm:left-2 flex flex-col gap-1">
@@ -36,10 +46,15 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, tags }) => {
           </div>
         )}
 
-        {/* Price */}
-        {item.price && (
-          <div className="absolute bottom-1 left-1 sm:bottom-2 sm:left-2">
-            <span className="bg-orange-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-bold">
+        {/* Price - with promotion support */}
+        {item.price !== null && (
+          <div className="absolute bottom-1 left-1 sm:bottom-2 sm:left-2 flex items-center gap-1">
+            {item.isPromotion && item.originalPrice !== null && (
+              <span className="bg-gray-400 text-white px-2 py-0.5 rounded-full text-xs line-through opacity-80">
+                {item.originalPrice}DA
+              </span>
+            )}
+            <span className={`${item.isPromotion ? 'bg-green-500' : 'bg-orange-500'} text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-bold`}>
               {item.price}DA
             </span>
           </div>
@@ -55,6 +70,12 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, tags }) => {
             <p className="text-gray-500 text-xs sm:text-sm line-clamp-2">
               {item.description}
             </p>
+            {/* Savings indicator */}
+            {item.isPromotion && item.originalPrice && item.price && (
+              <p className="text-green-600 text-xs font-medium mt-1">
+                Save {Math.round((1 - item.price / item.originalPrice) * 100)}%
+              </p>
+            )}
           </div>
           <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" />
         </div>

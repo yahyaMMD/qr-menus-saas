@@ -8,270 +8,438 @@ import {
   Edit, 
   Trash2, 
   Image as ImageIcon, 
-  DollarSign,
+  Banknote,
   QrCode,
   Download,
   Printer,
   Copy,
   Check,
-  Folder
+  Folder,
+  Tag as TagIcon,
+  Percent,
+  X,
+  Loader2
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { getErrorPagePath } from '@/lib/error-redirect';
+
+interface Tag {
+  id: string;
+  name: string;
+  color: string;
+}
 
 interface Category {
   id: string;
   name: string;
   image?: string | null;
-  items: Array<{
-    id: string;
-    name: string;
-    price: number;
-    image: string;
-    tags: string[];
-  }>;
-  _count?: {
-    items: number;
-  };
 }
 
-const mockCategories: Category[] = [
-  {
-    id: '1',
-    name: 'Breakfast',
-    image: null,
-    items: [
-      { id: '1', name: 'Avocado Toast', price: 12.99, image: 'https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?w=150', tags: ['Vegan', 'Popular'] },
-      { id: '2', name: 'Organic Oatmeal', price: 8.99, image: 'https://images.unsplash.com/photo-1517673132405-a56a62b18caf?w=150', tags: ['Vegan', 'Gluten-Free'] },
-      { id: '3', name: 'Chia Pudding', price: 9.99, image: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=150', tags: ['Vegan'] }
-    ],
-    _count: { items: 3 }
-  },
-  {
-    id: '2',
-    name: 'Salads',
-    image: null,
-    items: [
-      { id: '4', name: 'Caesar Salad', price: 14.99, image: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=150', tags: ['Popular'] },
-      { id: '5', name: 'Greek Salad', price: 13.99, image: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=150', tags: ['Vegetarian'] },
-      { id: '6', name: 'Quinoa Bowl', price: 15.99, image: 'https://images.unsplash.com/photo-1505576399279-565b52d4ac71?w=150', tags: ['Vegan', 'Popular'] }
-    ],
-    _count: { items: 3 }
-  },
-  {
-    id: '3',
-    name: 'Beverages',
-    image: null,
-    items: [
-      { id: '7', name: 'Green Smoothie', price: 7.99, image: 'https://images.unsplash.com/photo-1610970881699-44a5587cabec?w=150', tags: ['Vegan'] },
-      { id: '8', name: 'Cold Brew Coffee', price: 5.99, image: 'https://images.unsplash.com/photo-1517487881594-2787fef5ebf7?w=150', tags: ['Popular'] },
-      { id: '9', name: 'Fresh Orange Juice', price: 6.99, image: 'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=150', tags: [] }
-    ],
-    _count: { items: 3 }
-  }
-];
+interface Type {
+  id: string;
+  name: string;
+  image?: string | null;
+}
+
+interface Item {
+  id: string;
+  name: string;
+  description?: string | null;
+  price: number | null;
+  originalPrice?: number | null;
+  isPromotion: boolean;
+  image?: string | null;
+  categoryId?: string | null;
+  typeId?: string | null;
+  category?: { id: string; name: string } | null;
+  type?: { id: string; name: string } | null;
+  tags: Tag[];
+}
+
+interface MenuData {
+  id: string;
+  name: string;
+  description?: string | null;
+  profile: {
+    id: string;
+    name: string;
+  };
+}
 
 export default function MenuBuilderPage({ 
   params 
 }: { 
   params: Promise<{ profileId: string; menuId: string }> 
 }) {
-  const { profileId, menuId } = use(params); // Unwrap params with React.use()
+  const { profileId, menuId } = use(params);
   const router = useRouter();
   
-  const [categories, setCategories] = useState<Category[]>(mockCategories);
+  const [menu, setMenu] = useState<MenuData | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [types, setTypes] = useState<Type[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  
+  // Modals
   const [showAddItem, setShowAddItem] = useState(false);
+  const [showEditItem, setShowEditItem] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showEditCategory, setShowEditCategory] = useState(false);
+  const [showAddTag, setShowAddTag] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
+  
   const [qrCodeSvg, setQrCodeSvg] = useState<string>('');
   const [isLoadingQR, setIsLoadingQR] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [saving, setSaving] = useState(false);
   
-  const [newCategory, setNewCategory] = useState({
+  // Form states
+  const [newCategory, setNewCategory] = useState({ name: '', image: '' });
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [newTag, setNewTag] = useState({ name: '', color: '#f97316' });
+  
+  const [itemForm, setItemForm] = useState({
+    id: '',
     name: '',
+    description: '',
+    price: '',
+    originalPrice: '',
+    isPromotion: false,
     image: '',
+    categoryId: '',
+    typeId: '',
+    tagIds: [] as string[],
   });
 
-  const [editingCategory, setEditingCategory] = useState<any>(null);
-
-  // Fetch categories on mount
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await fetch(`/api/menus/${menuId}/categories`);
-        const data = await response.json();
-        
-        if (response.ok) {
-          // Transform to match your UI structure
-          const transformedCategories = data.categories.map((cat: any) => ({
-            id: cat.id,
-            name: cat.name,
-            image: cat.image,
-            items: [], // Will be populated separately if needed
-            _count: cat._count,
-          }));
-          setCategories(transformedCategories);
-        } else {
-          console.error('Failed to fetch categories:', data.error);
-          // Fallback to mock data if API fails
-          setCategories(mockCategories);
+  // Get auth token
+  const getToken = () => {
+    let token = localStorage.getItem('accessToken');
+    if (!token) {
+      const authRaw = localStorage.getItem('auth');
+      if (authRaw) {
+        try {
+          const auth = JSON.parse(authRaw);
+          token = auth?.tokens?.accessToken;
+        } catch (e) {
+          console.error('Failed to parse auth', e);
         }
+      }
+    }
+    return token;
+  };
+
+  // Fetch all data
+  useEffect(() => {
+    const fetchData = async () => {
+      const token = getToken();
+      if (!token) {
+        router.push('/unauthorized');
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const headers = { Authorization: `Bearer ${token}` };
+
+        // Fetch menu details, categories, items, tags, types in parallel
+        const [menuRes, categoriesRes, itemsRes, tagsRes, typesRes] = await Promise.all([
+          fetch(`/api/menus/${menuId}`, { headers }),
+          fetch(`/api/menus/${menuId}/categories`, { headers }),
+          fetch(`/api/menus/${menuId}/items`, { headers }),
+          fetch(`/api/menus/${menuId}/tags`, { headers }),
+          fetch(`/api/menus/${menuId}/types`, { headers }),
+        ]);
+
+        // Check for auth errors
+        for (const res of [menuRes, categoriesRes, itemsRes, tagsRes, typesRes]) {
+          if (!res.ok) {
+            const errorPath = getErrorPagePath(res.status);
+            if (errorPath) {
+              router.push(errorPath);
+              return;
+            }
+          }
+        }
+
+        const [menuData, categoriesData, itemsData, tagsData, typesData] = await Promise.all([
+          menuRes.json(),
+          categoriesRes.json(),
+          itemsRes.json(),
+          tagsRes.json(),
+          typesRes.json(),
+        ]);
+
+        setMenu(menuData);
+        setCategories(categoriesData.categories || []);
+        setItems(itemsData.items || []);
+        setTags(tagsData.tags || []);
+        setTypes(typesData.types || []);
       } catch (error) {
-        console.error('Error fetching categories:', error);
-        // Fallback to mock data if API fails
-        setCategories(mockCategories);
+        console.error('Error fetching menu data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCategories();
-  }, [menuId]);
+    fetchData();
+  }, [menuId, router]);
 
-  const allItems = categories.flatMap(cat => 
-    cat.items.map(item => ({ ...item, category: cat.name }))
-  );
+  // Group items by category
+  const itemsByCategory = categories.map(cat => ({
+    ...cat,
+    items: items.filter(item => item.categoryId === cat.id),
+  }));
 
+  // Uncategorized items
+  const uncategorizedItems = items.filter(item => !item.categoryId);
+
+  // Search filter
   const filteredItems = searchQuery
-    ? allItems.filter(item => 
+    ? items.filter(item => 
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+        item.tags.some(tag => tag.name.toLowerCase().includes(searchQuery.toLowerCase()))
       )
     : null;
 
-  // Handle Add Category
+  // CRUD Operations
   const handleAddCategory = async () => {
-    if (!newCategory.name.trim()) {
-      alert('Please enter a category name');
-      return;
-    }
+    if (!newCategory.name.trim()) return;
+    const token = getToken();
+    setSaving(true);
 
     try {
       const response = await fetch(`/api/menus/${menuId}/categories`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newCategory.name,
-          image: newCategory.image || null,
-        }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name: newCategory.name, image: newCategory.image || null }),
       });
 
       const data = await response.json();
-
       if (response.ok) {
-        // Add new category to state
-        setCategories([...categories, {
-          id: data.category.id,
-          name: data.category.name,
-          image: data.category.image,
-          items: [],
-          _count: { items: 0 },
-        }]);
-        
+        setCategories([...categories, data.category]);
         setNewCategory({ name: '', image: '' });
         setShowAddCategory(false);
-        alert('Category created successfully!');
       } else {
-        alert(`Failed to create category: ${data.error}`);
+        alert(data.error || 'Failed to create category');
       }
     } catch (error) {
       console.error('Create category error:', error);
-      alert('Failed to create category. Please try again.');
+      alert('Failed to create category');
+    } finally {
+      setSaving(false);
     }
   };
 
-  // Handle Edit Category
   const handleEditCategory = async () => {
-    if (!editingCategory?.name.trim()) {
-      alert('Please enter a category name');
-      return;
-    }
+    if (!editingCategory?.name.trim()) return;
+    const token = getToken();
+    setSaving(true);
 
     try {
-      const response = await fetch(
-        `/api/menus/${menuId}/categories/${editingCategory.id}`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: editingCategory.name,
-            image: editingCategory.image || null,
-          }),
-        }
-      );
+      const response = await fetch(`/api/menus/${menuId}/categories/${editingCategory.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name: editingCategory.name, image: editingCategory.image || null }),
+      });
 
       const data = await response.json();
-
       if (response.ok) {
-        // Update category in state
-        setCategories(categories.map(cat => 
-          cat.id === editingCategory.id 
-            ? { ...cat, name: data.category.name, image: data.category.image }
-            : cat
-        ));
-        
-        setShowEditCategory(false);
+        setCategories(categories.map(cat => cat.id === editingCategory.id ? data.category : cat));
         setEditingCategory(null);
-        alert('Category updated successfully!');
+        setShowEditCategory(false);
       } else {
-        alert(`Failed to update category: ${data.error}`);
+        alert(data.error || 'Failed to update category');
       }
     } catch (error) {
       console.error('Update category error:', error);
-      alert('Failed to update category. Please try again.');
+      alert('Failed to update category');
+    } finally {
+      setSaving(false);
     }
   };
 
-  // Handle Delete Category
   const handleDeleteCategory = async (categoryId: string, categoryName: string) => {
-    if (!confirm(`Are you sure you want to delete "${categoryName}"? This action cannot be undone.`)) {
-      return;
-    }
+    if (!confirm(`Delete "${categoryName}"? Items in this category will become uncategorized.`)) return;
+    const token = getToken();
 
     try {
-      const response = await fetch(
-        `/api/menus/${menuId}/categories/${categoryId}`,
-        {
-          method: 'DELETE',
-        }
-      );
-
-      const data = await response.json();
+      const response = await fetch(`/api/menus/${menuId}/categories/${categoryId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (response.ok) {
-        // Remove category from state
         setCategories(categories.filter(cat => cat.id !== categoryId));
-        alert('Category deleted successfully!');
+        // Update items to remove category reference
+        setItems(items.map(item => item.categoryId === categoryId ? { ...item, categoryId: null, category: null } : item));
       } else {
-        alert(`Failed to delete category: ${data.error}`);
+        const data = await response.json();
+        alert(data.error || 'Failed to delete category');
       }
     } catch (error) {
       console.error('Delete category error:', error);
-      alert('Failed to delete category. Please try again.');
+      alert('Failed to delete category');
     }
   };
 
-  // Generate QR Code
+  const handleAddTag = async () => {
+    if (!newTag.name.trim()) return;
+    const token = getToken();
+    setSaving(true);
+
+    try {
+      const response = await fetch(`/api/menus/${menuId}/tags`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(newTag),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setTags([...tags, data.tag]);
+        setNewTag({ name: '', color: '#f97316' });
+        setShowAddTag(false);
+      } else {
+        alert(data.error || 'Failed to create tag');
+      }
+    } catch (error) {
+      console.error('Create tag error:', error);
+      alert('Failed to create tag');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveItem = async () => {
+    if (!itemForm.name.trim()) {
+      alert('Item name is required');
+      return;
+    }
+    const token = getToken();
+    setSaving(true);
+
+    const itemData = {
+      name: itemForm.name,
+      description: itemForm.description || null,
+      price: itemForm.price ? parseFloat(itemForm.price) : null,
+      originalPrice: itemForm.isPromotion && itemForm.originalPrice ? parseFloat(itemForm.originalPrice) : null,
+      isPromotion: itemForm.isPromotion,
+      image: itemForm.image || null,
+      categoryId: itemForm.categoryId || null,
+      typeId: itemForm.typeId || null,
+      tagIds: itemForm.tagIds,
+    };
+
+    try {
+      const isEdit = !!itemForm.id;
+      const url = isEdit ? `/api/menus/${menuId}/items/${itemForm.id}` : `/api/menus/${menuId}/items`;
+      const method = isEdit ? 'PATCH' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(itemData),
+      });
+
+      if (!response.ok) {
+        const errorPath = getErrorPagePath(response.status);
+        if (errorPath) {
+          router.push(errorPath);
+          return;
+        }
+      }
+
+      const data = await response.json();
+      if (response.ok) {
+        if (isEdit) {
+          setItems(items.map(item => item.id === itemForm.id ? data.item : item));
+        } else {
+          setItems([data.item, ...items]);
+        }
+        resetItemForm();
+        setShowAddItem(false);
+        setShowEditItem(false);
+      } else {
+        alert(data.error || 'Failed to save item');
+      }
+    } catch (error) {
+      console.error('Save item error:', error);
+      alert('Failed to save item');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteItem = async (itemId: string, itemName: string) => {
+    if (!confirm(`Delete "${itemName}"?`)) return;
+    const token = getToken();
+
+    try {
+      const response = await fetch(`/api/menus/${menuId}/items/${itemId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        setItems(items.filter(item => item.id !== itemId));
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to delete item');
+      }
+    } catch (error) {
+      console.error('Delete item error:', error);
+      alert('Failed to delete item');
+    }
+  };
+
+  const resetItemForm = () => {
+    setItemForm({
+      id: '',
+      name: '',
+      description: '',
+      price: '',
+      originalPrice: '',
+      isPromotion: false,
+      image: '',
+      categoryId: '',
+      typeId: '',
+      tagIds: [],
+    });
+  };
+
+  const openEditItem = (item: Item) => {
+    setItemForm({
+      id: item.id,
+      name: item.name,
+      description: item.description || '',
+      price: item.price?.toString() || '',
+      originalPrice: item.originalPrice?.toString() || '',
+      isPromotion: item.isPromotion,
+      image: item.image || '',
+      categoryId: item.categoryId || '',
+      typeId: item.typeId || '',
+      tagIds: item.tags.map(t => t.id),
+    });
+    setShowEditItem(true);
+  };
+
+  // QR Code handlers
   const handleGenerateQR = async () => {
     setIsLoadingQR(true);
     setShowQRModal(true);
-    
     try {
       const response = await fetch(`/api/qr/${menuId}?format=svg`);
       const svg = await response.text();
       setQrCodeSvg(svg);
     } catch (error) {
       console.error('Failed to generate QR code:', error);
-      alert('Failed to generate QR code. Please try again.');
     } finally {
       setIsLoadingQR(false);
     }
   };
 
-  // Download QR Code
   const handleDownloadQR = async (format: 'svg' | 'png') => {
     try {
       const response = await fetch(`/api/qr/${menuId}?format=${format}&size=1000`);
@@ -286,93 +454,40 @@ export default function MenuBuilderPage({
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Failed to download QR code:', error);
-      alert('Failed to download QR code. Please try again.');
     }
   };
 
-  // Print QR Code
+  const handleCopyURL = () => {
+    const menuUrl = `${window.location.origin}/menu/${profileId}?menuId=${menuId}`;
+    navigator.clipboard.writeText(menuUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const handlePrintQR = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
-
     const menuUrl = `${window.location.origin}/menu/${profileId}?menuId=${menuId}`;
-    
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
         <head>
-          <title>QR Code - Menu</title>
+          <title>QR Code - ${menu?.name || 'Menu'}</title>
           <style>
-            @media print {
-              @page { margin: 2cm; }
-              body { margin: 0; }
-            }
-            body {
-              font-family: Arial, sans-serif;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              min-height: 100vh;
-              padding: 2rem;
-            }
-            .qr-container {
-              text-align: center;
-              max-width: 600px;
-            }
-            .qr-code {
-              margin: 2rem 0;
-            }
-            h1 { color: #f97316; font-size: 2rem; margin-bottom: 0.5rem; }
-            p { color: #666; font-size: 1.1rem; margin: 0.5rem 0; }
-            .instructions {
-              margin-top: 2rem;
-              padding: 1.5rem;
-              background: #f3f4f6;
-              border-radius: 8px;
-            }
-            .instructions h2 {
-              font-size: 1.2rem;
-              margin-bottom: 1rem;
-              color: #111;
-            }
-            .instructions ol {
-              text-align: left;
-              padding-left: 1.5rem;
-            }
-            .instructions li {
-              margin: 0.5rem 0;
-              color: #555;
-            }
-            .url {
-              margin-top: 1rem;
-              padding: 0.5rem;
-              background: #fff;
-              border: 1px solid #ddd;
-              border-radius: 4px;
-              font-family: monospace;
-              word-break: break-all;
-            }
+            body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
+            .qr-container { text-align: center; max-width: 600px; }
+            h1 { color: #f97316; font-size: 2rem; }
+            p { color: #666; }
+            .qr-code { margin: 2rem 0; }
+            .url { margin-top: 1rem; padding: 0.5rem; background: #f3f4f6; border-radius: 4px; font-family: monospace; word-break: break-all; }
           </style>
         </head>
         <body>
           <div class="qr-container">
             <h1>Scan to View Menu</h1>
-            <p>The Green Leaf Café</p>
-            <div class="qr-code">
-              ${qrCodeSvg}
-            </div>
-            <div class="instructions">
-              <h2>How to use this QR code:</h2>
-              <ol>
-                <li>Open your phone's camera app</li>
-                <li>Point it at this QR code</li>
-                <li>Tap the notification to view the menu</li>
-              </ol>
-              <div class="url">
-                <strong>Direct link:</strong><br>${menuUrl}
-              </div>
-            </div>
+            <p>${menu?.profile?.name || 'Restaurant'}</p>
+            <div class="qr-code">${qrCodeSvg}</div>
+            <div class="url"><strong>Direct link:</strong><br>${menuUrl}</div>
           </div>
         </body>
       </html>
@@ -381,39 +496,376 @@ export default function MenuBuilderPage({
     printWindow.print();
   };
 
-  // Copy URL
-  const handleCopyURL = () => {
-    const menuUrl = `${window.location.origin}/menu/${profileId}?menuId=${menuId}`;
-    navigator.clipboard.writeText(menuUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  // Item Modal Component
+  const ItemModal = ({ isEdit = false }: { isEdit?: boolean }) => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+          <h3 className="text-2xl font-bold text-gray-900">
+            {isEdit ? 'Edit Menu Item' : 'Add New Menu Item'}
+          </h3>
+          <button
+            onClick={() => { resetItemForm(); isEdit ? setShowEditItem(false) : setShowAddItem(false); }}
+            className="p-2 hover:bg-gray-100 rounded-lg"
+          >
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+        
+        <div className="p-6 space-y-5">
+          {/* Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Item Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="e.g., Avocado Toast"
+              value={itemForm.name}
+              onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            />
+          </div>
 
-  // QR Code Modal Component
+          {/* Category & Type */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+              <select
+                value={itemForm.categoryId}
+                onChange={(e) => setItemForm({ ...itemForm, categoryId: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                <option value="">No Category</option>
+                {categories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+              <select
+                value={itemForm.typeId}
+                onChange={(e) => setItemForm({ ...itemForm, typeId: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                <option value="">No Type</option>
+                {types.map(type => (
+                  <option key={type.id} value={type.id}>{type.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Pricing with Promotion */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={itemForm.isPromotion}
+                  onChange={(e) => setItemForm({ ...itemForm, isPromotion: e.target.checked })}
+                  className="w-4 h-4 text-orange-500 rounded focus:ring-orange-500"
+                />
+                <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                  <Percent className="w-4 h-4" />
+                  This item is on promotion
+                </span>
+              </label>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {itemForm.isPromotion && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Original Price <span className="text-gray-400">(strikethrough)</span>
+                  </label>
+                  <div className="relative">
+                    <Banknote className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="number"
+                      step="1"
+                      placeholder="1500"
+                      value={itemForm.originalPrice}
+                      onChange={(e) => setItemForm({ ...itemForm, originalPrice: e.target.value })}
+                      className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">DA</span>
+                  </div>
+                </div>
+              )}
+              <div className={itemForm.isPromotion ? '' : 'col-span-2'}>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {itemForm.isPromotion ? 'Sale Price' : 'Price'}
+                  {itemForm.isPromotion && <span className="text-green-600 ml-1">(promotional)</span>}
+                </label>
+                <div className="relative">
+                  <Banknote className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="number"
+                    step="1"
+                    placeholder="1200"
+                    value={itemForm.price}
+                    onChange={(e) => setItemForm({ ...itemForm, price: e.target.value })}
+                    className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">DA</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Promotion Preview */}
+            {itemForm.isPromotion && itemForm.originalPrice && itemForm.price && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <p className="text-sm text-green-800 font-medium flex items-center gap-2">
+                  <Percent className="w-4 h-4" />
+                  Promotion Preview:
+                </p>
+                <div className="flex items-baseline gap-3 mt-1">
+                  <span className="text-gray-500 line-through text-lg">{parseFloat(itemForm.originalPrice).toFixed(0)} DA</span>
+                  <span className="text-green-600 font-bold text-2xl">{parseFloat(itemForm.price).toFixed(0)} DA</span>
+                  <span className="text-green-600 text-sm font-medium">
+                    Save {Math.round((1 - parseFloat(itemForm.price) / parseFloat(itemForm.originalPrice)) * 100)}%
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+            <textarea
+              rows={3}
+              placeholder="Describe your item..."
+              value={itemForm.description}
+              onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+            />
+          </div>
+
+          {/* Tags */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">Tags</label>
+              <button
+                type="button"
+                onClick={() => setShowAddTag(true)}
+                className="text-sm text-orange-600 hover:text-orange-700 flex items-center gap-1"
+              >
+                <Plus className="w-4 h-4" />
+                New Tag
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {tags.map(tag => (
+                <button
+                  key={tag.id}
+                  type="button"
+                  onClick={() => {
+                    const isSelected = itemForm.tagIds.includes(tag.id);
+                    setItemForm({
+                      ...itemForm,
+                      tagIds: isSelected
+                        ? itemForm.tagIds.filter(id => id !== tag.id)
+                        : [...itemForm.tagIds, tag.id],
+                    });
+                  }}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                    itemForm.tagIds.includes(tag.id)
+                      ? 'ring-2 ring-offset-2 ring-orange-500'
+                      : 'opacity-60 hover:opacity-100'
+                  }`}
+                  style={{
+                    backgroundColor: `${tag.color}20`,
+                    color: tag.color,
+                    borderColor: tag.color,
+                  }}
+                >
+                  {tag.name}
+                </button>
+              ))}
+              {tags.length === 0 && (
+                <p className="text-sm text-gray-500">No tags yet. Create one to categorize items.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Image URL */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
+            <input
+              type="url"
+              placeholder="https://example.com/image.jpg"
+              value={itemForm.image}
+              onChange={(e) => setItemForm({ ...itemForm, image: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            />
+            {itemForm.image && (
+              <div className="mt-2 relative w-32 h-32 rounded-lg overflow-hidden border border-gray-200">
+                <img src={itemForm.image} alt="Preview" className="w-full h-full object-cover" />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex gap-3">
+          <button
+            onClick={() => { resetItemForm(); isEdit ? setShowEditItem(false) : setShowAddItem(false); }}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSaveItem}
+            disabled={saving || !itemForm.name.trim()}
+            className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isEdit ? 'Update Item' : 'Add Item'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Category Modal
+  const CategoryModal = ({ isEdit = false }: { isEdit?: boolean }) => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl max-w-lg w-full p-6">
+        <h3 className="text-2xl font-bold text-gray-900 mb-6">
+          {isEdit ? 'Edit Category' : 'Add New Category'}
+        </h3>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Category Name <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <Folder className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="e.g., Appetizers, Main Courses"
+                value={isEdit ? editingCategory?.name || '' : newCategory.name}
+                onChange={(e) => isEdit 
+                  ? setEditingCategory({ ...editingCategory!, name: e.target.value })
+                  : setNewCategory({ ...newCategory, name: e.target.value })
+                }
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                autoFocus
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={() => {
+              isEdit ? setShowEditCategory(false) : setShowAddCategory(false);
+              setEditingCategory(null);
+              setNewCategory({ name: '', image: '' });
+            }}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={isEdit ? handleEditCategory : handleAddCategory}
+            disabled={saving || !(isEdit ? editingCategory?.name.trim() : newCategory.name.trim())}
+            className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isEdit ? 'Update' : 'Add'} Category
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Tag Modal
+  const TagModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl max-w-lg w-full p-6">
+        <h3 className="text-2xl font-bold text-gray-900 mb-6">Create New Tag</h3>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Tag Name <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <TagIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="e.g., Vegan, Spicy, Popular"
+                value={newTag.name}
+                onChange={(e) => setNewTag({ ...newTag, name: e.target.value })}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                autoFocus
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Tag Color</label>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={newTag.color}
+                onChange={(e) => setNewTag({ ...newTag, color: e.target.value })}
+                className="w-12 h-12 rounded-lg cursor-pointer border-0"
+              />
+              <div
+                className="px-4 py-2 rounded-full text-sm font-medium"
+                style={{ backgroundColor: `${newTag.color}20`, color: newTag.color }}
+              >
+                {newTag.name || 'Preview'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={() => { setShowAddTag(false); setNewTag({ name: '', color: '#f97316' }); }}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleAddTag}
+            disabled={saving || !newTag.name.trim()}
+            className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+            Create Tag
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // QR Code Modal
   const QRCodeModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl max-w-2xl w-full p-6">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-2xl font-bold text-gray-900">QR Code</h3>
-          <button
-            onClick={() => setShowQRModal(false)}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <span className="text-2xl text-gray-500">×</span>
+          <button onClick={() => setShowQRModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+            <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
 
         {isLoadingQR ? (
           <div className="flex items-center justify-center py-20">
-            <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+            <Loader2 className="w-12 h-12 text-orange-500 animate-spin" />
           </div>
         ) : (
           <>
             <div className="bg-gray-50 rounded-xl p-8 mb-6 flex items-center justify-center">
-              <div 
-                className="bg-white p-6 rounded-lg shadow-lg"
-                dangerouslySetInnerHTML={{ __html: qrCodeSvg }}
-              />
+              <div className="bg-white p-6 rounded-lg shadow-lg" dangerouslySetInnerHTML={{ __html: qrCodeSvg }} />
             </div>
 
             <div className="bg-blue-50 rounded-lg p-4 mb-6">
@@ -426,50 +878,21 @@ export default function MenuBuilderPage({
                   onClick={handleCopyURL}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm flex items-center gap-2"
                 >
-                  {copied ? (
-                    <>
-                      <Check className="w-4 h-4" />
-                      Copied
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4" />
-                      Copy
-                    </>
-                  )}
+                  {copied ? <><Check className="w-4 h-4" />Copied</> : <><Copy className="w-4 h-4" />Copy</>}
                 </button>
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
-              <button
-                onClick={() => handleDownloadQR('svg')}
-                className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-              >
-                <Download className="w-5 h-5" />
-                SVG
+              <button onClick={() => handleDownloadQR('svg')} className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium">
+                <Download className="w-5 h-5" />SVG
               </button>
-              <button
-                onClick={() => handleDownloadQR('png')}
-                className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-              >
-                <Download className="w-5 h-5" />
-                PNG
+              <button onClick={() => handleDownloadQR('png')} className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium">
+                <Download className="w-5 h-5" />PNG
               </button>
-              <button
-                onClick={handlePrintQR}
-                className="flex items-center justify-center gap-2 px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
-              >
-                <Printer className="w-5 h-5" />
-                Print
+              <button onClick={handlePrintQR} className="flex items-center justify-center gap-2 px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium">
+                <Printer className="w-5 h-5" />Print
               </button>
-            </div>
-
-            <div className="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-              <p className="text-sm text-yellow-900">
-                <strong>💡 Tip:</strong> For best results, print the QR code at least 2x2 inches (5x5 cm) in size. 
-                Test it with your phone before distributing.
-              </p>
             </div>
           </>
         )}
@@ -477,130 +900,60 @@ export default function MenuBuilderPage({
     </div>
   );
 
-  // Add Category Modal Component
-  const AddCategoryModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl max-w-lg w-full p-6">
-        <h3 className="text-2xl font-bold text-gray-900 mb-6">Add New Category</h3>
-        
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Category Name <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <Folder className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="e.g., Appetizers, Main Courses, Desserts"
-                value={newCategory.name}
-                onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                autoFocus
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Choose a clear, descriptive name for your menu category
-            </p>
+  // Item Card Component
+  const ItemCard = ({ item }: { item: Item }) => (
+    <div className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all group bg-white">
+      <div className="relative">
+        {item.image ? (
+          <img src={item.image} alt={item.name} className="w-full h-40 object-cover" />
+        ) : (
+          <div className="w-full h-40 bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
+            <ImageIcon className="w-12 h-12 text-orange-400" />
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Category Image (Optional)
-            </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-orange-500 transition-colors cursor-pointer">
-              <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
-              <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB</p>
-            </div>
+        )}
+        {item.isPromotion && (
+          <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+            <Percent className="w-3 h-3" />
+            SALE
           </div>
-
-          <div className="bg-blue-50 rounded-lg p-4">
-            <p className="text-sm text-blue-900">
-              <strong>💡 Tip:</strong> Organize your menu items into logical categories to help customers browse easily. Common categories include Appetizers, Entrees, Desserts, and Beverages.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex gap-3 mt-6">
-          <button
-            onClick={() => {
-              setShowAddCategory(false);
-              setNewCategory({ name: '', image: '' });
-            }}
-            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-          >
-            Cancel
+        )}
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+          <button onClick={() => openEditItem(item)} className="p-2 bg-white rounded-lg shadow-lg hover:bg-gray-50">
+            <Edit className="w-4 h-4 text-gray-700" />
           </button>
-          <button
-            onClick={handleAddCategory}
-            disabled={!newCategory.name.trim()}
-            className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Add Category
+          <button onClick={() => handleDeleteItem(item.id, item.name)} className="p-2 bg-white rounded-lg shadow-lg hover:bg-red-50">
+            <Trash2 className="w-4 h-4 text-red-600" />
           </button>
         </div>
       </div>
-    </div>
-  );
-
-  // Edit Category Modal Component
-  const EditCategoryModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl max-w-lg w-full p-6">
-        <h3 className="text-2xl font-bold text-gray-900 mb-6">Edit Category</h3>
-        
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Category Name <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <Folder className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="e.g., Appetizers, Main Courses, Desserts"
-                value={editingCategory?.name || ''}
-                onChange={(e) => setEditingCategory({ 
-                  ...editingCategory, 
-                  name: e.target.value 
-                })}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                autoFocus
-              />
+      <div className="p-4">
+        <h3 className="font-semibold text-gray-900 mb-2">{item.name}</h3>
+        {item.description && (
+          <p className="text-sm text-gray-500 mb-2 line-clamp-2">{item.description}</p>
+        )}
+        <div className="flex items-center justify-between mb-3">
+          {item.isPromotion && item.originalPrice ? (
+            <div className="flex items-baseline gap-2">
+              <span className="text-gray-400 line-through text-sm">{item.originalPrice.toFixed(0)} DA</span>
+              <span className="text-xl font-bold text-green-600">{item.price?.toFixed(0) || '0'} DA</span>
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Category Image (Optional)
-            </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-orange-500 transition-colors cursor-pointer">
-              <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
-              <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB</p>
-            </div>
-          </div>
+          ) : (
+            <span className="text-xl font-bold text-orange-600">{item.price?.toFixed(0) || '0'} DA</span>
+          )}
         </div>
-
-        <div className="flex gap-3 mt-6">
-          <button
-            onClick={() => {
-              setShowEditCategory(false);
-              setEditingCategory(null);
-            }}
-            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleEditCategory}
-            disabled={!editingCategory?.name.trim()}
-            className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Update Category
-          </button>
-        </div>
+        {item.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {item.tags.map(tag => (
+              <span
+                key={tag.id}
+                className="px-2 py-0.5 text-xs rounded-full font-medium"
+                style={{ backgroundColor: `${tag.color}20`, color: tag.color }}
+              >
+                {tag.name}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -609,7 +962,7 @@ export default function MenuBuilderPage({
     return (
       <div className="p-8 flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <Loader2 className="w-12 h-12 text-orange-500 animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Loading menu...</p>
         </div>
       </div>
@@ -618,47 +971,34 @@ export default function MenuBuilderPage({
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
-      {/* QR Code Modal */}
+      {/* Modals */}
       {showQRModal && <QRCodeModal />}
-
-      {/* Add Category Modal */}
-      {showAddCategory && <AddCategoryModal />}
-
-      {/* Edit Category Modal */}
-      {showEditCategory && <EditCategoryModal />}
+      {showAddCategory && <CategoryModal />}
+      {showEditCategory && <CategoryModal isEdit />}
+      {showAddTag && <TagModal />}
+      {showAddItem && <ItemModal />}
+      {showEditItem && <ItemModal isEdit />}
 
       {/* Header */}
       <div className="mb-8">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
-        >
+        <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4">
           <ArrowLeft className="w-5 h-5" />
           Back
         </button>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Menu Builder</h1>
-            <p className="text-gray-600">The Green Leaf Café • Spring Menu 2024</p>
+            <p className="text-gray-600">{menu?.profile?.name} • {menu?.name}</p>
           </div>
           <div className="flex gap-3">
-            <button
-              onClick={handleGenerateQR}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
-            >
+            <button onClick={handleGenerateQR} className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium">
               <QrCode className="w-5 h-5" />
               QR Code
             </button>
-            <button
-              onClick={() => setShowAddCategory(true)}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-            >
+            <button onClick={() => setShowAddCategory(true)} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
               Add Category
             </button>
-            <button
-              onClick={() => setShowAddItem(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium"
-            >
+            <button onClick={() => { resetItemForm(); setShowAddItem(true); }} className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium">
               <Plus className="w-5 h-5" />
               Add Item
             </button>
@@ -666,7 +1006,7 @@ export default function MenuBuilderPage({
         </div>
       </div>
 
-      {/* Search Bar */}
+      {/* Search */}
       <div className="bg-white rounded-xl p-4 border border-gray-200 mb-6">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -675,7 +1015,7 @@ export default function MenuBuilderPage({
             placeholder="Search menu items..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-orange-500"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           />
         </div>
       </div>
@@ -684,68 +1024,47 @@ export default function MenuBuilderPage({
       {filteredItems && (
         <div className="bg-white rounded-xl border border-gray-200 mb-6">
           <div className="p-6 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Search Results ({filteredItems.length})
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-900">Search Results ({filteredItems.length})</h3>
           </div>
-          <div className="divide-y divide-gray-200">
-            {filteredItems.map((item) => (
-              <div key={item.id} className="p-4 hover:bg-gray-50 transition-colors">
-                <div className="flex items-center gap-4">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-16 h-16 rounded-lg object-cover"
-                  />
-                  <div className="flex-1">
-                    <div className="font-semibold text-gray-900">{item.name}</div>
-                    <div className="text-sm text-gray-500">{item.category}</div>
-                  </div>
-                  <div className="text-lg font-bold text-gray-900">${item.price}</div>
-                  <div className="flex gap-2">
-                    <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                      <Edit className="w-5 h-5 text-gray-600" />
-                    </button>
-                    <button className="p-2 hover:bg-red-50 rounded-lg transition-colors">
-                      <Trash2 className="w-5 h-5 text-red-600" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {filteredItems.map(item => <ItemCard key={item.id} item={item} />)}
           </div>
         </div>
       )}
 
-      {/* Categories */}
+      {/* Categories with Items */}
       {!filteredItems && (
         <div className="space-y-6">
-          {categories.map((category) => (
+          {/* Uncategorized Items */}
+          {uncategorizedItems.length > 0 && (
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="bg-gray-100 p-6">
+                <h2 className="text-xl font-bold text-gray-700">Uncategorized</h2>
+                <p className="text-gray-500 text-sm mt-1">{uncategorizedItems.length} items</p>
+              </div>
+              <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {uncategorizedItems.map(item => <ItemCard key={item.id} item={item} />)}
+              </div>
+            </div>
+          )}
+
+          {/* Categories */}
+          {itemsByCategory.map(category => (
             <div key={category.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              {/* Category Header */}
               <div className="bg-gradient-to-r from-orange-400 to-orange-500 p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-2xl font-bold text-white">{category.name}</h2>
-                    <p className="text-orange-100 text-sm mt-1">
-                      {category._count?.items || category.items.length} items
-                    </p>
+                    <p className="text-orange-100 text-sm mt-1">{category.items.length} items</p>
                   </div>
                   <div className="flex gap-2">
-                    <button 
-                      onClick={() => {
-                        setEditingCategory({
-                          id: category.id,
-                          name: category.name,
-                          image: category.image || '',
-                        });
-                        setShowEditCategory(true);
-                      }}
+                    <button
+                      onClick={() => { setEditingCategory(category); setShowEditCategory(true); }}
                       className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
                     >
                       <Edit className="w-5 h-5 text-white" />
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleDeleteCategory(category.id, category.name)}
                       className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
                     >
@@ -754,144 +1073,41 @@ export default function MenuBuilderPage({
                   </div>
                 </div>
               </div>
-
-              {/* Items Grid */}
-              <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {category.items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all group"
-                  >
-                    <div className="relative">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-48 object-cover"
-                      />
-                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                        <button className="p-2 bg-white rounded-lg shadow-lg hover:bg-gray-50">
-                          <Edit className="w-4 h-4 text-gray-700" />
-                        </button>
-                        <button className="p-2 bg-white rounded-lg shadow-lg hover:bg-red-50">
-                          <Trash2 className="w-4 h-4 text-red-600" />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-semibold text-gray-900 mb-2">{item.name}</h3>
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-xl font-bold text-orange-600">${item.price}</span>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {item.tags.map((tag, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {/* Add Item Card */}
+              <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {category.items.map(item => <ItemCard key={item.id} item={item} />)}
                 <button
-                  onClick={() => setShowAddItem(true)}
-                  className="border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-all h-[340px] flex flex-col items-center justify-center gap-3 text-gray-500 hover:text-orange-600"
+                  onClick={() => { resetItemForm(); setItemForm(f => ({ ...f, categoryId: category.id })); setShowAddItem(true); }}
+                  className="border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-all min-h-[280px] flex flex-col items-center justify-center gap-3 text-gray-500 hover:text-orange-600"
                 >
                   <Plus className="w-12 h-12" />
-                  <span className="font-medium">Add New Item</span>
+                  <span className="font-medium">Add Item</span>
                 </button>
               </div>
             </div>
           ))}
-        </div>
-      )}
 
-      {/* Add Item Modal */}
-      {showAddItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-2xl w-full p-6">
-            <h3 className="text-2xl font-bold text-gray-900 mb-6">Add New Menu Item</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Item Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g., Avocado Toast"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-orange-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                  <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-orange-500">
-                    {categories.map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Price</label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder="12.99"
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-orange-500"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                <textarea
-                  rows={3}
-                  placeholder="Describe your item..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-orange-500 resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
-                <input
-                  type="text"
-                  placeholder="Vegan, Gluten-Free, Popular..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-orange-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Image</label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-orange-500 transition-colors cursor-pointer">
-                  <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
-                  <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 5MB</p>
-                </div>
+          {/* Empty state */}
+          {categories.length === 0 && items.length === 0 && (
+            <div className="bg-white rounded-xl border-2 border-dashed border-gray-300 p-12 text-center">
+              <Folder className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No menu items yet</h3>
+              <p className="text-gray-500 mb-6">Start by creating categories and adding items to your menu</p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => setShowAddCategory(true)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                >
+                  Create Category
+                </button>
+                <button
+                  onClick={() => { resetItemForm(); setShowAddItem(true); }}
+                  className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
+                >
+                  Add First Item
+                </button>
               </div>
             </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowAddItem(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => setShowAddItem(false)}
-                className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-              >
-                Add Item
-              </button>
-            </div>
-          </div>
+          )}
         </div>
       )}
     </div>

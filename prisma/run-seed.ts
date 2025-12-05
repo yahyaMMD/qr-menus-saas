@@ -35,37 +35,39 @@ async function main() {
     if (fnLength === 1) {
       // Simple seed that only needs prisma
       await seedFn(prisma);
-    } else if (fnLength === 2) {
+    } else if (fnLength >= 2) {
       // Seed that needs additional data - fetch required data first
       console.log("📦 Fetching required data...");
       
-      if (seedName.includes("tags") || seedName.includes("categories") || seedName.includes("items")) {
+      if (seedName.includes("items")) {
+        // Items seed needs types, categories, and tags
+        const types = await prisma.type.findMany();
+        const categories = await prisma.category.findMany();
+        const tags = await prisma.tag.findMany();
+        console.log(`   Found ${types.length} types, ${categories.length} categories, ${tags.length} tags`);
+        await seedFn(prisma, { types, categories, tags });
+      } else if (seedName.includes("tags") || seedName.includes("categories") || seedName.includes("types")) {
         const menus = await prisma.menu.findMany();
+        console.log(`   Found ${menus.length} menus`);
         await seedFn(prisma, menus);
       } else if (seedName.includes("menus")) {
         const profiles = await prisma.profile.findMany();
+        console.log(`   Found ${profiles.length} profiles`);
         await seedFn(prisma, profiles);
       } else if (seedName.includes("profiles")) {
         const users = await prisma.user.findMany();
+        console.log(`   Found ${users.length} users`);
         await seedFn(prisma, users);
       } else if (seedName.includes("feedbacks")) {
         const profiles = await prisma.profile.findMany();
+        console.log(`   Found ${profiles.length} profiles`);
         await seedFn(prisma, profiles);
       } else if (seedName.includes("analytics")) {
         const menus = await prisma.menu.findMany();
+        console.log(`   Found ${menus.length} menus`);
         await seedFn(prisma, menus);
       } else {
         // Try with just prisma
-        await seedFn(prisma);
-      }
-    } else if (fnLength >= 3) {
-      // Seed that needs multiple dependencies
-      if (seedName.includes("items")) {
-        const menus = await prisma.menu.findMany();
-        const categories = await prisma.category.findMany();
-        const tags = await prisma.tag.findMany();
-        await seedFn(prisma, menus, { categories, tags });
-      } else {
         await seedFn(prisma);
       }
     }

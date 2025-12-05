@@ -6,6 +6,18 @@ interface ItemsParams {
   tags: Tag[];
 }
 
+interface ItemData {
+  name: string;
+  description: string;
+  image: string;
+  price: number;
+  originalPrice?: number | null;
+  isPromotion?: boolean;
+  categoryId?: string;
+  menuId?: string;
+  tagIds: string[];
+}
+
 export default async function items(prisma: PrismaClient, { types, categories, tags }: ItemsParams) {
   console.log("🍽 Creating menu items...");
 
@@ -20,13 +32,15 @@ export default async function items(prisma: PrismaClient, { types, categories, t
   const pizzaCategory = categories.find(c => c.name === "Pizza");
   const antipastiCategory = categories.find(c => c.name === "Antipasti");
 
-  const italianItems = [
+  const italianItems: ItemData[] = [
     // Antipasti
     {
       name: "Bruschetta al Pomodoro",
       description: "Toasted bread topped with fresh tomatoes, basil, garlic, and extra virgin olive oil",
       image: "https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?w=800&h=600&fit=crop",
-      price: 450,
+      price: 350,
+      originalPrice: 450,
+      isPromotion: true, // ON SALE!
       categoryId: antipastiCategory?.id,
       menuId: antipastiCategory?.menuId,
       tagIds: [vegetarianTag?.id, popularTag?.id].filter(Boolean) as string[]
@@ -36,6 +50,8 @@ export default async function items(prisma: PrismaClient, { types, categories, t
       description: "Fresh mozzarella, tomatoes, and basil with balsamic glaze",
       image: "https://images.unsplash.com/photo-1592417817098-8fd3d9eb14a5?w=800&h=600&fit=crop",
       price: 550,
+      originalPrice: null,
+      isPromotion: false,
       categoryId: antipastiCategory?.id,
       menuId: antipastiCategory?.menuId,
       tagIds: [vegetarianTag?.id].filter(Boolean) as string[]
@@ -46,6 +62,8 @@ export default async function items(prisma: PrismaClient, { types, categories, t
       description: "Classic Roman pasta with eggs, pecorino cheese, guanciale, and black pepper",
       image: "https://images.unsplash.com/photo-1612874742237-6526221588e3?w=800&h=600&fit=crop",
       price: 950,
+      originalPrice: null,
+      isPromotion: false,
       categoryId: pastaCategory?.id,
       menuId: pastaCategory?.menuId,
       tagIds: [popularTag?.id, chefSpecialTag?.id].filter(Boolean) as string[]
@@ -54,7 +72,9 @@ export default async function items(prisma: PrismaClient, { types, categories, t
       name: "Penne Arrabbiata",
       description: "Spicy tomato sauce with garlic and red chili peppers",
       image: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=800&h=600&fit=crop",
-      price: 750,
+      price: 600,
+      originalPrice: 750,
+      isPromotion: true, // ON SALE!
       categoryId: pastaCategory?.id,
       menuId: pastaCategory?.menuId,
       tagIds: [spicyTag?.id, veganTag?.id].filter(Boolean) as string[]
@@ -64,6 +84,8 @@ export default async function items(prisma: PrismaClient, { types, categories, t
       description: "Creamy parmesan sauce with fresh fettuccine pasta",
       image: "https://images.unsplash.com/photo-1645112411341-6c4fd023714a?w=800&h=600&fit=crop",
       price: 850,
+      originalPrice: null,
+      isPromotion: false,
       categoryId: pastaCategory?.id,
       menuId: pastaCategory?.menuId,
       tagIds: [vegetarianTag?.id].filter(Boolean) as string[]
@@ -73,7 +95,9 @@ export default async function items(prisma: PrismaClient, { types, categories, t
       name: "Margherita Pizza",
       description: "San Marzano tomato sauce, fresh mozzarella, basil, and extra virgin olive oil",
       image: "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=800&h=600&fit=crop",
-      price: 800,
+      price: 650,
+      originalPrice: 800,
+      isPromotion: true, // ON SALE!
       categoryId: pizzaCategory?.id,
       menuId: pizzaCategory?.menuId,
       tagIds: [popularTag?.id, vegetarianTag?.id].filter(Boolean) as string[]
@@ -83,6 +107,8 @@ export default async function items(prisma: PrismaClient, { types, categories, t
       description: "Four cheese pizza: mozzarella, gorgonzola, parmesan, and fontina",
       image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800&h=600&fit=crop",
       price: 950,
+      originalPrice: null,
+      isPromotion: false,
       categoryId: pizzaCategory?.id,
       menuId: pizzaCategory?.menuId,
       tagIds: [vegetarianTag?.id, chefSpecialTag?.id].filter(Boolean) as string[]
@@ -92,6 +118,8 @@ export default async function items(prisma: PrismaClient, { types, categories, t
       description: "Tomato sauce, mozzarella, and premium pepperoni",
       image: "https://images.unsplash.com/photo-1628840042765-356cda07504e?w=800&h=600&fit=crop",
       price: 900,
+      originalPrice: null,
+      isPromotion: false,
       categoryId: pizzaCategory?.id,
       menuId: pizzaCategory?.menuId,
       tagIds: [popularTag?.id].filter(Boolean) as string[]
@@ -103,13 +131,15 @@ export default async function items(prisma: PrismaClient, { types, categories, t
   const makiCategory = categories.find(c => c.name === "Maki Rolls");
   const sashimiCategory = categories.find(c => c.name === "Sashimi");
 
-  const sushiItems = [
+  const sushiItems: ItemData[] = [
     // Nigiri
     {
       name: "Salmon Nigiri",
       description: "Fresh salmon over seasoned sushi rice (2 pieces)",
       image: "https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=800&h=600&fit=crop",
-      price: 550,
+      price: 450,
+      originalPrice: 550,
+      isPromotion: true, // ON SALE!
       categoryId: nigiriCategory?.id,
       menuId: nigiriCategory?.menuId,
       tagIds: [popularTag?.id].filter(Boolean) as string[]
@@ -119,6 +149,8 @@ export default async function items(prisma: PrismaClient, { types, categories, t
       description: "Premium bluefin tuna over sushi rice (2 pieces)",
       image: "https://images.unsplash.com/photo-1563612116625-3012372fccce?w=800&h=600&fit=crop",
       price: 650,
+      originalPrice: null,
+      isPromotion: false,
       categoryId: nigiriCategory?.id,
       menuId: nigiriCategory?.menuId,
       tagIds: [chefSpecialTag?.id].filter(Boolean) as string[]
@@ -128,9 +160,11 @@ export default async function items(prisma: PrismaClient, { types, categories, t
       description: "Grilled freshwater eel with sweet soy glaze (2 pieces)",
       image: "https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?w=800&h=600&fit=crop",
       price: 700,
+      originalPrice: null,
+      isPromotion: false,
       categoryId: nigiriCategory?.id,
       menuId: nigiriCategory?.menuId,
-      tagIds: [].filter(Boolean) as string[]
+      tagIds: [] as string[]
     },
     // Maki Rolls
     {
@@ -138,6 +172,8 @@ export default async function items(prisma: PrismaClient, { types, categories, t
       description: "Crab, avocado, cucumber, and tobiko",
       image: "https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=800&h=600&fit=crop",
       price: 850,
+      originalPrice: null,
+      isPromotion: false,
       categoryId: makiCategory?.id,
       menuId: makiCategory?.menuId,
       tagIds: [popularTag?.id].filter(Boolean) as string[]
@@ -146,7 +182,9 @@ export default async function items(prisma: PrismaClient, { types, categories, t
       name: "Spicy Tuna Roll",
       description: "Fresh tuna with spicy mayo and cucumber",
       image: "https://images.unsplash.com/photo-1617196035491-79ac2e9eb9f3?w=800&h=600&fit=crop",
-      price: 950,
+      price: 750,
+      originalPrice: 950,
+      isPromotion: true, // ON SALE!
       categoryId: makiCategory?.id,
       menuId: makiCategory?.menuId,
       tagIds: [spicyTag?.id, popularTag?.id].filter(Boolean) as string[]
@@ -156,6 +194,8 @@ export default async function items(prisma: PrismaClient, { types, categories, t
       description: "Shrimp tempura, cucumber, topped with avocado and eel sauce",
       image: "https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=800&h=600&fit=crop",
       price: 1200,
+      originalPrice: null,
+      isPromotion: false,
       categoryId: makiCategory?.id,
       menuId: makiCategory?.menuId,
       tagIds: [chefSpecialTag?.id].filter(Boolean) as string[]
@@ -166,6 +206,8 @@ export default async function items(prisma: PrismaClient, { types, categories, t
       description: "Fresh sliced salmon (5 pieces)",
       image: "https://images.unsplash.com/photo-1580822184713-fc5400e7fe10?w=800&h=600&fit=crop",
       price: 900,
+      originalPrice: null,
+      isPromotion: false,
       categoryId: sashimiCategory?.id,
       menuId: sashimiCategory?.menuId,
       tagIds: [popularTag?.id].filter(Boolean) as string[]
@@ -175,6 +217,8 @@ export default async function items(prisma: PrismaClient, { types, categories, t
       description: "Premium tuna, thinly sliced (5 pieces)",
       image: "https://images.unsplash.com/photo-1617196034183-421b4917c92d?w=800&h=600&fit=crop",
       price: 1000,
+      originalPrice: null,
+      isPromotion: false,
       categoryId: sashimiCategory?.id,
       menuId: sashimiCategory?.menuId,
       tagIds: [chefSpecialTag?.id].filter(Boolean) as string[]
@@ -186,13 +230,15 @@ export default async function items(prisma: PrismaClient, { types, categories, t
   const chickenBurgerCategory = categories.find(c => c.name === "Chicken Burgers");
   const veggieCategory = categories.find(c => c.name === "Vegetarian Options");
 
-  const burgerItems = [
+  const burgerItems: ItemData[] = [
     // Beef Burgers
     {
       name: "Classic Cheeseburger",
       description: "100% beef patty, cheddar cheese, lettuce, tomato, onion, and special sauce",
       image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&h=600&fit=crop",
-      price: 750,
+      price: 600,
+      originalPrice: 750,
+      isPromotion: true, // ON SALE!
       categoryId: beefBurgerCategory?.id,
       menuId: beefBurgerCategory?.menuId,
       tagIds: [popularTag?.id].filter(Boolean) as string[]
@@ -202,6 +248,8 @@ export default async function items(prisma: PrismaClient, { types, categories, t
       description: "Double beef patties, crispy bacon, BBQ sauce, cheddar, and onion rings",
       image: "https://images.unsplash.com/photo-1553979459-d2229ba7433b?w=800&h=600&fit=crop",
       price: 950,
+      originalPrice: null,
+      isPromotion: false,
       categoryId: beefBurgerCategory?.id,
       menuId: beefBurgerCategory?.menuId,
       tagIds: [chefSpecialTag?.id, popularTag?.id].filter(Boolean) as string[]
@@ -211,9 +259,11 @@ export default async function items(prisma: PrismaClient, { types, categories, t
       description: "Beef patty topped with sautéed mushrooms and Swiss cheese",
       image: "https://images.unsplash.com/photo-1572448862527-d3c904757de6?w=800&h=600&fit=crop",
       price: 850,
+      originalPrice: null,
+      isPromotion: false,
       categoryId: beefBurgerCategory?.id,
       menuId: beefBurgerCategory?.menuId,
-      tagIds: [].filter(Boolean) as string[]
+      tagIds: [] as string[]
     },
     // Chicken Burgers
     {
@@ -221,6 +271,8 @@ export default async function items(prisma: PrismaClient, { types, categories, t
       description: "Breaded chicken breast, lettuce, mayo, and pickles",
       image: "https://images.unsplash.com/photo-1606755962773-d324e0a13086?w=800&h=600&fit=crop",
       price: 700,
+      originalPrice: null,
+      isPromotion: false,
       categoryId: chickenBurgerCategory?.id,
       menuId: chickenBurgerCategory?.menuId,
       tagIds: [popularTag?.id].filter(Boolean) as string[]
@@ -229,7 +281,9 @@ export default async function items(prisma: PrismaClient, { types, categories, t
       name: "Spicy Chicken Burger",
       description: "Grilled spicy chicken, jalapeños, pepper jack cheese, and chipotle mayo",
       image: "https://images.unsplash.com/photo-1619360082247-7938c57c43b5?w=800&h=600&fit=crop",
-      price: 750,
+      price: 550,
+      originalPrice: 750,
+      isPromotion: true, // ON SALE!
       categoryId: chickenBurgerCategory?.id,
       menuId: chickenBurgerCategory?.menuId,
       tagIds: [spicyTag?.id].filter(Boolean) as string[]
@@ -240,6 +294,8 @@ export default async function items(prisma: PrismaClient, { types, categories, t
       description: "Plant-based patty, avocado, lettuce, tomato, and special sauce",
       image: "https://images.unsplash.com/photo-1520072959219-c595dc870360?w=800&h=600&fit=crop",
       price: 650,
+      originalPrice: null,
+      isPromotion: false,
       categoryId: veggieCategory?.id,
       menuId: veggieCategory?.menuId,
       tagIds: [vegetarianTag?.id, veganTag?.id].filter(Boolean) as string[]
@@ -249,6 +305,8 @@ export default async function items(prisma: PrismaClient, { types, categories, t
       description: "Grilled portobello mushroom cap with roasted peppers and pesto",
       image: "https://images.unsplash.com/photo-1585238342024-78d387f4a707?w=800&h=600&fit=crop",
       price: 700,
+      originalPrice: null,
+      isPromotion: false,
       categoryId: veggieCategory?.id,
       menuId: veggieCategory?.menuId,
       tagIds: [vegetarianTag?.id, chefSpecialTag?.id].filter(Boolean) as string[]
@@ -265,7 +323,14 @@ export default async function items(prisma: PrismaClient, { types, categories, t
 
     await prisma.item.create({
       data: {
-        ...rest,
+        name: rest.name,
+        description: rest.description,
+        image: rest.image,
+        price: rest.price,
+        originalPrice: rest.originalPrice || null,
+        isPromotion: rest.isPromotion || false,
+        categoryId: rest.categoryId || null,
+        menuId: rest.menuId,
         itemTags: {
           create: tagIds.map(id => ({ tagId: id }))
         }
@@ -273,5 +338,5 @@ export default async function items(prisma: PrismaClient, { types, categories, t
     });
   }
 
-  console.log(`🍽 Created ${allItems.length} menu items.`);
+  console.log(`🍽 Created ${allItems.length} menu items (including ${allItems.filter(i => i.isPromotion).length} promotional items).`);
 }
