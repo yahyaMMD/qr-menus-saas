@@ -37,6 +37,22 @@ export interface Menu {
   id: string;
   logoUrl: string;
   name: string;
+  description?: string | null;
+}
+
+export interface LanguageInfo {
+  code: string;
+  name: string;
+  nativeName: string;
+  direction: 'ltr' | 'rtl';
+  flag: string;
+}
+
+export interface LanguagesData {
+  current: string;
+  default: string;
+  supported: string[];
+  availableLanguages: LanguageInfo[];
 }
 
 export interface MenuData {
@@ -45,6 +61,7 @@ export interface MenuData {
   types: Type[];
   categories: Category[];
   tags: Tag[];
+  languages?: LanguagesData;
 }
 
 export interface Filters {

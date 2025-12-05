@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { SUPPORTED_LANGUAGES } from '@/lib/languages';
 
 // Public API - no authentication required
 export async function GET(
@@ -7,6 +8,8 @@ export async function GET(
   { params }: { params: Promise<{ menuId: string }> }
 ) {
   const { menuId } = await params;
+  const { searchParams } = new URL(request.url);
+  const requestedLang = searchParams.get('lang');
 
   try {
     // Fetch menu with all related data
@@ -45,6 +48,7 @@ export async function GET(
           },
           orderBy: { name: 'asc' },
         },
+        translations: true,
       },
     });
 
@@ -63,11 +67,32 @@ export async function GET(
       );
     }
 
-    // Transform items to include tag IDs as flat array
+    // Determine current language
+    const currentLang = requestedLang && menu.supportedLanguages.includes(requestedLang) 
+      ? requestedLang 
+      : menu.defaultLanguage;
+
+    // Create translation lookup map
+    const translationMap = new Map<string, string>();
+    for (const t of menu.translations) {
+      if (t.languageCode === currentLang) {
+        const key = `${t.entityType}:${t.entityId}:${t.field}`;
+        translationMap.set(key, t.value);
+      }
+    }
+
+    // Helper to get translated value
+    const getTranslated = (entityType: string, entityId: string, field: string, defaultValue: string | null) => {
+      if (currentLang === menu.defaultLanguage) return defaultValue;
+      const key = `${entityType}:${entityId}:${field}`;
+      return translationMap.get(key) || defaultValue;
+    };
+
+    // Transform items with translations
     const transformedItems = menu.items.map(item => ({
       id: item.id,
-      name: item.name,
-      description: item.description,
+      name: getTranslated('item', item.id, 'name', item.name) || item.name,
+      description: getTranslated('item', item.id, 'description', item.description),
       image: item.image,
       categoryId: item.categoryId,
       typeId: item.typeId,
@@ -78,13 +103,13 @@ export async function GET(
       tags: item.itemTags.map(it => it.tagId),
     }));
 
-    // Format response
+    // Format response with translations
     const response = {
       menu: {
         id: menu.id,
-        name: menu.name,
+        name: getTranslated('menu', menu.id, 'name', menu.name) || menu.name,
         logoUrl: menu.profile.logo || '/placeholder-logo.png',
-        description: menu.description,
+        description: getTranslated('menu', menu.id, 'description', menu.description),
       },
       restaurant: {
         id: menu.profile.id,
@@ -99,22 +124,29 @@ export async function GET(
       items: transformedItems,
       categories: menu.categories.map(c => ({
         id: c.id,
-        name: c.name,
+        name: getTranslated('category', c.id, 'name', c.name) || c.name,
         image: c.image,
         menuId: c.menuId,
       })),
       types: menu.types.map(t => ({
         id: t.id,
-        name: t.name,
+        name: getTranslated('type', t.id, 'name', t.name) || t.name,
         image: t.image,
         menuId: t.menuId,
       })),
       tags: menu.tags.map(t => ({
         id: t.id,
-        name: t.name,
+        name: getTranslated('tag', t.id, 'name', t.name) || t.name,
         color: t.color,
         menuId: t.menuId,
       })),
+      // Language info for frontend
+      languages: {
+        current: currentLang,
+        default: menu.defaultLanguage,
+        supported: menu.supportedLanguages,
+        availableLanguages: SUPPORTED_LANGUAGES.filter(l => menu.supportedLanguages.includes(l.code)),
+      },
     };
 
     // Track scan (analytics)

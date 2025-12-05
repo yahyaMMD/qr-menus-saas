@@ -18,10 +18,14 @@ import {
   Tag as TagIcon,
   Percent,
   X,
-  Loader2
+  Loader2,
+  Globe,
+  Languages,
+  ChevronRight
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getErrorPagePath } from '@/lib/error-redirect';
+import { SUPPORTED_LANGUAGES, Language as LanguageType } from '@/lib/languages';
 
 interface Tag {
   id: string;
@@ -60,10 +64,21 @@ interface MenuData {
   id: string;
   name: string;
   description?: string | null;
+  defaultLanguage?: string;
+  supportedLanguages?: string[];
   profile: {
     id: string;
     name: string;
   };
+}
+
+interface Translation {
+  id: string;
+  entityType: string;
+  entityId: string;
+  languageCode: string;
+  field: string;
+  value: string;
 }
 
 export default function MenuBuilderPage({ 
@@ -79,6 +94,7 @@ export default function MenuBuilderPage({
   const [types, setTypes] = useState<Type[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [items, setItems] = useState<Item[]>([]);
+  const [translations, setTranslations] = useState<Translation[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -89,6 +105,9 @@ export default function MenuBuilderPage({
   const [showEditCategory, setShowEditCategory] = useState(false);
   const [showAddTag, setShowAddTag] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
+  const [showLanguagesModal, setShowLanguagesModal] = useState(false);
+  const [showTranslationModal, setShowTranslationModal] = useState(false);
+  const [translatingEntity, setTranslatingEntity] = useState<{type: string; id: string; name: string} | null>(null);
   
   const [qrCodeSvg, setQrCodeSvg] = useState<string>('');
   const [isLoadingQR, setIsLoadingQR] = useState(false);
@@ -143,13 +162,14 @@ export default function MenuBuilderPage({
         setLoading(true);
         const headers = { Authorization: `Bearer ${token}` };
 
-        // Fetch menu details, categories, items, tags, types in parallel
-        const [menuRes, categoriesRes, itemsRes, tagsRes, typesRes] = await Promise.all([
+        // Fetch menu details, categories, items, tags, types, translations in parallel
+        const [menuRes, categoriesRes, itemsRes, tagsRes, typesRes, translationsRes] = await Promise.all([
           fetch(`/api/menus/${menuId}`, { headers }),
           fetch(`/api/menus/${menuId}/categories`, { headers }),
           fetch(`/api/menus/${menuId}/items`, { headers }),
           fetch(`/api/menus/${menuId}/tags`, { headers }),
           fetch(`/api/menus/${menuId}/types`, { headers }),
+          fetch(`/api/menus/${menuId}/translations`, { headers }),
         ]);
 
         // Check for auth errors
@@ -163,12 +183,13 @@ export default function MenuBuilderPage({
           }
         }
 
-        const [menuData, categoriesData, itemsData, tagsData, typesData] = await Promise.all([
+        const [menuData, categoriesData, itemsData, tagsData, typesData, translationsData] = await Promise.all([
           menuRes.json(),
           categoriesRes.json(),
           itemsRes.json(),
           tagsRes.json(),
           typesRes.json(),
+          translationsRes.json(),
         ]);
 
         setMenu(menuData);
@@ -176,6 +197,7 @@ export default function MenuBuilderPage({
         setItems(itemsData.items || []);
         setTags(tagsData.tags || []);
         setTypes(typesData.types || []);
+        setTranslations(translationsData.translations || []);
       } catch (error) {
         console.error('Error fetching menu data:', error);
       } finally {
@@ -462,6 +484,75 @@ export default function MenuBuilderPage({
     navigator.clipboard.writeText(menuUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Language management
+  const handleUpdateLanguages = async (defaultLang: string, supportedLangs: string[]) => {
+    const token = getToken();
+    setSaving(true);
+
+    try {
+      const response = await fetch(`/api/menus/${menuId}/languages`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ defaultLanguage: defaultLang, supportedLanguages: supportedLangs }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setMenu(prev => prev ? { ...prev, defaultLanguage: data.defaultLanguage, supportedLanguages: data.supportedLanguages } : null);
+        setShowLanguagesModal(false);
+      } else {
+        alert(data.error || 'Failed to update languages');
+      }
+    } catch (error) {
+      console.error('Update languages error:', error);
+      alert('Failed to update languages');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveTranslation = async (entityType: string, entityId: string, languageCode: string, field: string, value: string) => {
+    const token = getToken();
+
+    try {
+      const response = await fetch(`/api/menus/${menuId}/translations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ entityType, entityId, languageCode, field, value }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        // Update local translations
+        setTranslations(prev => {
+          const filtered = prev.filter(t => 
+            !(t.entityType === entityType && t.entityId === entityId && t.languageCode === languageCode && t.field === field)
+          );
+          return [...filtered, data.translation];
+        });
+        return true;
+      } else {
+        alert(data.error || 'Failed to save translation');
+        return false;
+      }
+    } catch (error) {
+      console.error('Save translation error:', error);
+      alert('Failed to save translation');
+      return false;
+    }
+  };
+
+  const getTranslation = (entityType: string, entityId: string, languageCode: string, field: string) => {
+    return translations.find(t => 
+      t.entityType === entityType && t.entityId === entityId && t.languageCode === languageCode && t.field === field
+    )?.value || '';
+  };
+
+  const openTranslationModal = (type: string, id: string, name: string) => {
+    setTranslatingEntity({ type, id, name });
+    setShowTranslationModal(true);
   };
 
   const handlePrintQR = () => {
@@ -900,6 +991,271 @@ export default function MenuBuilderPage({
     </div>
   );
 
+  // Languages Modal
+  const LanguagesModal = () => {
+    const [selectedDefault, setSelectedDefault] = useState(menu?.defaultLanguage || 'en');
+    const [selectedSupported, setSelectedSupported] = useState<string[]>(menu?.supportedLanguages || ['en']);
+
+    const toggleLanguage = (code: string) => {
+      if (selectedSupported.includes(code)) {
+        if (selectedSupported.length > 1) {
+          const newSupported = selectedSupported.filter(c => c !== code);
+          setSelectedSupported(newSupported);
+          if (selectedDefault === code) {
+            setSelectedDefault(newSupported[0]);
+          }
+        }
+      } else {
+        setSelectedSupported([...selectedSupported, code]);
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Languages className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Menu Languages</h3>
+                <p className="text-sm text-gray-500">Configure multilingual support for international visitors</p>
+              </div>
+            </div>
+            <button onClick={() => setShowLanguagesModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
+
+          <div className="p-6 space-y-6">
+            {/* Default Language */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">Default Language</label>
+              <p className="text-xs text-gray-500 mb-3">This is the primary language for your menu content</p>
+              <select
+                value={selectedDefault}
+                onChange={(e) => {
+                  setSelectedDefault(e.target.value);
+                  if (!selectedSupported.includes(e.target.value)) {
+                    setSelectedSupported([...selectedSupported, e.target.value]);
+                  }
+                }}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                {SUPPORTED_LANGUAGES.map(lang => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.flag} {lang.name} ({lang.nativeName})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Supported Languages */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-3">Supported Languages</label>
+              <p className="text-xs text-gray-500 mb-3">Select languages your menu will be available in</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {SUPPORTED_LANGUAGES.map(lang => {
+                  const isSelected = selectedSupported.includes(lang.code);
+                  const isDefault = selectedDefault === lang.code;
+                  return (
+                    <button
+                      key={lang.code}
+                      onClick={() => toggleLanguage(lang.code)}
+                      disabled={isDefault}
+                      className={`p-3 rounded-lg border-2 transition-all text-left ${
+                        isSelected
+                          ? 'border-orange-500 bg-orange-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      } ${isDefault ? 'opacity-75 cursor-not-allowed' : ''}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">{lang.flag}</span>
+                        <div>
+                          <p className="font-medium text-sm text-gray-900">{lang.nativeName}</p>
+                          <p className="text-xs text-gray-500">{lang.name}</p>
+                        </div>
+                        {isDefault && (
+                          <span className="ml-auto text-xs bg-orange-500 text-white px-2 py-0.5 rounded-full">Default</span>
+                        )}
+                        {isSelected && !isDefault && (
+                          <span className="ml-auto text-orange-500">✓</span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Info */}
+            <div className="bg-blue-50 rounded-lg p-4">
+              <p className="text-sm text-blue-900">
+                <strong>💡 Tip:</strong> After adding languages, click the translate icon (🌐) on items and categories to add translations.
+              </p>
+            </div>
+          </div>
+
+          <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex gap-3">
+            <button
+              onClick={() => setShowLanguagesModal(false)}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => handleUpdateLanguages(selectedDefault, selectedSupported)}
+              disabled={saving}
+              className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+              Save Languages
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Translation Modal
+  const TranslationModal = () => {
+    const [localTranslations, setLocalTranslations] = useState<Record<string, Record<string, string>>>({});
+    const [savingField, setSavingField] = useState<string | null>(null);
+
+    const supportedLangs = menu?.supportedLanguages?.filter(l => l !== menu?.defaultLanguage) || [];
+    const fields = translatingEntity?.type === 'item' ? ['name', 'description'] : ['name'];
+
+    useEffect(() => {
+      if (translatingEntity) {
+        const initial: Record<string, Record<string, string>> = {};
+        supportedLangs.forEach(lang => {
+          initial[lang] = {};
+          fields.forEach(field => {
+            initial[lang][field] = getTranslation(translatingEntity.type, translatingEntity.id, lang, field);
+          });
+        });
+        setLocalTranslations(initial);
+      }
+    }, [translatingEntity]);
+
+    const handleSave = async (lang: string, field: string) => {
+      if (!translatingEntity) return;
+      setSavingField(`${lang}-${field}`);
+      const value = localTranslations[lang]?.[field] || '';
+      await handleSaveTranslation(translatingEntity.type, translatingEntity.id, lang, field, value);
+      setSavingField(null);
+    };
+
+    if (!translatingEntity || supportedLangs.length === 0) {
+      return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6 text-center">
+            <Globe className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-gray-900 mb-2">No Languages Configured</h3>
+            <p className="text-gray-500 mb-4">Add more languages in Language Settings first.</p>
+            <button
+              onClick={() => { setShowTranslationModal(false); setShowLanguagesModal(true); }}
+              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
+            >
+              Configure Languages
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <Globe className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Translate: {translatingEntity.name}</h3>
+                <p className="text-sm text-gray-500 capitalize">{translatingEntity.type}</p>
+              </div>
+            </div>
+            <button onClick={() => setShowTranslationModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
+
+          <div className="p-6 space-y-6">
+            {supportedLangs.map(langCode => {
+              const lang = SUPPORTED_LANGUAGES.find(l => l.code === langCode);
+              if (!lang) return null;
+
+              return (
+                <div key={langCode} className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center gap-2">
+                    <span className="text-xl">{lang.flag}</span>
+                    <span className="font-medium text-gray-900">{lang.nativeName}</span>
+                    <span className="text-gray-500 text-sm">({lang.name})</span>
+                  </div>
+                  <div className="p-4 space-y-4">
+                    {fields.map(field => (
+                      <div key={field}>
+                        <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">{field}</label>
+                        {field === 'description' ? (
+                          <textarea
+                            rows={2}
+                            value={localTranslations[langCode]?.[field] || ''}
+                            onChange={(e) => setLocalTranslations(prev => ({
+                              ...prev,
+                              [langCode]: { ...prev[langCode], [field]: e.target.value }
+                            }))}
+                            placeholder={`Enter ${field} in ${lang.name}...`}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+                            dir={lang.direction}
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            value={localTranslations[langCode]?.[field] || ''}
+                            onChange={(e) => setLocalTranslations(prev => ({
+                              ...prev,
+                              [langCode]: { ...prev[langCode], [field]: e.target.value }
+                            }))}
+                            placeholder={`Enter ${field} in ${lang.name}...`}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                            dir={lang.direction}
+                          />
+                        )}
+                        <button
+                          onClick={() => handleSave(langCode, field)}
+                          disabled={savingField === `${langCode}-${field}`}
+                          className="mt-2 px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors disabled:opacity-50 flex items-center gap-1"
+                        >
+                          {savingField === `${langCode}-${field}` ? (
+                            <><Loader2 className="w-3 h-3 animate-spin" /> Saving...</>
+                          ) : (
+                            <><Check className="w-3 h-3" /> Save</>
+                          )}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6">
+            <button
+              onClick={() => setShowTranslationModal(false)}
+              className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Item Card Component
   const ItemCard = ({ item }: { item: Item }) => (
     <div className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all group bg-white">
@@ -918,6 +1274,11 @@ export default function MenuBuilderPage({
           </div>
         )}
         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+          {(menu?.supportedLanguages?.length || 0) > 1 && (
+            <button onClick={() => openTranslationModal('item', item.id, item.name)} className="p-2 bg-white rounded-lg shadow-lg hover:bg-blue-50" title="Translate">
+              <Globe className="w-4 h-4 text-blue-600" />
+            </button>
+          )}
           <button onClick={() => openEditItem(item)} className="p-2 bg-white rounded-lg shadow-lg hover:bg-gray-50">
             <Edit className="w-4 h-4 text-gray-700" />
           </button>
@@ -978,6 +1339,8 @@ export default function MenuBuilderPage({
       {showAddTag && <TagModal />}
       {showAddItem && <ItemModal />}
       {showEditItem && <ItemModal isEdit />}
+      {showLanguagesModal && <LanguagesModal />}
+      {showTranslationModal && <TranslationModal />}
 
       {/* Header */}
       <div className="mb-8">
@@ -991,9 +1354,16 @@ export default function MenuBuilderPage({
             <p className="text-gray-600">{menu?.profile?.name} • {menu?.name}</p>
           </div>
           <div className="flex gap-3">
+            <button onClick={() => setShowLanguagesModal(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+              <Languages className="w-5 h-5" />
+              <span className="hidden sm:inline">Languages</span>
+              {(menu?.supportedLanguages?.length || 1) > 1 && (
+                <span className="bg-white/20 px-1.5 py-0.5 rounded text-xs">{menu?.supportedLanguages?.length}</span>
+              )}
+            </button>
             <button onClick={handleGenerateQR} className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium">
               <QrCode className="w-5 h-5" />
-              QR Code
+              <span className="hidden sm:inline">QR Code</span>
             </button>
             <button onClick={() => setShowAddCategory(true)} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
               Add Category
@@ -1058,6 +1428,15 @@ export default function MenuBuilderPage({
                     <p className="text-orange-100 text-sm mt-1">{category.items.length} items</p>
                   </div>
                   <div className="flex gap-2">
+                    {(menu?.supportedLanguages?.length || 0) > 1 && (
+                      <button
+                        onClick={() => openTranslationModal('category', category.id, category.name)}
+                        className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
+                        title="Translate"
+                      >
+                        <Globe className="w-5 h-5 text-white" />
+                      </button>
+                    )}
                     <button
                       onClick={() => { setEditingCategory(category); setShowEditCategory(true); }}
                       className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"

@@ -45,20 +45,23 @@ model Profile {
 }
 
 model Menu {
-  id          String      @id @default(auto()) @map("_id") @db.ObjectId
-  profileId   String      @db.ObjectId
-  profile     Profile     @relation(fields: [profileId], references: [id])
-  name        String
-  description String?
-  types       Type[]
-  categories  Category[]
-  tags        Tag[]
-  items       Item[]
-  isActive    Boolean     @default(false)
-  analytics   Analytics[]
-  createdAt   DateTime    @default(now())
-  qrCodeUrl   String?
-  qrCodeSvg   String?
+  id                 String        @id @default(auto()) @map("_id") @db.ObjectId
+  profileId          String        @db.ObjectId
+  profile            Profile       @relation(fields: [profileId], references: [id])
+  name               String
+  description        String?
+  defaultLanguage    String        @default("en") // Default language code (en, fr, ar, etc.)
+  supportedLanguages String[]      @default(["en"]) // Array of supported language codes
+  types              Type[]
+  categories         Category[]
+  tags               Tag[]
+  items              Item[]
+  translations       Translation[]
+  isActive           Boolean       @default(false)
+  analytics          Analytics[]
+  createdAt          DateTime      @default(now())
+  qrCodeUrl          String?
+  qrCodeSvg          String?
 }
 
 model Type {
@@ -236,4 +239,20 @@ model SupportTicket {
 enum TicketStatus {
   OPEN
   RESOLVED
+}
+
+// Multilingual support - stores translations for menu items, categories, tags
+model Translation {
+  id           String @id @default(auto()) @map("_id") @db.ObjectId
+  menuId       String @db.ObjectId
+  menu         Menu   @relation(fields: [menuId], references: [id])
+  entityType   String // "item", "category", "tag", "type", "menu"
+  entityId     String // The ID of the item/category/tag being translated
+  languageCode String // ISO language code: "en", "fr", "ar", "es", etc.
+  field        String // The field being translated: "name", "description"
+  value        String // The translated text
+
+  @@unique([menuId, entityType, entityId, languageCode, field])
+  @@index([menuId, languageCode])
+  @@index([entityType, entityId])
 }
