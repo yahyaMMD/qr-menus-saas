@@ -9,9 +9,14 @@ export interface UserData {
   name: string;
   email: string;
   password: string;
+  phone?: string | null;
+  location?: string | null;
+  avatar?: string | null;
+  preferences?: Record<string, unknown> | null;
   role: Role;
   isActive: boolean;
   createdAt: Date;
+  updatedAt?: Date | null;
 }
 
 export interface RefreshTokenData {
@@ -30,9 +35,14 @@ export async function findUserByEmail(email: string): Promise<UserData | null> {
     name: user.name,
     email: user.email,
     password: user.password,
+    phone: user.phone,
+    location: user.location,
+    avatar: user.avatar,
+    preferences: user.preferences as Record<string, unknown> | null,
     role: user.role as Role,
     isActive: user.isActive,
     createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
   };
 }
 
@@ -44,9 +54,14 @@ export async function findUserById(id: string): Promise<UserData | null> {
     name: user.name,
     email: user.email,
     password: user.password,
+    phone: user.phone,
+    location: user.location,
+    avatar: user.avatar,
+    preferences: user.preferences as Record<string, unknown> | null,
     role: user.role as Role,
     isActive: user.isActive,
     createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
   };
 }
 
@@ -71,15 +86,20 @@ export async function createUser(data: {
     name: user.name,
     email: user.email,
     password: user.password,
+    phone: user.phone,
+    location: user.location,
+    avatar: user.avatar,
+    preferences: user.preferences as Record<string, unknown> | null,
     role: user.role as Role,
     isActive: user.isActive,
     createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
   };
 }
 
 export async function updateUser(
   id: string,
-  data: Partial<Pick<UserData, 'name' | 'email' | 'password' | 'isActive' | 'role'>>
+  data: Partial<Pick<UserData, 'name' | 'email' | 'password' | 'phone' | 'location' | 'avatar' | 'preferences' | 'isActive' | 'role'>>
 ): Promise<UserData> {
   const user = await prisma.user.update({
     where: { id },
@@ -91,9 +111,14 @@ export async function updateUser(
     name: user.name,
     email: user.email,
     password: user.password,
+    phone: user.phone,
+    location: user.location,
+    avatar: user.avatar,
+    preferences: user.preferences as Record<string, unknown> | null,
     role: user.role as Role,
     isActive: user.isActive,
     createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
   };
 }
 

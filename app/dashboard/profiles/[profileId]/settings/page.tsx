@@ -460,13 +460,15 @@ export default function ProfileSettingsPage({
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Restaurant Logo
                 </label>
-                <ImageUpload
-                  value={generalInfo.logo}
-                  onChange={(url) => setGeneralInfo({ ...generalInfo, logo: url || '' })}
-                  folder="qr-menus/logos"
-                  aspectRatio="square"
-                  placeholder="Upload restaurant logo"
-                />
+                <div className="max-w-[200px]">
+                  <ImageUpload
+                    value={generalInfo.logo}
+                    onChange={(url) => setGeneralInfo({ ...generalInfo, logo: url || '' })}
+                    folder="qr-menus/logos"
+                    aspectRatio="square"
+                    placeholder="Upload logo"
+                  />
+                </div>
               </div>
             </div>
 

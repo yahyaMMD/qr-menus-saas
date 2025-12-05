@@ -154,13 +154,15 @@ export const CreateRestaurantForm = () => {
           <label className="block text-sm font-medium text-gray-900 mb-2">
             Restaurant Logo
           </label>
-          <ImageUpload
-            value={formData.logo}
-            onChange={(url) => setFormData({ ...formData, logo: url })}
-            folder="qr-menus/logos"
-            aspectRatio="square"
-            placeholder="Upload your restaurant logo"
-          />
+          <div className="max-w-[200px]">
+            <ImageUpload
+              value={formData.logo}
+              onChange={(url) => setFormData({ ...formData, logo: url })}
+              folder="qr-menus/logos"
+              aspectRatio="square"
+              placeholder="Upload logo"
+            />
+          </div>
         </div>
 
         {/* Wilaya and Commune */}

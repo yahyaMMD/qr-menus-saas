@@ -12,6 +12,10 @@ model User {
   name          String
   email         String         @unique
   password      String
+  phone         String?
+  location      String?
+  avatar        String?
+  preferences   Json?          // { language, timezone, currency, dateFormat }
   role          Role           @default(USER)
   isActive      Boolean        @default(true)
   refreshTokens RefreshToken[]
@@ -19,7 +23,9 @@ model User {
   subscriptions Subscription[]
   payments      Payment[]
   tickets       SupportTicket[]
+  teamMembers   TeamMember[]
   createdAt     DateTime       @default(now())
+  updatedAt     DateTime?      @updatedAt
 }
 
 model Profile {
@@ -56,6 +62,7 @@ model TeamMember {
   invitedAt DateTime   @default(now())
   acceptedAt DateTime? // When they accepted the invitation (null if pending)
   userId    String?    @db.ObjectId // Linked user ID after they accept invitation
+  user      User?      @relation(fields: [userId], references: [id])
 
   @@unique([profileId, email])
   @@index([profileId])

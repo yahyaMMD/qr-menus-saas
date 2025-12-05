@@ -9,39 +9,41 @@ import {
   Bell, 
   CreditCard, 
   Globe, 
-  Shield,
   Save,
   Camera,
   Phone,
   MapPin,
   X,
   Check,
-  AlertCircle
+  AlertCircle,
+  CheckCircle,
+  Loader2
 } from 'lucide-react';
+// Profile Photo Upload Component with Camera Icon Overlay
+function ProfilePhotoUpload({ 
+  value, 
+  onChange, 
+  fallbackLetter 
+}: { 
+  value: string; 
+  onChange: (url: string | null) => void; 
+  fallbackLetter: string;
+}) {
+  const [isUploading, setIsUploading] = React.useState(false);
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
-export default function AccountSettingsPage() {
-  const [activeSection, setActiveSection] = useState('profile');
-  const [isSaving, setIsSaving] = useState(false);
-  const [showAddPaymentModal, setShowAddPaymentModal] = useState(false);
-  const [password, setPassword] = useState('');
-  const [passwordStrength, setPasswordStrength] = useState<'weak' | 'moderate' | 'strong' | null>(null);
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [profileData, setProfileData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    location: ''
-  });
+  const handleFile = async (file: File) => {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      alert('Invalid file type. Please upload JPG, PNG, WebP, or GIF.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File too large. Maximum size is 5MB.');
+      return;
+    }
 
-  const router = useRouter();
-
-  useEffect(() => {
-    fetchUserData();
-  }, []);
-
-  const fetchUserData = async () => {
+    setIsUploading(true);
     try {
       let token = localStorage.getItem('accessToken');
       if (!token) {
@@ -52,9 +54,159 @@ export default function AccountSettingsPage() {
         }
       }
 
-      const response = await fetch('/api/profiles', {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'qr-menus/avatars');
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Upload failed');
+      onChange(data.url);
+    } catch (err: any) {
+      console.error('Upload error:', err);
+      alert(err.message || 'Failed to upload image');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <div className="relative inline-block">
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+        onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+        className="hidden"
+        disabled={isUploading}
+      />
+      
+      {/* Photo */}
+      <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-gray-200">
+        {value ? (
+          <img src={value} alt="Profile" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold text-3xl">
+            {fallbackLetter}
+          </div>
+        )}
+      </div>
+
+      {/* Camera Button Overlay */}
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={isUploading}
+        className="absolute bottom-0 right-0 w-8 h-8 bg-orange-500 hover:bg-orange-600 text-white rounded-full flex items-center justify-center shadow-lg border-2 border-white transition-colors disabled:opacity-50"
+        title="Change photo"
+      >
+        {isUploading ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <Camera className="w-4 h-4" />
+        )}
+      </button>
+    </div>
+  );
+}
+
+interface UserPreferences {
+  language: string;
+  timezone: string;
+  currency: string;
+  dateFormat: string;
+  notifications: {
+    email: {
+      feedback: boolean;
+      menuScans: boolean;
+      subscription: boolean;
+      marketing: boolean;
+    };
+    push: {
+      feedback: boolean;
+      system: boolean;
+    };
+  };
+}
+
+export default function AccountSettingsPage() {
+  const [activeSection, setActiveSection] = useState('profile');
+  const [isSaving, setIsSaving] = useState(false);
+  const [showAddPaymentModal, setShowAddPaymentModal] = useState(false);
+  const [password, setPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState<'weak' | 'moderate' | 'strong' | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [profileData, setProfileData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    location: '',
+    avatar: ''
+  });
+  const [preferences, setPreferences] = useState<UserPreferences>({
+    language: 'en',
+    timezone: 'Africa/Algiers',
+    currency: 'DZD',
+    dateFormat: 'DD/MM/YYYY',
+    notifications: {
+      email: {
+        feedback: true,
+        menuScans: true,
+        subscription: true,
+        marketing: false,
+      },
+      push: {
+        feedback: true,
+        system: true,
+      },
+    },
+  });
+
+  const router = useRouter();
+
+  const getToken = () => {
+    let token = localStorage.getItem('accessToken');
+    if (!token) {
+      const authRaw = localStorage.getItem('auth');
+      if (authRaw) {
+        try {
+          const auth = JSON.parse(authRaw);
+          token = auth?.tokens?.accessToken;
+        } catch (e) {
+          console.error('Failed to parse auth', e);
+        }
+      }
+    }
+    return token;
+  };
+
+  useEffect(() => {
+    fetchUserData();
+    fetchPreferences();
+  }, []);
+
+  const fetchUserData = async () => {
+    try {
+      const token = getToken();
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      const response = await fetch('/api/user', {
         headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -72,20 +224,223 @@ export default function AccountSettingsPage() {
           lastName,
           email: data.user.email || '',
           phone: data.user.phone || '',
-          location: data.user.location || ''
+          location: data.user.location || '',
+          avatar: data.user.avatar || ''
         });
+      } else if (response.status === 401) {
+        router.push('/login');
       }
     } catch (error) {
       console.error('Error fetching user:', error);
+      setError('Failed to load user data');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSave = async () => {
+  const fetchPreferences = async () => {
+    try {
+      const token = getToken();
+      if (!token) return;
+
+      const response = await fetch('/api/user/preferences', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPreferences(data.preferences);
+      }
+    } catch (error) {
+      console.error('Error fetching preferences:', error);
+    }
+  };
+
+  const handleSaveProfile = async () => {
     setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsSaving(false);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const token = getToken();
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      const fullName = `${profileData.firstName} ${profileData.lastName}`.trim();
+      
+      const response = await fetch('/api/user', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: fullName,
+          email: profileData.email,
+          phone: profileData.phone || null,
+          location: profileData.location || null,
+          avatar: profileData.avatar || null,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to save profile');
+      }
+
+      setUser(data.user);
+      setSuccess('Profile saved successfully!');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to save profile');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    setIsSaving(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const token = getToken();
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      if (!currentPassword || !password || !confirmPassword) {
+        throw new Error('All password fields are required');
+      }
+
+      if (password !== confirmPassword) {
+        throw new Error('New password and confirmation do not match');
+      }
+
+      if (passwordStrength !== 'strong') {
+        throw new Error('Please use a strong password');
+      }
+
+      const response = await fetch('/api/user/password', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword: password,
+          confirmPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to change password');
+      }
+
+      setSuccess('Password changed successfully! Please log in again.');
+      setCurrentPassword('');
+      setPassword('');
+      setConfirmPassword('');
+      
+      // Log out after password change
+      setTimeout(() => {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('auth');
+        router.push('/login');
+      }, 2000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to change password');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveNotifications = async () => {
+    setIsSaving(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const token = getToken();
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      const response = await fetch('/api/user/preferences', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          notifications: preferences.notifications,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to save notification preferences');
+      }
+
+      setSuccess('Notification preferences saved!');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to save notification preferences');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSavePreferences = async () => {
+    setIsSaving(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const token = getToken();
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+
+      const response = await fetch('/api/user/preferences', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          language: preferences.language,
+          timezone: preferences.timezone,
+          currency: preferences.currency,
+          dateFormat: preferences.dateFormat,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to save preferences');
+      }
+
+      setSuccess('Preferences saved!');
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to save preferences');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Password strength checker
@@ -130,7 +485,7 @@ export default function AccountSettingsPage() {
     const formatCardNumber = (value: string) => {
       const cleaned = value.replace(/\s/g, '');
       const formatted = cleaned.match(/.{1,4}/g)?.join(' ') || cleaned;
-      return formatted.substring(0, 19); // Max 16 digits + 3 spaces
+      return formatted.substring(0, 19);
     };
 
     const formatExpiryDate = (value: string) => {
@@ -144,6 +499,7 @@ export default function AccountSettingsPage() {
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       setIsSubmitting(true);
+      // Note: Payment method management would integrate with Chargily or your payment provider
       await new Promise(resolve => setTimeout(resolve, 1500));
       setIsSubmitting(false);
       setShowAddPaymentModal(false);
@@ -152,7 +508,6 @@ export default function AccountSettingsPage() {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-xl max-w-md w-full shadow-2xl">
-          {/* Modal Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <h3 className="text-xl font-semibold text-gray-900">Add Payment Method</h3>
             <button
@@ -163,10 +518,8 @@ export default function AccountSettingsPage() {
             </button>
           </div>
 
-          {/* Modal Body */}
           <form onSubmit={handleSubmit} className="p-6">
             <div className="space-y-4">
-              {/* Card Number */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Card Number
@@ -184,7 +537,6 @@ export default function AccountSettingsPage() {
                 </div>
               </div>
 
-              {/* Cardholder Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Cardholder Name
@@ -199,7 +551,6 @@ export default function AccountSettingsPage() {
                 />
               </div>
 
-              {/* Expiry Date & CVV */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -231,7 +582,6 @@ export default function AccountSettingsPage() {
                 </div>
               </div>
 
-              {/* Save as default */}
               <div className="flex items-center gap-2 pt-2">
                 <input
                   type="checkbox"
@@ -244,7 +594,6 @@ export default function AccountSettingsPage() {
               </div>
             </div>
 
-            {/* Modal Footer */}
             <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200">
               <button
                 type="button"
@@ -260,7 +609,7 @@ export default function AccountSettingsPage() {
               >
                 {isSubmitting ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <Loader2 className="w-4 h-4 animate-spin" />
                     Adding...
                   </>
                 ) : (
@@ -283,65 +632,46 @@ export default function AccountSettingsPage() {
 
     const getStrengthColor = () => {
       switch (strength) {
-        case 'weak':
-          return 'bg-red-500';
-        case 'moderate':
-          return 'bg-yellow-500';
-        case 'strong':
-          return 'bg-green-500';
-        default:
-          return 'bg-gray-200';
+        case 'weak': return 'bg-red-500';
+        case 'moderate': return 'bg-yellow-500';
+        case 'strong': return 'bg-green-500';
+        default: return 'bg-gray-200';
       }
     };
 
     const getStrengthWidth = () => {
       switch (strength) {
-        case 'weak':
-          return 'w-1/3';
-        case 'moderate':
-          return 'w-2/3';
-        case 'strong':
-          return 'w-full';
-        default:
-          return 'w-0';
+        case 'weak': return 'w-1/3';
+        case 'moderate': return 'w-2/3';
+        case 'strong': return 'w-full';
+        default: return 'w-0';
       }
     };
 
     const getStrengthText = () => {
       switch (strength) {
-        case 'weak':
-          return 'Weak password';
-        case 'moderate':
-          return 'Moderate password';
-        case 'strong':
-          return 'Strong password';
-        default:
-          return '';
+        case 'weak': return 'Weak password';
+        case 'moderate': return 'Moderate password';
+        case 'strong': return 'Strong password';
+        default: return '';
       }
     };
 
     const getStrengthTextColor = () => {
       switch (strength) {
-        case 'weak':
-          return 'text-red-600';
-        case 'moderate':
-          return 'text-yellow-600';
-        case 'strong':
-          return 'text-green-600';
-        default:
-          return 'text-gray-500';
+        case 'weak': return 'text-red-600';
+        case 'moderate': return 'text-yellow-600';
+        case 'strong': return 'text-green-600';
+        default: return 'text-gray-500';
       }
     };
 
     return (
       <div className="mt-3">
-        {/* Progress Bar */}
         {password.length > 0 && (
           <div className="mb-3">
             <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className={`h-full transition-all duration-300 ${getStrengthColor()} ${getStrengthWidth()}`}
-              ></div>
+              <div className={`h-full transition-all duration-300 ${getStrengthColor()} ${getStrengthWidth()}`}></div>
             </div>
             <p className={`text-sm font-medium mt-1.5 ${getStrengthTextColor()}`}>
               {getStrengthText()}
@@ -349,49 +679,24 @@ export default function AccountSettingsPage() {
           </div>
         )}
 
-        {/* Requirements List */}
         <div className="bg-gray-50 rounded-lg p-4 space-y-2">
           <p className="text-xs font-medium text-gray-700 mb-2">Password must contain:</p>
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 text-sm">
-              {hasMinLength ? (
-                <Check className="w-4 h-4 text-green-600" />
-              ) : (
-                <AlertCircle className="w-4 h-4 text-gray-400" />
-              )}
-              <span className={hasMinLength ? 'text-green-600' : 'text-gray-600'}>
-                At least 8 characters
-              </span>
+              {hasMinLength ? <Check className="w-4 h-4 text-green-600" /> : <AlertCircle className="w-4 h-4 text-gray-400" />}
+              <span className={hasMinLength ? 'text-green-600' : 'text-gray-600'}>At least 8 characters</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
-              {hasUppercase ? (
-                <Check className="w-4 h-4 text-green-600" />
-              ) : (
-                <AlertCircle className="w-4 h-4 text-gray-400" />
-              )}
-              <span className={hasUppercase ? 'text-green-600' : 'text-gray-600'}>
-                One uppercase letter
-              </span>
+              {hasUppercase ? <Check className="w-4 h-4 text-green-600" /> : <AlertCircle className="w-4 h-4 text-gray-400" />}
+              <span className={hasUppercase ? 'text-green-600' : 'text-gray-600'}>One uppercase letter</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
-              {hasNumber ? (
-                <Check className="w-4 h-4 text-green-600" />
-              ) : (
-                <AlertCircle className="w-4 h-4 text-gray-400" />
-              )}
-              <span className={hasNumber ? 'text-green-600' : 'text-gray-600'}>
-                One number
-              </span>
+              {hasNumber ? <Check className="w-4 h-4 text-green-600" /> : <AlertCircle className="w-4 h-4 text-gray-400" />}
+              <span className={hasNumber ? 'text-green-600' : 'text-gray-600'}>One number</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
-              {hasSpecialChar ? (
-                <Check className="w-4 h-4 text-green-600" />
-              ) : (
-                <AlertCircle className="w-4 h-4 text-gray-400" />
-              )}
-              <span className={hasSpecialChar ? 'text-green-600' : 'text-gray-600'}>
-                One special character (!@#$%^&*...)
-              </span>
+              {hasSpecialChar ? <Check className="w-4 h-4 text-green-600" /> : <AlertCircle className="w-4 h-4 text-gray-400" />}
+              <span className={hasSpecialChar ? 'text-green-600' : 'text-gray-600'}>One special character (!@#$%^&*...)</span>
             </div>
           </div>
         </div>
@@ -409,6 +714,27 @@ export default function AccountSettingsPage() {
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Account Settings</h1>
         <p className="text-gray-600">Manage your account preferences and security</p>
       </div>
+
+      {/* Global Messages */}
+      {error && (
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+          <p className="text-red-800">{error}</p>
+          <button onClick={() => setError(null)} className="ml-auto text-red-600 hover:text-red-800">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {success && (
+        <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
+          <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+          <p className="text-green-800">{success}</p>
+          <button onClick={() => setSuccess(null)} className="ml-auto text-green-600 hover:text-green-800">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-12 gap-6">
         {/* Sidebar Navigation */}
@@ -445,24 +771,17 @@ export default function AccountSettingsPage() {
                 {/* Profile Photo */}
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-3">Profile Photo</label>
-                  <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold text-2xl">
-                      {loading ? '...' : (user?.name?.charAt(0).toUpperCase() || 'U')}
-                    </div>
-                    <div>
-                      <button className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium text-sm transition-colors flex items-center gap-2">
-                        <Camera className="w-4 h-4" />
-                        Change Photo
-                      </button>
-                      <p className="text-xs text-gray-500 mt-2">JPG, PNG or GIF. Max 2MB</p>
-                    </div>
-                  </div>
+                  <ProfilePhotoUpload
+                    value={profileData.avatar}
+                    onChange={(url) => setProfileData({ ...profileData, avatar: url || '' })}
+                    fallbackLetter={loading ? '...' : (user?.name?.charAt(0).toUpperCase() || 'U')}
+                  />
                 </div>
 
                 {/* Form Fields */}
                 {loading ? (
                   <div className="flex items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+                    <Loader2 className="w-8 h-8 animate-spin text-orange-600" />
                   </div>
                 ) : (
                   <>
@@ -531,15 +850,18 @@ export default function AccountSettingsPage() {
                 )}
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                  <button className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+                  <button 
+                    onClick={() => fetchUserData()}
+                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                  >
                     Cancel
                   </button>
                   <button 
-                    onClick={handleSave}
+                    onClick={handleSaveProfile}
                     disabled={isSaving}
                     className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-50"
                   >
-                    <Save className="w-4 h-4" />
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                     {isSaving ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
@@ -559,6 +881,8 @@ export default function AccountSettingsPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
                       <input
                         type="password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       />
                     </div>
@@ -576,8 +900,13 @@ export default function AccountSettingsPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
                       <input
                         type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                       />
+                      {confirmPassword && password !== confirmPassword && (
+                        <p className="text-sm text-red-600 mt-1">Passwords do not match</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -614,12 +943,12 @@ export default function AccountSettingsPage() {
 
                 <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-gray-200">
                   <button 
-                    onClick={handleSave}
-                    disabled={passwordStrength !== 'strong' && password.length > 0}
+                    onClick={handleChangePassword}
+                    disabled={isSaving || passwordStrength !== 'strong' || !currentPassword || password !== confirmPassword}
                     className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Save className="w-4 h-4" />
-                    Update Security
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    Update Password
                   </button>
                 </div>
               </div>
@@ -636,18 +965,32 @@ export default function AccountSettingsPage() {
                     <h3 className="font-medium text-gray-900 mb-4">Email Notifications</h3>
                     <div className="space-y-3">
                       {[
-                        { label: 'New customer feedback', description: 'Get notified when customers leave reviews' },
-                        { label: 'Menu scan alerts', description: 'Daily summary of menu QR code scans' },
-                        { label: 'Subscription updates', description: 'Billing and plan change notifications' },
-                        { label: 'Marketing tips', description: 'Weekly tips to grow your restaurant' },
-                      ].map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        { key: 'feedback', label: 'New customer feedback', description: 'Get notified when customers leave reviews' },
+                        { key: 'menuScans', label: 'Menu scan alerts', description: 'Daily summary of menu QR code scans' },
+                        { key: 'subscription', label: 'Subscription updates', description: 'Billing and plan change notifications' },
+                        { key: 'marketing', label: 'Marketing tips', description: 'Weekly tips to grow your restaurant' },
+                      ].map((item) => (
+                        <div key={item.key} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                           <div>
                             <div className="font-medium text-gray-900">{item.label}</div>
                             <div className="text-sm text-gray-600">{item.description}</div>
                           </div>
                           <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" defaultChecked={idx < 2} className="sr-only peer" />
+                            <input 
+                              type="checkbox" 
+                              checked={preferences.notifications.email[item.key as keyof typeof preferences.notifications.email]}
+                              onChange={(e) => setPreferences({
+                                ...preferences,
+                                notifications: {
+                                  ...preferences.notifications,
+                                  email: {
+                                    ...preferences.notifications.email,
+                                    [item.key]: e.target.checked
+                                  }
+                                }
+                              })}
+                              className="sr-only peer" 
+                            />
                             <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
                           </label>
                         </div>
@@ -660,16 +1003,30 @@ export default function AccountSettingsPage() {
                     <h3 className="font-medium text-gray-900 mb-4">Push Notifications</h3>
                     <div className="space-y-3">
                       {[
-                        { label: 'Real-time feedback alerts', description: 'Instant notifications for new reviews' },
-                        { label: 'System updates', description: 'Important platform updates and features' },
-                      ].map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        { key: 'feedback', label: 'Real-time feedback alerts', description: 'Instant notifications for new reviews' },
+                        { key: 'system', label: 'System updates', description: 'Important platform updates and features' },
+                      ].map((item) => (
+                        <div key={item.key} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                           <div>
                             <div className="font-medium text-gray-900">{item.label}</div>
                             <div className="text-sm text-gray-600">{item.description}</div>
                           </div>
                           <label className="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" defaultChecked className="sr-only peer" />
+                            <input 
+                              type="checkbox" 
+                              checked={preferences.notifications.push[item.key as keyof typeof preferences.notifications.push]}
+                              onChange={(e) => setPreferences({
+                                ...preferences,
+                                notifications: {
+                                  ...preferences.notifications,
+                                  push: {
+                                    ...preferences.notifications.push,
+                                    [item.key]: e.target.checked
+                                  }
+                                }
+                              })}
+                              className="sr-only peer" 
+                            />
                             <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
                           </label>
                         </div>
@@ -680,10 +1037,11 @@ export default function AccountSettingsPage() {
 
                 <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-gray-200">
                   <button 
-                    onClick={handleSave}
-                    className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium flex items-center gap-2"
+                    onClick={handleSaveNotifications}
+                    disabled={isSaving}
+                    className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-50"
                   >
-                    <Save className="w-4 h-4" />
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                     Save Preferences
                   </button>
                 </div>
@@ -709,18 +1067,18 @@ export default function AccountSettingsPage() {
                   </div>
                   <div className="flex gap-3">
                     <button 
-                        onClick={() => router.push('/dashboard/settings/plans')}
-                        className="px-4 py-2 bg-white text-orange-600 border border-orange-300 rounded-lg hover:bg-orange-50 transition-colors font-medium text-sm"
+                      onClick={() => router.push('/dashboard/settings/plans')}
+                      className="px-4 py-2 bg-white text-orange-600 border border-orange-300 rounded-lg hover:bg-orange-50 transition-colors font-medium text-sm"
                     >
-                        Change Plan
+                      Change Plan
                     </button>
                     <button 
-                        onClick={() => router.push('/dashboard/settings/subscription')}
-                        className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium text-sm"
+                      onClick={() => router.push('/dashboard/settings/subscription')}
+                      className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium text-sm"
                     >
-                        Manage Subscription
+                      Manage Subscription
                     </button>
-                    </div>
+                  </div>
                 </div>
 
                 {/* Payment Methods */}
@@ -799,47 +1157,64 @@ export default function AccountSettingsPage() {
                 <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
-                    <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                      <option>English</option>
-                      <option>Français</option>
-                      <option>العربية</option>
+                    <select 
+                      value={preferences.language}
+                      onChange={(e) => setPreferences({ ...preferences, language: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    >
+                      <option value="en">English</option>
+                      <option value="fr">Français</option>
+                      <option value="ar">العربية</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
-                    <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                      <option>Africa/Algiers (GMT+1)</option>
-                      <option>Europe/Paris (GMT+1)</option>
-                      <option>UTC (GMT+0)</option>
+                    <select 
+                      value={preferences.timezone}
+                      onChange={(e) => setPreferences({ ...preferences, timezone: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    >
+                      <option value="Africa/Algiers">Africa/Algiers (GMT+1)</option>
+                      <option value="Europe/Paris">Europe/Paris (GMT+1)</option>
+                      <option value="UTC">UTC (GMT+0)</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
-                    <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                      <option>DZD - Algerian Dinar</option>
-                      <option>EUR - Euro</option>
-                      <option>USD - US Dollar</option>
+                    <select 
+                      value={preferences.currency}
+                      onChange={(e) => setPreferences({ ...preferences, currency: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    >
+                      <option value="DZD">DZD - Algerian Dinar</option>
+                      <option value="EUR">EUR - Euro</option>
+                      <option value="USD">USD - US Dollar</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Date Format</label>
-                    <select className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                      <option>DD/MM/YYYY</option>
-                      <option>MM/DD/YYYY</option>
-                      <option>YYYY-MM-DD</option>
+                    <select 
+                      value={preferences.dateFormat}
+                      onChange={(e) => setPreferences({ ...preferences, dateFormat: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    >
+                      <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                      <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                      <option value="YYYY-MM-DD">YYYY-MM-DD</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-gray-200">
                   <button 
-                    onClick={handleSave}
-                    className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium flex items-center gap-2"
+                    onClick={handleSavePreferences}
+                    disabled={isSaving}
+                    className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-50"
                   >
-                    <Save className="w-4 h-4" />
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                     Save Preferences
                   </button>
                 </div>
