@@ -5,6 +5,7 @@ import { findUserById } from '@/lib/auth/db';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { sendEmail, getTeamInvitationEmailTemplate } from '@/lib/email';
+import { notifyTeamInvitation } from '@/lib/notifications';
 
 const APP_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
@@ -216,6 +217,12 @@ export async function POST(
       subject: emailTemplate.subject,
       html: emailTemplate.html,
     }).catch(err => console.error('Failed to send team invitation email:', err));
+
+    // If the user already exists in our system, send them an in-app notification
+    if (existingUser?.id) {
+      notifyTeamInvitation(existingUser.id, profile.name, user.name)
+        .catch(err => console.error('Failed to create team invitation notification:', err));
+    }
 
     return NextResponse.json(
       { message: 'Team member added and invitation sent', teamMember },

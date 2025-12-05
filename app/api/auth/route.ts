@@ -8,6 +8,7 @@ import { Role, RegisterRequest, LoginRequest, RefreshRequest, AuthResponse } fro
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { z } from 'zod';
 import { sendEmail, getWelcomeEmailTemplate } from '@/lib/email';
+import { notifyWelcome } from '@/lib/notifications';
 
 async function generateAndSaveTokens(user: { id: string; email: string; role: Role }) {
   const tokens = generateTokens({
@@ -86,6 +87,11 @@ async function handleRegister(request: NextRequest): Promise<NextResponse> {
       subject: welcomeEmail.subject,
       html: welcomeEmail.html,
     }).catch(err => console.error('Failed to send welcome email:', err));
+
+    // Create welcome notification (non-blocking)
+    notifyWelcome(user.id, user.name).catch(err => 
+      console.error('Failed to create welcome notification:', err)
+    );
 
     const response: AuthResponse = {
       user: {

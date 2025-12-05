@@ -15,7 +15,7 @@ model User {
   phone         String?
   location      String?
   avatar        String?
-  preferences   Json?          // { language, timezone, currency, dateFormat }
+  preferences   Json?          // { language, timezone, currency, dateFormat, notifications }
   role          Role           @default(USER)
   isActive      Boolean        @default(true)
   refreshTokens RefreshToken[]
@@ -24,6 +24,7 @@ model User {
   payments      Payment[]
   tickets       SupportTicket[]
   teamMembers   TeamMember[]
+  notifications Notification[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime?      @updatedAt
 }
@@ -319,4 +320,50 @@ model Translation {
   @@unique([menuId, entityType, entityId, languageCode, field])
   @@index([menuId, languageCode])
   @@index([entityType, entityId])
+}
+
+// Notification system
+model Notification {
+  id        String           @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String           @db.ObjectId
+  user      User             @relation(fields: [userId], references: [id])
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?            // Additional data (e.g., profileId, menuId, etc.)
+  read      Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@index([userId, read])
+  @@index([createdAt])
+}
+
+enum NotificationType {
+  // Subscription & Billing
+  SUBSCRIPTION_ACTIVATED
+  SUBSCRIPTION_EXPIRING
+  SUBSCRIPTION_EXPIRED
+  SUBSCRIPTION_PAUSED
+  SUBSCRIPTION_RESUMED
+  SUBSCRIPTION_CANCELLED
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+  
+  // Team
+  TEAM_INVITATION
+  TEAM_MEMBER_JOINED
+  TEAM_MEMBER_LEFT
+  TEAM_ROLE_CHANGED
+  
+  // Restaurant & Menu
+  NEW_FEEDBACK
+  MENU_PUBLISHED
+  QR_SCAN_MILESTONE
+  
+  // System
+  SYSTEM_UPDATE
+  SECURITY_ALERT
+  WELCOME
 }

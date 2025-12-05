@@ -1,9 +1,10 @@
 // @ts-nocheck
 "use client";
 import { useState, useEffect } from "react";
-import { Bell, Home, Store, Menu as MenuIcon, Settings, CreditCard, HelpCircle, LogOut, ChevronRight, BarChart3, MessageSquare, User } from "lucide-react";
+import { Home, Store, Menu as MenuIcon, Settings, CreditCard, HelpCircle, LogOut, ChevronRight, BarChart3, MessageSquare, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 export const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
@@ -69,6 +70,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
     { icon: Store, label: 'Restaurants', href: '/dashboard/profiles', badge: null },
     { icon: Settings, label: 'Account Settings', href: '/dashboard/settings', badge: null },
     { icon: CreditCard, label: 'Subscription', href: '/dashboard/settings/subscription', badge: null },
+    { icon: MessageSquare, label: 'Notifications', href: '/dashboard/notifications', badge: null },
     { icon: HelpCircle, label: 'Help & Support', href: '/help', badge: null },
   ];
 
@@ -173,10 +175,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
 
             {/* Right Side */}
             <div className="flex items-center gap-4 ml-auto">
-              <button className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-orange-500 rounded-full"></span>
-              </button>
+              <NotificationBell />
               {!loading && user && (
                 <div className="hidden md:flex items-center gap-3">
                   <div className="text-right">

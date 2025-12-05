@@ -6,6 +6,11 @@ import {
   getSubscriptionConfirmedEmailTemplate, 
   getPaymentReceiptEmailTemplate 
 } from '@/lib/email';
+import {
+  notifySubscriptionActivated,
+  notifyPaymentSuccess,
+  notifyPaymentFailed
+} from '@/lib/notifications';
 
 export async function POST(request: NextRequest) {
   let event;
@@ -200,6 +205,21 @@ async function handleSuccessfulPayment(event: any) {
         subject: receiptEmail.subject,
         html: receiptEmail.html,
       }).catch(err => console.error('Failed to send receipt email:', err));
+
+      // Create notifications (non-blocking)
+      notifySubscriptionActivated(
+        user.id,
+        plan,
+        priceFormatted,
+        'DA'
+      ).catch(err => console.error('Failed to create subscription notification:', err));
+
+      notifyPaymentSuccess(
+        user.id,
+        priceFormatted,
+        'DA',
+        plan
+      ).catch(err => console.error('Failed to create payment notification:', err));
     }
 
   } catch (error) {

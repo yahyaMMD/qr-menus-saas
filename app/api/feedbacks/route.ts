@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
+import { notifyNewFeedback } from '@/lib/notifications';
 
 const prisma = new PrismaClient();
 
@@ -80,9 +81,10 @@ export async function POST(request: NextRequest) {
 
     const { profileId, userName, rating, comment } = parsed.data;
 
-    // Verify profile exists
+    // Verify profile exists and get owner
     const profile = await prisma.profile.findUnique({
       where: { id: profileId },
+      select: { id: true, name: true, ownerId: true },
     });
 
     if (!profile) {
@@ -101,6 +103,15 @@ export async function POST(request: NextRequest) {
         comment: comment || null,
       },
     });
+
+    // Notify restaurant owner about new feedback
+    notifyNewFeedback(
+      profile.ownerId,
+      profile.id,
+      profile.name,
+      rating,
+      feedback.id
+    ).catch(err => console.error('Failed to create feedback notification:', err));
 
     return NextResponse.json(
       { message: 'Feedback submitted successfully', feedback },

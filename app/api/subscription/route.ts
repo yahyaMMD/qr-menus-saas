@@ -7,6 +7,11 @@ import {
   getSubscriptionPausedEmailTemplate, 
   getSubscriptionCancelledEmailTemplate 
 } from '@/lib/email';
+import {
+  notifySubscriptionPaused,
+  notifySubscriptionResumed,
+  notifySubscriptionCancelled
+} from '@/lib/notifications';
 
 async function getAuthenticatedUser(request: NextRequest) {
   const authResult = await authenticateRequest(request);
@@ -163,9 +168,8 @@ export async function PATCH(request: NextRequest) {
           );
         }
 
-        // Calculate new expiration date (extend by remaining pause time)
         const newExpiresAt = new Date();
-        newExpiresAt.setMonth(newExpiresAt.getMonth() + 1); // Add 1 month from today
+        newExpiresAt.setMonth(newExpiresAt.getMonth() + 1);
 
         updateData = {
           status: 'ACTIVE',
@@ -229,39 +233,57 @@ export async function PATCH(request: NextRequest) {
       data: updateData,
     });
 
-    // Send notification emails
+    // Send notification emails and create in-app notifications
     if (action === 'pause' && updateData.resumesAt) {
+      const resumeDate = updateData.resumesAt.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+      
       const pausedEmail = getSubscriptionPausedEmailTemplate({
         name: user.name,
         plan: subscription.plan,
-        resumeDate: updateData.resumesAt.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        }),
+        resumeDate,
       });
       sendEmail({
         to: user.email,
         subject: pausedEmail.subject,
         html: pausedEmail.html,
       }).catch(err => console.error('Failed to send pause email:', err));
+
+      // In-app notification
+      notifySubscriptionPaused(user.id, subscription.plan, resumeDate)
+        .catch(err => console.error('Failed to create pause notification:', err));
+    }
+
+    if (action === 'resume') {
+      // In-app notification
+      notifySubscriptionResumed(user.id, subscription.plan)
+        .catch(err => console.error('Failed to create resume notification:', err));
     }
 
     if (action === 'cancel') {
+      const endDate = subscription.expiresAt.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+      
       const cancelledEmail = getSubscriptionCancelledEmailTemplate({
         name: user.name,
         plan: subscription.plan,
-        endDate: subscription.expiresAt.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        }),
+        endDate,
       });
       sendEmail({
         to: user.email,
         subject: cancelledEmail.subject,
         html: cancelledEmail.html,
       }).catch(err => console.error('Failed to send cancel email:', err));
+
+      // In-app notification
+      notifySubscriptionCancelled(user.id, subscription.plan, endDate)
+        .catch(err => console.error('Failed to create cancel notification:', err));
     }
 
     return NextResponse.json({
