@@ -34,6 +34,7 @@ model Profile {
   location    Json?
   menus       Menu[]
   feedbacks   Feedback[]
+  teamMembers TeamMember[]
   createdAt   DateTime   @default(now())
   phone       String?
   email       String?
@@ -42,6 +43,27 @@ model Profile {
   wifiPassword String?
   mapUrl      String?
   businessHours Json?
+}
+
+// Team member for restaurant profile
+model TeamMember {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  profileId String     @db.ObjectId
+  profile   Profile    @relation(fields: [profileId], references: [id])
+  email     String     // Email of the team member (may or may not be a registered user)
+  name      String     // Display name
+  role      TeamRole   @default(STAFF)
+  invitedAt DateTime   @default(now())
+  acceptedAt DateTime? // When they accepted the invitation (null if pending)
+  userId    String?    @db.ObjectId // Linked user ID after they accept invitation
+
+  @@unique([profileId, email])
+  @@index([profileId])
+}
+
+enum TeamRole {
+  MANAGER   // Can manage menus, items, but not billing or delete profile
+  STAFF     // Can view and edit menus/items only
 }
 
 model Menu {

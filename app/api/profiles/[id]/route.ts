@@ -192,6 +192,11 @@ export async function DELETE(
   try {
     const profile = await prisma.profile.findUnique({
       where: { id },
+      include: {
+        menus: {
+          select: { id: true },
+        },
+      },
     });
 
     if (!profile) {
@@ -201,25 +206,89 @@ export async function DELETE(
       );
     }
 
+    // Only the owner can delete the profile
     if (profile.ownerId !== user.id) {
       return NextResponse.json(
-        { error: 'You do not have permission to delete this profile' },
+        { error: 'Only the profile owner can delete this restaurant' },
         { status: 403 }
       );
     }
 
+    // Get all menu IDs for cascade deletion
+    const menuIds = profile.menus.map((m) => m.id);
+
+    // Delete in order to respect foreign key constraints
+    // 1. Delete translations for all menus
+    if (menuIds.length > 0) {
+      await prisma.translation.deleteMany({
+        where: { menuId: { in: menuIds } },
+      });
+
+      // 2. Delete ItemTags for items in these menus
+      const items = await prisma.item.findMany({
+        where: { menuId: { in: menuIds } },
+        select: { id: true },
+      });
+      const itemIds = items.map((i) => i.id);
+
+      if (itemIds.length > 0) {
+        await prisma.itemTag.deleteMany({
+          where: { itemId: { in: itemIds } },
+        });
+      }
+
+      // 3. Delete items
+      await prisma.item.deleteMany({
+        where: { menuId: { in: menuIds } },
+      });
+
+      // 4. Delete categories, tags, types
+      await prisma.category.deleteMany({
+        where: { menuId: { in: menuIds } },
+      });
+
+      await prisma.tag.deleteMany({
+        where: { menuId: { in: menuIds } },
+      });
+
+      await prisma.type.deleteMany({
+        where: { menuId: { in: menuIds } },
+      });
+
+      // 5. Delete analytics
+      await prisma.analytics.deleteMany({
+        where: { menuId: { in: menuIds } },
+      });
+
+      // 6. Delete menus
+      await prisma.menu.deleteMany({
+        where: { profileId: id },
+      });
+    }
+
+    // 7. Delete feedbacks
+    await prisma.feedback.deleteMany({
+      where: { profileId: id },
+    });
+
+    // 8. Delete team members
+    await prisma.teamMember.deleteMany({
+      where: { profileId: id },
+    });
+
+    // 9. Finally, delete the profile
     await prisma.profile.delete({
       where: { id },
     });
 
     return NextResponse.json(
-      { message: 'Profile deleted successfully' },
+      { message: 'Restaurant profile and all related data deleted successfully' },
       { status: 200 }
     );
   } catch (error) {
     console.error('Delete profile error:', error);
     return NextResponse.json(
-      { error: 'Failed to delete profile' },
+      { error: 'Failed to delete profile. Please try again.' },
       { status: 500 }
     );
   }
