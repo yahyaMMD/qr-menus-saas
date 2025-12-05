@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
     timezone: 'Africa/Algiers',
     currency: 'DZD',
     dateFormat: 'DD/MM/YYYY',
+    defaultPaymentMethod: 'edahabia',
     notifications: {
       email: {
         feedback: true,
@@ -110,6 +111,15 @@ export async function PATCH(request: NextRequest) {
     if (body.dateFormat && !validDateFormats.includes(body.dateFormat)) {
       return NextResponse.json(
         { error: 'Invalid date format' },
+        { status: 400 }
+      );
+    }
+
+    // Validate payment method
+    const validPaymentMethods = ['edahabia', 'cib'];
+    if (body.defaultPaymentMethod && !validPaymentMethods.includes(body.defaultPaymentMethod)) {
+      return NextResponse.json(
+        { error: 'Invalid payment method' },
         { status: 400 }
       );
     }

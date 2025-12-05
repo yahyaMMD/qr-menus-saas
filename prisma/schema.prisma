@@ -161,17 +161,24 @@ model Feedback {
 }
 
 model Subscription {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId     String   @db.ObjectId
-  plan       Plan
-  status     SubscriptionStatus @default(ACTIVE)
-  expiresAt  DateTime
-  active     Boolean  @default(true)
-  paymentRef String?
-  priceCents Int?
-  currency   String?  @default("USD")
-  user       User     @relation(fields: [userId], references: [id])
-  payments   Payment[]
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String   @db.ObjectId
+  plan         Plan
+  status       SubscriptionStatus @default(ACTIVE)
+  expiresAt    DateTime
+  active       Boolean  @default(true)
+  paymentRef   String?
+  priceCents   Int?
+  currency     String?  @default("DZD")
+  // Pause/Cancel tracking
+  pausedAt     DateTime?
+  resumesAt    DateTime?
+  canceledAt   DateTime?
+  cancelReason String?
+  cancelFeedback String?
+  createdAt    DateTime? @default(now())
+  user         User     @relation(fields: [userId], references: [id])
+  payments     Payment[]
 }
 
 model Analytics {
@@ -220,6 +227,7 @@ enum Plan {
 
 enum SubscriptionStatus {
   ACTIVE
+  PAUSED
   EXPIRED
   CANCELED
 }

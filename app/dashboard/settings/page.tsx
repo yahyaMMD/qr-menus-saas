@@ -146,6 +146,7 @@ export default function AccountSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [defaultPaymentMethod, setDefaultPaymentMethod] = useState<'edahabia' | 'cib'>('edahabia');
   const [profileData, setProfileData] = useState({
     firstName: '',
     lastName: '',
@@ -252,6 +253,10 @@ export default function AccountSettingsPage() {
       if (response.ok) {
         const data = await response.json();
         setPreferences(data.preferences);
+        // Set payment method preference
+        if (data.preferences.defaultPaymentMethod) {
+          setDefaultPaymentMethod(data.preferences.defaultPaymentMethod);
+        }
       }
     } catch (error) {
       console.error('Error fetching preferences:', error);
@@ -474,42 +479,58 @@ export default function AccountSettingsPage() {
     { id: 'preferences', label: 'Preferences', icon: Globe },
   ];
 
-  // Add Payment Method Modal Component
+  // Add Payment Method Modal Component - For Algerian cards (EDDAHABIA/CIB)
   const AddPaymentModal = () => {
-    const [cardNumber, setCardNumber] = useState('');
-    const [cardName, setCardName] = useState('');
-    const [expiryDate, setExpiryDate] = useState('');
-    const [cvv, setCvv] = useState('');
+    const [selectedMethod, setSelectedMethod] = useState<'edahabia' | 'cib'>(defaultPaymentMethod);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [modalError, setModalError] = useState<string | null>(null);
 
-    const formatCardNumber = (value: string) => {
-      const cleaned = value.replace(/\s/g, '');
-      const formatted = cleaned.match(/.{1,4}/g)?.join(' ') || cleaned;
-      return formatted.substring(0, 19);
-    };
-
-    const formatExpiryDate = (value: string) => {
-      const cleaned = value.replace(/\D/g, '');
-      if (cleaned.length >= 2) {
-        return cleaned.substring(0, 2) + '/' + cleaned.substring(2, 4);
-      }
-      return cleaned;
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
+    const handleSubmit = async () => {
       setIsSubmitting(true);
-      // Note: Payment method management would integrate with Chargily or your payment provider
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setIsSubmitting(false);
-      setShowAddPaymentModal(false);
+      setModalError(null);
+
+      try {
+        const token = getToken();
+        if (!token) {
+          router.push('/login');
+          return;
+        }
+
+        const response = await fetch('/api/user/preferences', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            defaultPaymentMethod: selectedMethod,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to save payment method');
+        }
+
+        // Update local state
+        setDefaultPaymentMethod(selectedMethod);
+        setSuccess(`${selectedMethod.toUpperCase()} set as default payment method!`);
+        setTimeout(() => setSuccess(null), 3000);
+        setShowAddPaymentModal(false);
+      } catch (err: any) {
+        console.error('Save payment method error:', err);
+        setModalError(err.message || 'Failed to save payment method');
+      } finally {
+        setIsSubmitting(false);
+      }
     };
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-xl max-w-md w-full shadow-2xl">
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <h3 className="text-xl font-semibold text-gray-900">Add Payment Method</h3>
+            <h3 className="text-xl font-semibold text-gray-900">Payment Method</h3>
             <button
               onClick={() => setShowAddPaymentModal(false)}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -518,106 +539,108 @@ export default function AccountSettingsPage() {
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Card Number
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                    placeholder="1234 5678 9012 3456"
-                    required
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                  <CreditCard className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                </div>
-              </div>
+          <div className="p-6">
+            <p className="text-sm text-gray-600 mb-6">
+              Select your preferred payment method for subscriptions. Payments are processed securely via Chargily.
+            </p>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cardholder Name
-                </label>
-                <input
-                  type="text"
-                  value={cardName}
-                  onChange={(e) => setCardName(e.target.value)}
-                  placeholder="Bsahtek Frere"
-                  required
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Expiry Date
-                  </label>
-                  <input
-                    type="text"
-                    value={expiryDate}
-                    onChange={(e) => setExpiryDate(formatExpiryDate(e.target.value))}
-                    placeholder="MM/YY"
-                    maxLength={5}
-                    required
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
+            <div className="space-y-3 mb-6">
+              {/* EDDAHABIA Option */}
+              <button
+                type="button"
+                onClick={() => setSelectedMethod('edahabia')}
+                className={`w-full p-4 border-2 rounded-xl text-left transition-all ${
+                  selectedMethod === 'edahabia'
+                    ? 'border-orange-500 bg-orange-50 shadow-md'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    selectedMethod === 'edahabia' ? 'border-orange-500 bg-orange-500' : 'border-gray-300'
+                  }`}>
+                    {selectedMethod === 'edahabia' && <div className="w-2 h-2 bg-white rounded-full" />}
+                  </div>
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-12 h-8 bg-yellow-500 rounded flex items-center justify-center">
+                      <span className="text-white font-bold text-xs">EDA</span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">EDDAHABIA</p>
+                      <p className="text-xs text-gray-500">Algérie Poste</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    CVV
-                  </label>
-                  <input
-                    type="text"
-                    value={cvv}
-                    onChange={(e) => setCvv(e.target.value.replace(/\D/g, '').substring(0, 4))}
-                    placeholder="123"
-                    maxLength={4}
-                    required
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
+              </button>
 
-              <div className="flex items-center gap-2 pt-2">
-                <input
-                  type="checkbox"
-                  id="setDefault"
-                  className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
-                />
-                <label htmlFor="setDefault" className="text-sm text-gray-700">
-                  Set as default payment method
-                </label>
-              </div>
+              {/* CIB Option */}
+              <button
+                type="button"
+                onClick={() => setSelectedMethod('cib')}
+                className={`w-full p-4 border-2 rounded-xl text-left transition-all ${
+                  selectedMethod === 'cib'
+                    ? 'border-orange-500 bg-orange-50 shadow-md'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    selectedMethod === 'cib' ? 'border-orange-500 bg-orange-500' : 'border-gray-300'
+                  }`}>
+                    {selectedMethod === 'cib' && <div className="w-2 h-2 bg-white rounded-full" />}
+                  </div>
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-12 h-8 bg-blue-600 rounded flex items-center justify-center">
+                      <span className="text-white font-bold text-xs">CIB</span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">CIB</p>
+                      <p className="text-xs text-gray-500">SATIM Interbank Card</p>
+                    </div>
+                  </div>
+                </div>
+              </button>
             </div>
 
-            <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200">
+            <div className="bg-orange-50 rounded-lg p-4 mb-6">
+              <p className="text-sm text-orange-800">
+                <span className="font-semibold">How it works:</span>
+                <br />
+                When you subscribe to a plan, you'll be redirected to Chargily's secure payment page to complete your payment.
+              </p>
+            </div>
+
+            {modalError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                {modalError}
+              </div>
+            )}
+
+            <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => setShowAddPaymentModal(false)}
-                className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                disabled={isSubmitting}
+                className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
-                type="submit"
+                onClick={handleSubmit}
                 disabled={isSubmitting}
                 className="flex-1 px-4 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Adding...
+                    Saving...
                   </>
                 ) : (
-                  'Add Card'
+                  'Save Preference'
                 )}
               </button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     );
@@ -1089,22 +1112,39 @@ export default function AccountSettingsPage() {
                       onClick={() => setShowAddPaymentModal(true)}
                       className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium text-sm transition-colors"
                     >
-                      Add Method
+                      Change Preference
                     </button>
                   </div>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border-2 border-orange-300">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-8 bg-gray-900 rounded flex items-center justify-center">
-                          <CreditCard className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                          <div className="font-medium text-gray-900">•••• •••• •••• 4242</div>
-                          <div className="text-sm text-gray-600">Expires 12/25</div>
-                        </div>
+                        {defaultPaymentMethod === 'edahabia' ? (
+                          <>
+                            <div className="w-12 h-8 bg-yellow-500 rounded flex items-center justify-center">
+                              <span className="text-white font-bold text-xs">EDA</span>
+                            </div>
+                            <div>
+                              <div className="font-medium text-gray-900">EDDAHABIA</div>
+                              <div className="text-sm text-gray-600">Algérie Poste</div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-12 h-8 bg-blue-600 rounded flex items-center justify-center">
+                              <span className="text-white font-bold text-xs">CIB</span>
+                            </div>
+                            <div>
+                              <div className="font-medium text-gray-900">CIB</div>
+                              <div className="text-sm text-gray-600">SATIM Interbank Card</div>
+                            </div>
+                          </>
+                        )}
                       </div>
                       <span className="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">Default</span>
                     </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Payments are processed securely via Chargily. You can use {defaultPaymentMethod === 'edahabia' ? 'CIB' : 'EDDAHABIA'} cards too.
+                    </p>
                   </div>
                 </div>
 

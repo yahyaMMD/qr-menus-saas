@@ -21,9 +21,8 @@ export async function GET(request: NextRequest) {
         where: { 
           userId: authResult.payload.userId,
           active: true,
-          status: 'ACTIVE'
         },
-        orderBy: { id: 'desc' },
+        orderBy: { expiresAt: 'desc' },
       });
     }
 
