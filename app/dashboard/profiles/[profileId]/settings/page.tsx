@@ -7,6 +7,7 @@ import {
   Globe, Wifi, MapPin, Info, Image as ImageIcon, AlertCircle, CheckCircle,
   Plus, X, Shield, UserMinus, Loader2, AlertTriangle, Crown
 } from 'lucide-react';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 
 export default function ProfileSettingsPage({ 
   params 
@@ -457,14 +458,14 @@ export default function ProfileSettingsPage({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Logo URL
+                  Restaurant Logo
                 </label>
-                <input
-                  type="text"
+                <ImageUpload
                   value={generalInfo.logo}
-                  onChange={(e) => setGeneralInfo({ ...generalInfo, logo: e.target.value })}
-                  placeholder="https://example.com/logo.png"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-transparent"
+                  onChange={(url) => setGeneralInfo({ ...generalInfo, logo: url || '' })}
+                  folder="qr-menus/logos"
+                  aspectRatio="square"
+                  placeholder="Upload restaurant logo"
                 />
               </div>
             </div>

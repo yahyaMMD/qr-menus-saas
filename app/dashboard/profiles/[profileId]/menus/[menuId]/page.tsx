@@ -27,6 +27,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { getErrorPagePath } from '@/lib/error-redirect';
 import { SUPPORTED_LANGUAGES, Language as LanguageType } from '@/lib/languages';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 
 interface Tag {
   id: string;
@@ -864,21 +865,16 @@ export default function MenuBuilderPage({
             </div>
           </div>
 
-          {/* Image URL */}
+          {/* Item Image */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
-            <input
-              type="url"
-              placeholder="https://example.com/image.jpg"
+            <label className="block text-sm font-medium text-gray-700 mb-2">Item Image</label>
+            <ImageUpload
               value={itemForm.image}
-              onChange={(e) => setItemForm({ ...itemForm, image: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              onChange={(url) => setItemForm({ ...itemForm, image: url || '' })}
+              folder="qr-menus/items"
+              aspectRatio="video"
+              placeholder="Upload item image"
             />
-            {itemForm.image && (
-              <div className="mt-2 relative w-32 h-32 rounded-lg overflow-hidden border border-gray-200">
-                <img src={itemForm.image} alt="Preview" className="w-full h-full object-cover" />
-              </div>
-            )}
           </div>
         </div>
 
@@ -930,6 +926,22 @@ export default function MenuBuilderPage({
                 autoFocus
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Category Image <span className="text-gray-400">(optional)</span>
+            </label>
+            <ImageUpload
+              value={isEdit ? editingCategory?.image || null : newCategory.image || null}
+              onChange={(url) => isEdit 
+                ? setEditingCategory({ ...editingCategory!, image: url || '' })
+                : setNewCategory({ ...newCategory, image: url || '' })
+              }
+              folder="qr-menus/categories"
+              aspectRatio="video"
+              placeholder="Upload category image"
+            />
           </div>
         </div>
 
@@ -1043,13 +1055,13 @@ export default function MenuBuilderPage({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Image URL (optional)</label>
-            <input
-              type="text"
-              placeholder="https://example.com/image.jpg"
-              value={newType.image}
-              onChange={(e) => setNewType({ ...newType, image: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            <label className="block text-sm font-medium text-gray-700 mb-2">Type Image (optional)</label>
+            <ImageUpload
+              value={newType.image || null}
+              onChange={(url) => setNewType({ ...newType, image: url || '' })}
+              folder="qr-menus/types"
+              aspectRatio="video"
+              placeholder="Upload type image"
             />
           </div>
         </div>

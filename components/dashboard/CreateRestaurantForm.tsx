@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
-import { Upload, Facebook, Instagram, Music } from "lucide-react";
+import { ImageUpload } from "../ui/ImageUpload";
+import { Facebook, Instagram, Music } from "lucide-react";
 import { useAuth } from '@/lib/auth/context';
 
 export const CreateRestaurantForm = () => {
@@ -153,19 +154,13 @@ export const CreateRestaurantForm = () => {
           <label className="block text-sm font-medium text-gray-900 mb-2">
             Restaurant Logo
           </label>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-gray-400 transition-colors cursor-pointer">
-            <div className="flex flex-col items-center">
-              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <Upload className="h-6 w-6 text-gray-400" />
-              </div>
-              <p className="text-sm text-gray-600 mb-1">
-                Click to upload or drag and drop
-              </p>
-              <p className="text-xs text-gray-500">
-                PNG, JPG or SVG (max. 2MB)
-              </p>
-            </div>
-          </div>
+          <ImageUpload
+            value={formData.logo}
+            onChange={(url) => setFormData({ ...formData, logo: url })}
+            folder="qr-menus/logos"
+            aspectRatio="square"
+            placeholder="Upload your restaurant logo"
+          />
         </div>
 
         {/* Wilaya and Commune */}
