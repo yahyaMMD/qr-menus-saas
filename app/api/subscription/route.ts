@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { findUserById } from '@/lib/auth/db';
 import { prisma } from '@/lib/prisma';
+import { 
+  sendEmail, 
+  getSubscriptionPausedEmailTemplate, 
+  getSubscriptionCancelledEmailTemplate 
+} from '@/lib/email';
 
 async function getAuthenticatedUser(request: NextRequest) {
   const authResult = await authenticateRequest(request);
@@ -223,6 +228,41 @@ export async function PATCH(request: NextRequest) {
       where: { id: subscription.id },
       data: updateData,
     });
+
+    // Send notification emails
+    if (action === 'pause' && updateData.resumesAt) {
+      const pausedEmail = getSubscriptionPausedEmailTemplate({
+        name: user.name,
+        plan: subscription.plan,
+        resumeDate: updateData.resumesAt.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        }),
+      });
+      sendEmail({
+        to: user.email,
+        subject: pausedEmail.subject,
+        html: pausedEmail.html,
+      }).catch(err => console.error('Failed to send pause email:', err));
+    }
+
+    if (action === 'cancel') {
+      const cancelledEmail = getSubscriptionCancelledEmailTemplate({
+        name: user.name,
+        plan: subscription.plan,
+        endDate: subscription.expiresAt.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        }),
+      });
+      sendEmail({
+        to: user.email,
+        subject: cancelledEmail.subject,
+        html: cancelledEmail.html,
+      }).catch(err => console.error('Failed to send cancel email:', err));
+    }
 
     return NextResponse.json({
       message: `Subscription ${action}d successfully`,

@@ -7,6 +7,7 @@ import {
 import { Role, RegisterRequest, LoginRequest, RefreshRequest, AuthResponse } from '@/lib/auth/types';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { z } from 'zod';
+import { sendEmail, getWelcomeEmailTemplate } from '@/lib/email';
 
 async function generateAndSaveTokens(user: { id: string; email: string; role: Role }) {
   const tokens = generateTokens({
@@ -74,6 +75,17 @@ async function handleRegister(request: NextRequest): Promise<NextResponse> {
 
     // Generate tokens and save refresh token to DB
     const tokens = await generateAndSaveTokens(user);
+
+    // Send welcome email (non-blocking)
+    const welcomeEmail = getWelcomeEmailTemplate({
+      name: user.name,
+      email: user.email,
+    });
+    sendEmail({
+      to: user.email,
+      subject: welcomeEmail.subject,
+      html: welcomeEmail.html,
+    }).catch(err => console.error('Failed to send welcome email:', err));
 
     const response: AuthResponse = {
       user: {

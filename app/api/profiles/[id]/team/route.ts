@@ -3,6 +3,10 @@ import prisma from '@/lib/prisma';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { findUserById } from '@/lib/auth/db';
 import { z } from 'zod';
+import crypto from 'crypto';
+import { sendEmail, getTeamInvitationEmailTemplate } from '@/lib/email';
+
+const APP_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
 async function getAuthenticatedUser(request: NextRequest) {
   const authResult = await authenticateRequest(request);
@@ -181,8 +185,40 @@ export async function POST(
       },
     });
 
+    // Create invitation token and send email
+    const inviteToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    await prisma.teamInvitation.create({
+      data: {
+        token: inviteToken,
+        profileId,
+        email,
+        name,
+        role,
+        invitedBy: user.id,
+        expiresAt,
+      },
+    });
+
+    // Send invitation email
+    const inviteUrl = `${APP_URL}/auth/accept-invite?token=${inviteToken}`;
+    const emailTemplate = getTeamInvitationEmailTemplate({
+      inviterName: user.name,
+      restaurantName: profile.name,
+      role,
+      inviteUrl,
+      expiresIn: '7 days',
+    });
+
+    sendEmail({
+      to: email,
+      subject: emailTemplate.subject,
+      html: emailTemplate.html,
+    }).catch(err => console.error('Failed to send team invitation email:', err));
+
     return NextResponse.json(
-      { message: 'Team member added successfully', teamMember },
+      { message: 'Team member added and invitation sent', teamMember },
       { status: 201 }
     );
   } catch (error) {

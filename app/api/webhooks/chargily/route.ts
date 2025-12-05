@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySignature } from '@chargily/chargily-pay';
 import prisma from '@/lib/prisma';
+import { 
+  sendEmail, 
+  getSubscriptionConfirmedEmailTemplate, 
+  getPaymentReceiptEmailTemplate 
+} from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   let event;
@@ -96,9 +101,10 @@ async function handleSuccessfulPayment(event: any) {
       }
     });
 
-    if (payment && payment.userId) {
+    if (payment && payment.userId && payment.user) {
       const plan = checkout.metadata?.plan as any;
       const priceCents = checkout.metadata?.priceCents || checkout.amount;
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
       
       // Update subscription to active
       const existingSubscription = await prisma.subscription.findFirst({
@@ -115,7 +121,7 @@ async function handleSuccessfulPayment(event: any) {
           data: {
             plan: plan,
             status: 'ACTIVE',
-            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+            expiresAt,
             active: true,
             paymentRef: checkout.id,
             priceCents: priceCents,
@@ -128,7 +134,7 @@ async function handleSuccessfulPayment(event: any) {
             userId: payment.userId,
             plan: plan,
             status: 'ACTIVE',
-            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+            expiresAt,
             active: true,
             paymentRef: checkout.id,
             priceCents: priceCents,
@@ -138,12 +144,100 @@ async function handleSuccessfulPayment(event: any) {
       }
 
       console.log(`Subscription activated for user ${payment.userId} with plan ${plan}`);
+
+      // Send confirmation emails
+      const user = payment.user;
+      const priceFormatted = (priceCents / 100).toFixed(0);
+      const planFeatures = getPlanFeatures(plan);
+      
+      // Send subscription confirmation email
+      const subscriptionEmail = getSubscriptionConfirmedEmailTemplate({
+        name: user.name,
+        plan: plan,
+        price: priceFormatted,
+        currency: 'DA',
+        expiresAt: expiresAt.toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        }),
+        features: planFeatures,
+      });
+      
+      sendEmail({
+        to: user.email,
+        subject: subscriptionEmail.subject,
+        html: subscriptionEmail.html,
+      }).catch(err => console.error('Failed to send subscription email:', err));
+
+      // Send payment receipt email
+      const receiptEmail = getPaymentReceiptEmailTemplate({
+        name: user.name,
+        amount: priceFormatted,
+        currency: 'DA',
+        plan: plan,
+        paymentDate: new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        }),
+        paymentMethod: checkout.payment_method === 'edahabia' ? 'EDAHABIA' : 'CIB',
+        invoiceNumber: checkout.id.substring(0, 8).toUpperCase(),
+        periodStart: new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        }),
+        periodEnd: expiresAt.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        }),
+      });
+      
+      sendEmail({
+        to: user.email,
+        subject: receiptEmail.subject,
+        html: receiptEmail.html,
+      }).catch(err => console.error('Failed to send receipt email:', err));
     }
 
   } catch (error) {
     console.error('Error handling successful payment:', error);
     throw error;
   }
+}
+
+// Helper to get plan features for emails
+function getPlanFeatures(plan: string): string[] {
+  const features: Record<string, string[]> = {
+    STANDARD: [
+      '3 Restaurant Profiles',
+      '3 Digital Menus per profile',
+      'Custom QR Codes',
+      'Up to 50 menu items',
+      '100 QR scans per day',
+      'Advanced Analytics',
+      'Priority Email Support',
+    ],
+    CUSTOM: [
+      'Unlimited Restaurant Profiles',
+      'Unlimited Digital Menus',
+      'Premium QR Codes with Analytics',
+      'Unlimited menu items',
+      'Unlimited QR scans',
+      'Real-time Analytics & Reports',
+      '24/7 Priority Support',
+      'White-label Solution',
+    ],
+    FREE: [
+      '1 Restaurant Profile',
+      '1 Digital Menu',
+      'Basic QR Code',
+      'Up to 10 menu items',
+    ],
+  };
+  return features[plan] || features.FREE;
 }
 
 async function handleFailedPayment(event: any) {
