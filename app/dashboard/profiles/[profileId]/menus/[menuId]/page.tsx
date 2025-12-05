@@ -21,7 +21,8 @@ import {
   Loader2,
   Globe,
   Languages,
-  ChevronRight
+  ChevronRight,
+  Settings
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getErrorPagePath } from '@/lib/error-redirect';
@@ -104,6 +105,7 @@ export default function MenuBuilderPage({
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showEditCategory, setShowEditCategory] = useState(false);
   const [showAddTag, setShowAddTag] = useState(false);
+  const [showAddType, setShowAddType] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [showLanguagesModal, setShowLanguagesModal] = useState(false);
   const [showTranslationModal, setShowTranslationModal] = useState(false);
@@ -118,6 +120,7 @@ export default function MenuBuilderPage({
   const [newCategory, setNewCategory] = useState({ name: '', image: '' });
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [newTag, setNewTag] = useState({ name: '', color: '#f97316' });
+  const [newType, setNewType] = useState({ name: '', image: '' });
   
   const [itemForm, setItemForm] = useState({
     id: '',
@@ -331,6 +334,85 @@ export default function MenuBuilderPage({
       alert('Failed to create tag');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAddType = async () => {
+    if (!newType.name.trim()) return;
+    const token = getToken();
+    setSaving(true);
+
+    try {
+      const response = await fetch(`/api/menus/${menuId}/types`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name: newType.name, image: newType.image || null }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setTypes([...types, data.type]);
+        setNewType({ name: '', image: '' });
+        setShowAddType(false);
+      } else {
+        alert(data.error || 'Failed to create type');
+      }
+    } catch (error) {
+      console.error('Create type error:', error);
+      alert('Failed to create type');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteType = async (typeId: string, typeName: string) => {
+    if (!confirm(`Delete type "${typeName}"?`)) return;
+    const token = getToken();
+
+    try {
+      const response = await fetch(`/api/menus/${menuId}/types/${typeId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        setTypes(types.filter(t => t.id !== typeId));
+        // Update items to remove type reference
+        setItems(items.map(item => item.typeId === typeId ? { ...item, typeId: null, type: null } : item));
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to delete type');
+      }
+    } catch (error) {
+      console.error('Delete type error:', error);
+      alert('Failed to delete type');
+    }
+  };
+
+  const handleDeleteTag = async (tagId: string, tagName: string) => {
+    if (!confirm(`Delete tag "${tagName}"?`)) return;
+    const token = getToken();
+
+    try {
+      const response = await fetch(`/api/menus/${menuId}/tags/${tagId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        setTags(tags.filter(t => t.id !== tagId));
+        // Update items to remove tag reference
+        setItems(items.map(item => ({
+          ...item,
+          tags: item.tags.filter(t => t.id !== tagId)
+        })));
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Failed to delete tag');
+      }
+    } catch (error) {
+      console.error('Delete tag error:', error);
+      alert('Failed to delete tag');
     }
   };
 
@@ -938,6 +1020,60 @@ export default function MenuBuilderPage({
     </div>
   );
 
+  // Type Modal
+  const TypeModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl max-w-lg w-full p-6">
+        <h3 className="text-2xl font-bold text-gray-900 mb-6">Create New Type</h3>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Type Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="e.g., Lunch, Dinner, Breakfast, All Day"
+              value={newType.name}
+              onChange={(e) => setNewType({ ...newType, name: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              autoFocus
+            />
+            <p className="text-xs text-gray-500 mt-1">Types help organize when items are available (e.g., Breakfast, Lunch, Dinner)</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Image URL (optional)</label>
+            <input
+              type="text"
+              placeholder="https://example.com/image.jpg"
+              value={newType.image}
+              onChange={(e) => setNewType({ ...newType, image: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={() => { setShowAddType(false); setNewType({ name: '', image: '' }); }}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleAddType}
+            disabled={saving || !newType.name.trim()}
+            className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+            Create Type
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   // QR Code Modal
   const QRCodeModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -1337,6 +1473,7 @@ export default function MenuBuilderPage({
       {showAddCategory && <CategoryModal />}
       {showEditCategory && <CategoryModal isEdit />}
       {showAddTag && <TagModal />}
+      {showAddType && <TypeModal />}
       {showAddItem && <ItemModal />}
       {showEditItem && <ItemModal isEdit />}
       {showLanguagesModal && <LanguagesModal />}
@@ -1354,6 +1491,14 @@ export default function MenuBuilderPage({
             <p className="text-gray-600">{menu?.profile?.name} • {menu?.name}</p>
           </div>
           <div className="flex gap-3">
+            <button 
+              onClick={() => router.push(`/dashboard/profiles/${profileId}/menus/${menuId}/settings`)} 
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              title="Menu Settings"
+            >
+              <Settings className="w-5 h-5" />
+              <span className="hidden sm:inline">Settings</span>
+            </button>
             <button onClick={() => setShowLanguagesModal(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
               <Languages className="w-5 h-5" />
               <span className="hidden sm:inline">Languages</span>
@@ -1376,9 +1521,9 @@ export default function MenuBuilderPage({
         </div>
       </div>
 
-      {/* Search */}
+      {/* Search & Quick Actions */}
       <div className="bg-white rounded-xl p-4 border border-gray-200 mb-6">
-        <div className="relative">
+        <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
             type="text"
@@ -1387,6 +1532,80 @@ export default function MenuBuilderPage({
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
           />
+        </div>
+
+        {/* Tags & Types Management */}
+        <div className="flex flex-wrap gap-4 pt-4 border-t border-gray-100">
+          {/* Tags Section */}
+          <div className="flex-1 min-w-[200px]">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                <TagIcon className="w-4 h-4" /> Tags ({tags.length})
+              </span>
+              <button
+                onClick={() => setShowAddTag(true)}
+                className="text-xs text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1"
+              >
+                <Plus className="w-3 h-3" /> Add Tag
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {tags.length === 0 ? (
+                <span className="text-xs text-gray-400 italic">No tags yet</span>
+              ) : (
+                tags.map(tag => (
+                  <span
+                    key={tag.id}
+                    className="px-2 py-1 text-xs rounded-full font-medium flex items-center gap-1 group"
+                    style={{ backgroundColor: `${tag.color}20`, color: tag.color }}
+                  >
+                    {tag.name}
+                    <button
+                      onClick={() => handleDeleteTag(tag.id, tag.name)}
+                      className="opacity-0 group-hover:opacity-100 hover:text-red-600 transition-opacity"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Types Section */}
+          <div className="flex-1 min-w-[200px]">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                <Folder className="w-4 h-4" /> Types ({types.length})
+              </span>
+              <button
+                onClick={() => setShowAddType(true)}
+                className="text-xs text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1"
+              >
+                <Plus className="w-3 h-3" /> Add Type
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {types.length === 0 ? (
+                <span className="text-xs text-gray-400 italic">No types yet</span>
+              ) : (
+                types.map(type => (
+                  <span
+                    key={type.id}
+                    className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded-full font-medium flex items-center gap-1 group"
+                  >
+                    {type.name}
+                    <button
+                      onClick={() => handleDeleteType(type.id, type.name)}
+                      className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 transition-opacity"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
