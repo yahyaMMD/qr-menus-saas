@@ -1,12 +1,15 @@
-import { Resend } from 'resend';
-
-// Initialize Resend client
-const resend = new Resend(process.env.RESEND_API_KEY);
+import nodemailer from 'nodemailer';
 
 // Default sender email
 const FROM_EMAIL = process.env.EMAIL_FROM || 'QR Menus <noreply@qrmenus.app>';
 const APP_NAME = 'QR Menus';
 const APP_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+const SMTP_HOST = process.env.SMTP_HOST;
+const SMTP_PORT = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 587;
+const SMTP_USER = process.env.SMTP_USER;
+const SMTP_PASS = process.env.SMTP_PASS;
+const SMTP_SECURE = process.env.SMTP_SECURE === 'true';
+const SMTP_ENABLED = Boolean(SMTP_HOST && SMTP_USER && SMTP_PASS);
 
 // Email types
 export type EmailType = 
@@ -27,33 +30,37 @@ interface SendEmailOptions {
 }
 
 /**
- * Send an email using Resend
+ * Send an email via SMTP only.
  */
 export async function sendEmail({ to, subject, html, text }: SendEmailOptions) {
-  try {
-    // Check if Resend API key is configured
-    if (!process.env.RESEND_API_KEY) {
-      console.warn('RESEND_API_KEY not configured. Email not sent:', { to, subject });
-      return { success: false, error: 'Email service not configured' };
-    }
+  if (!SMTP_ENABLED) {
+    console.warn('Email not sent. Configure SMTP env vars:', { to, subject });
+    return { success: false, error: 'Email service not configured' };
+  }
 
-    const { data, error } = await resend.emails.send({
+  try {
+    const transporter = nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: SMTP_SECURE || SMTP_PORT === 465,
+      auth: {
+        user: SMTP_USER,
+        pass: SMTP_PASS,
+      },
+    });
+
+    const info = await transporter.sendMail({
       from: FROM_EMAIL,
-      to: [to],
+      to,
       subject,
       html,
       text: text || stripHtml(html),
     });
 
-    if (error) {
-      console.error('Failed to send email:', error);
-      return { success: false, error: error.message };
-    }
-
-    console.log('Email sent successfully:', { id: data?.id, to, subject });
-    return { success: true, id: data?.id };
+    console.log('Email sent via SMTP:', { id: info.messageId, to, subject });
+    return { success: true, id: info.messageId?.toString() };
   } catch (error) {
-    console.error('Email sending error:', error);
+    console.error('Email sending error (SMTP):', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
@@ -680,4 +687,3 @@ export function getSubscriptionPausedEmailTemplate(data: {
   
   return { subject, html };
 }
-
