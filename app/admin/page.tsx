@@ -216,10 +216,9 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (!tokens || !user || user.role !== ADMIN_ROLE) {
-      if (user && user.role !== ADMIN_ROLE) {
-        router.replace("/");
-      }
+    if (!tokens || !user) return;
+    if (user.role !== ADMIN_ROLE) {
+      router.replace("/");
       return;
     }
 
@@ -233,13 +232,45 @@ export default function AdminPage() {
         },
       });
       if (res.status === 401 || res.status === 403) {
+        // Try refresh token once
+        const refreshToken =
+          localStorage.getItem(REFRESH_KEY) ||
+          (tokens?.refreshToken ?? null);
+        if (refreshToken) {
+          try {
+            const refreshRes = await fetch("/api/auth?action=refresh", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ refreshToken }),
+            });
+            if (refreshRes.ok) {
+              const refreshJson = await refreshRes.json();
+              const newTokens = refreshJson.tokens;
+              localStorage.setItem(TOKEN_KEY, JSON.stringify(newTokens));
+              localStorage.setItem(ACCESS_KEY, newTokens.accessToken);
+              localStorage.setItem(REFRESH_KEY, newTokens.refreshToken);
+              setTokens(newTokens);
+              // Retry original request with new access token
+              return await fetch(input, {
+                ...init,
+                headers: {
+                  Authorization: `Bearer ${newTokens.accessToken}`,
+                  "Content-Type": "application/json",
+                  ...(init?.headers || {}),
+                },
+              });
+            }
+          } catch {
+            // fall through to logout
+          }
+        }
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
         localStorage.removeItem(ACCESS_KEY);
         localStorage.removeItem(REFRESH_KEY);
         setTokens(null);
         setUser(null);
-        router.replace("/test/login");
+        router.replace("/auth/login");
         throw new Error("Session expired. Please log in again.");
       }
       return res;
