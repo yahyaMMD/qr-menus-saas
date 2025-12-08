@@ -1,8 +1,10 @@
 <div align="center">
 
-# 🍽️ QrMenu
+# 🍽️ QResto
 
-### *Transform Your Restaurant Experience with Digital Menus*
+### *Digital Menus, QR Codes, Analytics & More*
+
+**Transform your restaurant experience with intelligent digital solutions**
 
 [![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
@@ -10,25 +12,17 @@
 [![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?style=for-the-badge&logo=prisma)](https://www.prisma.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-**[Documentation](#-documentation)** • **[Support](#-support)**
+[Features](#-key-features) • [Getting Started](#-quick-start) • [Documentation](#-documentation) • [Team](#-team)
 
 ---
 
 </div>
 
-## 🌟 About MenuLix
+## 🌟 Overview
 
-MenuLix is a modern **SaaS platform** that revolutionizes how restaurants present their menus to customers. Built with cutting-edge technology, MenuLix empowers restaurant owners to create stunning digital menus accessible via QR codes, track customer engagement with powerful analytics, and collect valuable feedback—all through an intuitive dashboard.
+QResto is a comprehensive SaaS platform designed specifically for modern restaurants. Create stunning digital menus, generate QR codes, track analytics, manage payments, handle support tickets, and collaborate with your team—all in one powerful application.
 
-### 🎯 Why MenuLix?
-
-- 📱 **Contactless & Safe** - Perfect for the post-pandemic dining experience
-- 💰 **Cost-Effective** - Eliminate expensive menu reprinting
-- 📊 **Data-Driven** - Understand what your customers love
-- 🚀 **Instant Updates** - Change prices, items, and descriptions in real-time
-- 🌍 **Localized** - Built specifically for the Algerian market with wilaya/commune support
-
----
+<br>
 
 ## ✨ Key Features
 
@@ -36,290 +30,301 @@ MenuLix is a modern **SaaS platform** that revolutionizes how restaurants presen
 <tr>
 <td width="50%">
 
-### 🍽️ Menu Management
-- 🎨 **Intuitive Menu Builder** with drag-and-drop
-- 📂 **Category Organization** for better structure
-- 🏷️ **Tags & Filters** for easy navigation
-- 🖼️ **Image Support** for appetizing visuals
-- 💱 **Dynamic Pricing** with real-time updates
+### 🔐 **Secure Authentication**
+- Custom JWT implementation with access & refresh tokens
+- Role-based access control (User, Owner, Admin)
+- Token blacklist for enhanced security
+- Secure password reset flows
 
 </td>
 <td width="50%">
 
-### 📱 Customer Experience
-- 📲 **QR Code Access** - instant menu viewing
-- 🌐 **Mobile-Optimized** design
-- ⭐ **Customer Reviews** and ratings
-- 🔍 **Search Functionality** within menus
-- 🌙 **Dark Mode** support
+### 📧 **Email System**
+- SMTP-based email delivery
+- Welcome emails for new users
+- Password reset with secure tokens
+- Professional email templates
 
 </td>
 </tr>
 <tr>
 <td width="50%">
 
-### 📊 Analytics & Insights
-- 📈 **Real-time Scan Tracking**
-- 🔥 **Popular Items Dashboard**
-- 👥 **Customer Engagement Metrics**
-- 📅 **Historical Data Analysis**
-- 📊 **Visual Reports** and charts
+### 📱 **Digital Menus**
+- Intuitive menu builder interface
+- QR code generation
+- Real-time menu updates
+- Customer feedback collection
 
 </td>
 <td width="50%">
 
-### 🛠️ Business Tools
-- 🏢 **Multi-Location Management**
-- 💳 **Subscription Plans** via Chargily
-- 🔗 **Social Media Integration**
-- 🗺️ **Location Services** (Wilaya/Commune)
-- 👨‍💼 **Admin Dashboard** for platform management
+### 💳 **Payment Integration**
+- Chargily integration (CIB/Edahabia)
+- Subscription management
+- Secure checkout process
+- Multiple payment plans
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 🎫 **Support System**
+- Integrated ticketing system
+- Contact form submissions
+- Email-based support tracking
+- Multi-profile management
+
+</td>
+<td width="50%">
+
+### 📊 **Analytics & Insights**
+- Menu performance tracking
+- Customer behavior analytics
+- Real-time notifications
+- Team collaboration tools
 
 </td>
 </tr>
 </table>
 
----
+<br>
 
-## 🏗️ Architecture
+## 🏗️ Technology Stack
 
-```
-menulix/
-├── 📁 app/
-│   ├── 🌐 (routes)/              # Public pages (Home, About, Pricing)
-│   ├── 🔐 (auth)/                # Authentication flows
-│   ├── 📊 dashboard/             # Authenticated user area
-│   │   ├── profile/              # Restaurant profile management
-│   │   ├── subscriptions/        # Payment & plan management
-│   │   └── admin/                # Admin-only features
-│   ├── 🍽️ menu/[restaurantId]/  # Public menu display (QR destination)
-│   └── 🔌 api/                   # Backend API routes
-├── 📁 components/                # Reusable React components
-├── 📁 lib/                       # Utility functions & helpers
-├── 📁 prisma/                    # Database schema & migrations
-└── 📁 public/                    # Static assets (images, icons, etc.)
+```mermaid
+graph LR
+    A[Frontend] -->|Next.js 15| B[React 19]
+    B -->|TypeScript| C[Tailwind CSS]
+    D[Backend] -->|API Routes| E[Prisma ORM]
+    E -->|Connection| F[(MongoDB)]
+    G[Authentication] -->|JWT| H[Token Management]
+    I[Payments] -->|Chargily| J[CIB/Edahabia]
+    K[Email] -->|SMTP| L[Nodemailer]
 ```
 
----
+<br>
 
-## 🛠️ Technology Stack
+## 📁 Project Structure
 
-<div align="center">
+```
+qresto/
+├── 📂 app/
+│   ├── 🏠 (public)/          # Landing pages & marketing
+│   ├── 🔐 auth/              # Authentication flows
+│   ├── 📊 dashboard/         # Main application dashboard
+│   └── 🔌 api/               # Server-side API routes
+├── 🧩 components/            # Reusable UI components
+├── 📚 lib/                   # Core utilities & helpers
+├── 🗄️ prisma/                # Database schema & seeds
+└── 📦 public/                # Static assets
+```
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | Next.js 14, React 18, TypeScript, Tailwind CSS |
-| **Backend** | Next.js API Routes, Prisma ORM |
-| **Database** | MongoDB |
-| **Authentication** | NextAuth.js |
-| **Payments** | Chargily (Baridi Mob & CIB) |
-| **Deployment** | Vercel |
-| **Analytics** | Custom Tracking System |
-
-</div>
-
----
+<br>
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-Ensure you have the following installed:
-
-- **Node.js** 18.0 or higher
-- **MongoDB** 5.0 or higher
-- **npm** or **yarn** package manager
+- Node.js 18+ installed
+- MongoDB database (local or Atlas)
+- SMTP email credentials
+- Chargily account (for payments)
 
 ### Installation
 
-1️⃣ **Clone the repository**
+1️⃣ **Clone and Install**
 ```bash
-git clone https://github.com/yahyaMMD/menulix.git
-cd menulix
-```
-
-2️⃣ **Install dependencies**
-```bash
+git clone https://github.com/yourusername/qresto.git
+cd qresto
 npm install
-# or
-yarn install
 ```
 
-3️⃣ **Set up environment variables**
+2️⃣ **Configure Environment**
 
 Create a `.env` file in the root directory:
 
 ```env
-# Database
-DATABASE_URL="mongodb+srv://username:password@cluster.mongodb.net/menulix"
+# 🗄️ Database
+DATABASE_URL=mongodb+srv://user:password@cluster.mongodb.net/qresto
 
-# Authentication
-NEXTAUTH_SECRET="your-secret-key-here"
-NEXTAUTH_URL="http://localhost:3000"
+# 🔑 JWT Configuration
+JWT_SECRET=your-super-secret-access-key
+JWT_REFRESH_SECRET=your-super-secret-refresh-key
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
 
-# Payment Gateway (Chargily)
-CHARGILY_SECRET_KEY="your-chargily-secret-key"
-CHARGILY_PUBLIC_KEY="your-chargily-public-key"
+# 🌐 Application URL
+NEXTAUTH_URL=http://localhost:3000
 
-# Optional: Analytics
-NEXT_PUBLIC_GA_ID="your-google-analytics-id"
+# 📧 SMTP Configuration
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+SMTP_SECURE=true
+EMAIL_FROM="QResto Support <support@qresto.com>"
+
+# 🎫 Support Email
+SUPPORT_EMAIL=support@qresto.com
+
+# 💳 Chargily Payment Gateway
+CHARGILY_SECRET_KEY=your-secret-key
+CHARGILY_PUBLIC_KEY=your-public-key
 ```
 
-4️⃣ **Initialize the database**
+3️⃣ **Setup Database**
 ```bash
 npx prisma generate
 npx prisma db push
-# Optional: Seed with sample data
-npx prisma db seed
+npm run db:seed  # Optional: seed sample data
 ```
 
-5️⃣ **Start the development server**
+4️⃣ **Launch Application**
 ```bash
 npm run dev
-# or
-yarn dev
 ```
 
-🎉 Open [http://localhost:3000](http://localhost:3000) in your browser!
-
----
-
-## 💎 Pricing Plans
-
-<table>
-<tr>
-<td width="33%" align="center">
-
-### 🆓 Free
-**Perfect for trying out**
-
-**0 DZD/month**
-
----
-
-✅ 1 Restaurant Profile  
-✅ 1 Digital Menu  
-✅ 10 Items per Menu  
-✅ 5 Scans per Day  
-✅ Basic Analytics  
+🎉 **Open [http://localhost:3000](http://localhost:3000) in your browser**
 
 <br>
 
-*[Get Started →](#)*
+## 🔐 Authentication Flow
 
-</td>
-<td width="33%" align="center">
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant API
+    participant Database
+    
+    User->>Frontend: Login Request
+    Frontend->>API: POST /api/auth?action=login
+    API->>Database: Verify Credentials
+    Database-->>API: User Data
+    API-->>Frontend: Access + Refresh Tokens
+    Frontend-->>User: Authenticated
+```
 
-### ⭐ Standard
-**Most Popular**
+### Available Endpoints
 
-**2,999 DZD/month**
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/auth?action=login` | POST | User login |
+| `/api/auth?action=register` | POST | New user registration |
+| `/api/auth?action=refresh` | POST | Refresh access token |
+| `/api/auth?action=logout` | POST | User logout |
+| `/api/auth/forgot-password` | POST | Request password reset |
+| `/api/auth/forgot-password` | PUT | Reset password with token |
 
----
+<br>
 
-✅ 3 Restaurant Profiles  
-✅ 3 Menus per Profile  
-✅ 50 Items per Menu  
-✅ 100 Scans per Day  
-✅ Advanced Analytics  
-✅ Priority Support  
+## 🎫 Support Ticket System
 
-*[Start Trial →](#)*
+The integrated support system allows customers to submit inquiries that are automatically converted into manageable tickets:
 
-</td>
-<td width="33%" align="center">
+1. Customer submits contact form
+2. System validates user (JWT or email matching)
+3. Ticket created in MongoDB via Prisma
+4. Support team notified
+5. Ticket tracked until resolution
 
-### 🚀 Custom
-**For growing businesses**
+**API Endpoint:** `POST /api/contact`
 
-**Contact Us**
+<br>
 
----
+## 💳 Payment Integration
 
-✅ Unlimited Profiles  
-✅ Unlimited Menus  
-✅ Unlimited Items  
-✅ Unlimited Scans  
-✅ Dedicated Support  
-✅ Custom Features  
+QResto integrates with **Chargily** for seamless payment processing supporting:
 
-*[Contact Sales →](#)*
+- 💳 CIB (Credit cards)
+- 💵 Edahabia (Algeria's e-payment system)
 
-</td>
-</tr>
-</table>
+**Payment Flow:**
+1. Fetch available plans: `GET /api/admin/plans`
+2. Initiate checkout: `POST /api/payment/checkout`
+3. Process payment via Chargily
+4. Activate subscription
 
----
+<br>
+
+## 📝 Available Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Create production build |
+| `npm run start` | Start production server |
+| `npm run lint` | Run ESLint checks |
+| `npm run db:push` | Push Prisma schema to database |
+| `npm run db:seed` | Seed database with sample data |
+
+<br>
 
 ## 👥 Team
 
 <div align="center">
 
-Meet the talented team behind MenuLix from the **National School of Artificial Intelligence** 🎓
+| Role | Name | GitHub |
+|:----:|------|:------:|
+| 👨‍💼 **Team Lead** | MAHDI YAHYA ABDERRAHMANE | [![GitHub](https://img.shields.io/badge/GitHub-100000?style=flat&logo=github&logoColor=white)](https://github.com/yahyaMMD) |
+| 👩‍💻 **Developer** | BOUTAYA HALA | [![GitHub](https://img.shields.io/badge/GitHub-100000?style=flat&logo=github&logoColor=white)](https://github.com/hallaboutaya) |
+| 👨‍💻 **Developer** | CHERDOUH YASSIR | [![GitHub](https://img.shields.io/badge/GitHub-100000?style=flat&logo=github&logoColor=white)](https://github.com/yassircherdouh) |
+| 👨‍💻 **Developer** | BENNACER ACHREF BAHA EDDINE | [![GitHub](https://img.shields.io/badge/GitHub-100000?style=flat&logo=github&logoColor=white)](https://github.com/ax666raf) |
+| 👩‍💻 **Developer** | HAICHOUR AMANI | [![GitHub](https://img.shields.io/badge/GitHub-100000?style=flat&logo=github&logoColor=white)](https://github.com/amanihaichour) |
 
 </div>
 
-| Role | Name | GitHub |
-|------|------|--------|
-| 👨‍💼 **Team Leader** | MAHDI YAHYA ABDERRAHMANE | [@yahyaMMD](https://github.com/yahyaMMD) |
-| 👩‍💻 **Developer** | BOUTAYA HALA | [ HALA BOUTAYA ](https://github.com/hallaboutaya) |
-| 👨‍💻 **Developer** | CHERDOUH YASSIR |[ YASSIR CHERDOUH ](https://github.com/yassircherdouh) |
-| 👨‍💻 **Developer** | BENNACER ACHREF BAHA EDDINE | [ ACHRAF BAHA EDDINE BENNACER](https://github.com/ax666raf) |
-| 👩‍💻 **Developer** | HAICHOUR AMANI | [ AMANI HAICHOUR ](https://github.com/amanihaichour) |
+<br>
 
----
+## 🔧 Troubleshooting
 
-## 🤝 Contributing
+<details>
+<summary><b>📧 Emails Not Sending</b></summary>
 
-We love contributions! Here's how you can help make MenuLix even better:
+- Verify all `SMTP_*` environment variables are correct
+- Ensure `EMAIL_FROM` is properly formatted
+- For port 465, `SMTP_SECURE` must be `true`
+- Check your email provider's app password settings
+- Test SMTP credentials with a mail client first
 
-1. 🍴 **Fork** the repository
-2. 🌿 **Create** a feature branch
-   ```bash
-   git checkout -b feature/AmazingFeature
-   ```
-3. 💾 **Commit** your changes
-   ```bash
-   git commit -m 'Add some AmazingFeature'
-   ```
-4. 📤 **Push** to the branch
-   ```bash
-   git push origin feature/AmazingFeature
-   ```
-5. 🎉 **Open** a Pull Request
+</details>
 
-Please read our [Contributing Guidelines](CONTRIBUTING.md) for details on our code of conduct and development process.
+<details>
+<summary><b>🔐 Authentication Issues</b></summary>
 
----
+- Clear browser local storage and cookies
+- Verify `JWT_SECRET` and `JWT_REFRESH_SECRET` are set
+- Check token expiration times are valid
+- Ensure database connection is active
+- Re-login to generate fresh tokens
 
-## 📖 Documentation
+</details>
 
-- 📚 **[User Guide](docs/USER_GUIDE.md)** - Complete guide for restaurant owners
-- 🔧 **[API Documentation](docs/API.md)** - API endpoints and usage
-- 🎨 **[Design System](docs/DESIGN.md)** - UI components and styling guide
-- 🚀 **[Deployment Guide](docs/DEPLOYMENT.md)** - How to deploy MenuLix
+<details>
+<summary><b>🗄️ Prisma/Database Errors</b></summary>
 
----
+- Run `npx prisma generate` after schema changes
+- Verify `DATABASE_URL` connection string is correct
+- Check MongoDB Atlas network access settings
+- Ensure database user has proper permissions
+- Try `npx prisma db push --force-reset` (⚠️ deletes data)
 
-## 📊 Project Status
+</details>
 
-- ✅ Core Features: **Complete**
-- 🚧 Admin Dashboard: **In Progress**
-- 📱 Mobile App: **Planned**
-- 🌐 Multi-language: **Planned**
+<details>
+<summary><b>💳 Payment Integration Issues</b></summary>
 
----
+- Verify Chargily API keys are correct
+- Check webhook URLs are properly configured
+- Ensure your Chargily account is active
+- Test with Chargily's sandbox environment first
+- Review Chargily API logs for errors
 
-## 📞 Support
+</details>
 
-Need help? We're here for you!
-
-- 📧 **Email**: [support@menulix.dz](mailto:support@menulix.dz)
-- 💬 **Discord**: [Join our community](https://discord.gg/menulix)
-- 📖 **Documentation**: [docs.menulix.dz](https://docs.menulix.dz)
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/yahyaMMD/menulix/issues)
-
----
+<br>
 
 ## 📄 License
 
@@ -327,30 +332,12 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ---
 
-## 🙏 Acknowledgments
-
-Special thanks to:
-
-- 🎓 **National School of Artificial Intelligence (ENSIA)** for their support
-- 👨‍🏫 Our mentors and professors for their guidance
-- 🇩🇿 The Algerian developer community for their feedback
-- 🍽️ Restaurant owners who helped shape MenuLix
-- 💳 **Chargily** for payment integration support
-
----
-
 <div align="center">
 
-### 🌟 Star us on GitHub — it motivates us a lot!
+**Made with ❤️ by the QResto Team**
 
-**Built with ❤️ by Team MenuLix**
+[Report Bug](https://github.com/yourusername/qresto/issues) • [Request Feature](https://github.com/yourusername/qresto/issues) • [Documentation](#)
 
-*Transforming restaurant experiences, one QR code at a time* 🍕 ☕ 🍽️
+⭐ Star us on GitHub if you find this project helpful!
 
-**[Website](https://menulix.dz)** • **[Twitter](https://twitter.com/menulix)** • **[LinkedIn](https://linkedin.com/company/menulix)**
-
----
-
-© 2024 MenuLix. All rights reserved.
-
-</div>#
+</div>
