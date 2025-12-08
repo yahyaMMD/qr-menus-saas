@@ -5,9 +5,9 @@ import Image from 'next/image'
 import menuIcon from '@/public/assets/menu-icon.svg'
 import qrIcon from '@/public/assets/qr-icon.svg'
 import analyticsIcon from '@/public/assets/analytics-icon.svg'
-import imageMenu from '@/public/assets/image-menu.png'
-import imageQr from '@/public/assets/image-qr.png'
-import imageAnalytics from '@/public/assets/image-analytics.png'
+import imageMenu from '@/public/assets/step1.png'
+import imageQr from '@/public/assets/step2.png'
+import imageAnalytics from '@/public/assets/step3.png'
 
 export default function HowItWorks() {
   const steps = [
