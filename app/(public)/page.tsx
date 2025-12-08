@@ -12,7 +12,6 @@ import { Contact } from '@/components/landing/Contact'
 export default function Home() {
   return (
     <main className="min-h-screen bg-white">
-      <Navbar />
       <Hero />
       <HowItWorks />
       <Pricing />
@@ -20,7 +19,6 @@ export default function Home() {
       <Testimonials />
       <Contact />
       <CTA />
-      <Footer />
     </main>
   )
 }
