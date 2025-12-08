@@ -32,7 +32,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full">
         {/* Logo/Brand */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-orange-600 mb-2">MenuLix</h1>
+          <h1 className="text-4xl font-bold text-orange-600 mb-2">QResto</h1>
           <p className="text-gray-600">Welcome back</p>
         </div>
 

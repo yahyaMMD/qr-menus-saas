@@ -14,7 +14,7 @@ export const Gallery = () => {
             See What You Can Create
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Explore a few of the stunning digital menus created with MenuLix. From cozy cafés to elegant restaurants, our designs adapt perfectly to every style.
+            Explore a few of the stunning digital menus created with QResto. From cozy cafés to elegant restaurants, our designs adapt perfectly to every style.
           </p>
         </div>
 

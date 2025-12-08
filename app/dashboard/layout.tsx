@@ -12,11 +12,9 @@ export default function DashboardLayout({
 }) {
   return (
     <ProtectedRoute>
-      <Navbar/>
       <DashboardLayoutComponent>
         {children}
       </DashboardLayoutComponent>
-      <Footer/>
     </ProtectedRoute>
   );
 }
