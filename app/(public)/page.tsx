@@ -18,7 +18,7 @@ export default function Home() {
       <MenuShowcase />
       <Testimonials />
       <Contact />
-      <CTA />
+      {/* <CTA /> */}
     </main>
   )
 }

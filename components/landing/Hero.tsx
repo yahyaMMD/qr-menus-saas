@@ -1,7 +1,7 @@
 // @ts-nocheck
 import Link from 'next/link'
 import Image from 'next/image'
-import heroImage from '@/public/assets/hero-image.png'
+import heroImage from '@/public/assets/hero.jpg'
 
 export default function Hero() {
   return (
@@ -65,7 +65,7 @@ export default function Hero() {
           {/* Right Image */}
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-br from-orange-400/20 to-orange-600/20 rounded-2xl blur-2xl"></div>
-            <div className="relative h-[400px] lg:h-[500px] rounded-2xl overflow-hidden shadow-2xl bg-white/50 backdrop-blur-sm border border-white/20 hover:scale-105 transition-transform duration-500">
+            <div className="relative h-[430px] lg:h-[650px] rounded-2xl overflow-hidden shadow-2xl bg-white/50 backdrop-blur-sm border border-white/20 hover:scale-105 transition-transform duration-500">
               <Image
                 src={heroImage}
                 alt="Restaurant Menu"
