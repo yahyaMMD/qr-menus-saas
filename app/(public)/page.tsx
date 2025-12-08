@@ -7,6 +7,7 @@ import Testimonials from '@/components/landing/Testimonials'
 import CTA from '@/components/landing/CTA'
 import Footer from '@/components/landing/Footer'
 import Navbar from '@/components/landing/Navbar'
+import { Contact } from '@/components/landing/Contact'
 
 export default function Home() {
   return (
@@ -17,6 +18,7 @@ export default function Home() {
       <Pricing />
       <MenuShowcase />
       <Testimonials />
+      <Contact />
       <CTA />
       <Footer />
     </main>

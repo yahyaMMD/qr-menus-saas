@@ -3,11 +3,14 @@
 
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
+import { useAuth } from '@/lib/auth/context'
+import Link from 'next/link'
 import menu1 from '@/public/assets/menu1-img.png'
 import menu2 from '@/public/assets/menu2-img.png'
 import menu3 from '@/public/assets/menu3-img.png'
 
 export default function MenuShowcase() {
+  const { isAuthenticated } = useAuth();
   const [restaurants, setRestaurants] = useState([
     {
       name: 'Cozy Cafe',
@@ -61,6 +64,16 @@ export default function MenuShowcase() {
   return (
     <section className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Section Header */}
+        <div className="text-center mb-12">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+            See What You Can Create
+          </h2>
+          <p className="text-lg text-gray-600">
+            Discover restaurants already using MenuMaster
+          </p>
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
@@ -70,7 +83,7 @@ export default function MenuShowcase() {
             {restaurants.map((restaurant, index) => (
               <div
                 key={index}
-                className="group cursor-pointer rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border-4 border-white hover:border-orange-200"
+                className="group cursor-pointer rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow border-4 border-white hover:border-orange-200 relative"
               >
                 {/* Restaurant Image */}
                 <div className="h-64 bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center relative overflow-hidden">
@@ -78,20 +91,30 @@ export default function MenuShowcase() {
                     <img
                       src={restaurant.logo}
                       alt={restaurant.name}
-                      className="w-full h-full object-cover"
+                      className={`w-full h-full object-cover transition-all duration-300 ${!isAuthenticated ? 'blur-sm' : ''}`}
                     />
                   ) : (
                     <Image
                       src={restaurant.image}
                       alt={restaurant.name}
                       fill
-                      className="object-cover"
+                      className={`object-cover transition-all duration-300 ${!isAuthenticated ? 'blur-sm' : ''}`}
                     />
+                  )}
+                  
+                  {/* Overlay badge */}
+                  {!isAuthenticated && (
+                    <div className="absolute top-4 right-4 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                      </svg>
+                      {restaurant.menus?.length || index + 1} Menu{(restaurant.menus?.length || index + 1) > 1 ? 's' : ''}
+                    </div>
                   )}
                 </div>
 
                 {/* Card Content */}
-                <div className="bg-white p-6">
+                <div className={`bg-white p-6 transition-all duration-300 ${!isAuthenticated ? 'opacity-75' : ''}`}>
                   <h3 className="text-xl font-bold text-gray-900 mb-1">
                     {restaurant.name}
                   </h3>
@@ -102,50 +125,42 @@ export default function MenuShowcase() {
           </div>
         )}
 
-        {/* Section Header */}
-        <div className="text-center mb-12 mt-20">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            See What You Can Create
-          </h2>
-          <p className="text-lg text-gray-600">
-            Sign up to explore real restaurant menus and see the possibilities
-          </p>
-        </div>
-
         {/* Unlock the Gallery CTA */}
-        <div className="mt-16 max-w-2xl mx-auto">
-          <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-12 text-center">
-            <div className="w-16 h-16 mx-auto bg-orange-100 rounded-lg flex items-center justify-center mb-6">
-              <svg 
-                className="w-8 h-8 text-orange-500" 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" 
-                />
-              </svg>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              Unlock the Gallery
-            </h3>
-            <p className="text-gray-600 mb-8">
-              Sign up as a user to explore real restaurant menus created with Qresto and see what's possible for your business
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="bg-orange-500 text-white px-8 py-3 rounded-lg hover:bg-orange-600 transition font-semibold">
-                Get Started
-              </button>
-              <button className="border-2 border-gray-300 text-gray-900 px-8 py-3 rounded-lg hover:bg-gray-50 transition font-semibold">
-                Sign In
-              </button>
+        {!isAuthenticated && (
+          <div className="mt-16 max-w-2xl mx-auto">
+            <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-12 text-center">
+              <div className="w-16 h-16 mx-auto bg-orange-100 rounded-lg flex items-center justify-center mb-6">
+                <svg 
+                  className="w-8 h-8 text-orange-500" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" 
+                  />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                Unlock the Gallery
+              </h3>
+              <p className="text-gray-600 mb-8">
+                Sign up as a user to explore real restaurant menus created with Qresto and see what's possible for your business
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link href="/auth/register" className="bg-orange-500 text-white px-8 py-3 rounded-lg hover:bg-orange-600 transition font-semibold">
+                  Get Started
+                </Link>
+                <Link href="/auth/login" className="border-2 border-gray-300 text-gray-900 px-8 py-3 rounded-lg hover:bg-gray-50 transition font-semibold">
+                  Sign In
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </section>
   )

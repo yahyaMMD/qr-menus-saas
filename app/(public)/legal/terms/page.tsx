@@ -3,26 +3,13 @@
 
 import Link from "next/link";
 import { Scale, FileText, AlertCircle, CheckCircle, XCircle, UserCheck } from "lucide-react";
+import Navbar from '@/components/landing/Navbar';
+import Footer from '@/components/landing/Footer';
 
 export default function TermsOfService() {
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="text-2xl font-bold text-gray-900">
-              Qresto
-            </Link>
-            <Link
-              href="/"
-              className="text-orange-500 hover:text-orange-600 font-medium"
-            >
-              Back to Home
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-orange-50 to-white py-16">
@@ -712,16 +699,7 @@ export default function TermsOfService() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <p className="text-gray-400">
-              © 2025 Qresto. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

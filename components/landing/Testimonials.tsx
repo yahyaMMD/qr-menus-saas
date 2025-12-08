@@ -23,17 +23,59 @@ export default function Testimonials() {
       role: 'Cafe Constantine',
       rating: 5,
     },
+    {
+      text: 'Our customers love scanning the QR code and browsing our menu on their phones. It\'s so convenient!',
+      author: 'Mohamed Cherif',
+      role: 'Restaurant El Bahia',
+      rating: 5,
+    },
+    {
+      text: 'The multilingual support is perfect for our tourist customers. They can view the menu in their language!',
+      author: 'Leila Hamidi',
+      role: 'Café des Arts - Algiers',
+      rating: 5,
+    },
+    {
+      text: 'Real-time menu updates are a game changer. No more printing new menus every week!',
+      author: 'Karim Bensaid',
+      role: 'Le Gourmet Restaurant',
+      rating: 5,
+    },
+    {
+      text: 'The customer feedback feature helps us improve our service constantly. Highly recommend!',
+      author: 'Nadia Mansouri',
+      role: 'Pizzeria Napoli',
+      rating: 5,
+    },
+    {
+      text: 'Easy to use dashboard and beautiful menu presentation. Our sales increased by 20%!',
+      author: 'Rachid Taleb',
+      role: 'Tajine House',
+      rating: 5,
+    },
+    {
+      text: 'Professional QR code menus at an affordable price. Perfect for small businesses like ours.',
+      author: 'Samira Bouteldja',
+      role: 'Café Glacier',
+      rating: 5,
+    },
+    {
+      text: 'The team support is excellent. They helped us set up everything in just one day!',
+      author: 'Yacine Brahimi',
+      role: 'Grillades & Saveurs',
+      rating: 5,
+    },
   ]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchTestimonials = async () => {
       try {
-        const response = await fetch('/api/feedbacks?limit=6&minRating=4');
+        const response = await fetch('/api/feedbacks?limit=10&minRating=4');
         if (response.ok) {
           const data = await response.json();
           if (data.feedbacks && data.feedbacks.length > 0) {
-            const formattedTestimonials = data.feedbacks.slice(0, 3).map((feedback: any) => ({
+            const formattedTestimonials = data.feedbacks.map((feedback: any) => ({
               text: feedback.comment || 'Great experience with MenuMaster!',
               author: feedback.userName,
               role: feedback.restaurantName,
@@ -78,31 +120,51 @@ export default function Testimonials() {
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
             Loved by Restaurant Owners
           </h2>
+          <p className="text-gray-600 text-sm">Scroll to see more testimonials →</p>
         </div>
 
-        {/* Testimonials Grid */}
-        <div className="grid md:grid-cols-3 gap-8">
-          {testimonials.map((testimonial, index) => (
-            <div key={index} className="bg-white p-8 rounded-xl shadow-md">
-              {/* Stars */}
-              <div className="flex gap-1 mb-4">
-                {[...Array(testimonial.rating)].map((_, i) => (
-                  <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                ))}
-              </div>
+        {/* Testimonials Scrollable Container */}
+        <div className="overflow-x-auto pb-4 scrollbar-thin">
+          <div className="flex gap-8">
+            {testimonials.map((testimonial, index) => (
+              <div key={index} className="bg-white p-8 rounded-xl shadow-md min-w-[320px] max-w-[320px] flex-shrink-0">
+                {/* Stars */}
+                <div className="flex gap-1 mb-4">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
 
-              {/* Testimonial Text */}
-              <p className="text-gray-700 mb-6 italic">"{testimonial.text}"</p>
+                {/* Testimonial Text */}
+                <p className="text-gray-700 mb-6 italic">"{testimonial.text}"</p>
 
-              {/* Author */}
-              <div>
-                <p className="font-bold text-gray-900">{testimonial.author}</p>
-                <p className="text-sm text-gray-600">{testimonial.role}</p>
+                {/* Author */}
+                <div>
+                  <p className="font-bold text-gray-900">{testimonial.author}</p>
+                  <p className="text-sm text-gray-600">{testimonial.role}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
+      
+      <style jsx global>{`
+        .scrollbar-thin::-webkit-scrollbar {
+          height: 8px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 10px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+          background: #fb923c;
+          border-radius: 10px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+          background: #f97316;
+        }
+      `}</style>
     </section>
   )
 }
