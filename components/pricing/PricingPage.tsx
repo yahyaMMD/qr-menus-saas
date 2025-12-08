@@ -38,43 +38,44 @@ export const PricingPage = () => {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [loginPrompt, setLoginPrompt] = useState<{ open: boolean; planId: string | null }>({ open: false, planId: null });
 
   // Check auth on component mount
   useEffect(() => {
     const checkAuth = () => {
+      let token: string | null = null;
       try {
-        const authRaw = localStorage.getItem('auth');
-        console.log('Payment page - Auth raw:', authRaw ? authRaw.substring(0, 100) + '...' : 'null');
-        if (authRaw) {
-          const auth = JSON.parse(authRaw);
-          console.log('Payment page - Auth parsed:', { 
-            hasTokens: !!auth?.tokens,
-            hasAccessToken: !!auth?.tokens?.accessToken,
-            tokenStart: auth?.tokens?.accessToken?.substring(0, 30)
-          });
-          const token = auth?.tokens?.accessToken || null;
-          if (token) {
-            console.log('Payment page - Token found:', token.substring(0, 30) + '...');
-            setAccessToken(token);
-            setIsCheckingAuth(false);
-            return;
+        token = localStorage.getItem("accessToken");
+        if (!token) {
+          const raw = localStorage.getItem("authTokens") || localStorage.getItem("auth");
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            token = parsed?.accessToken || parsed?.tokens?.accessToken || null;
           }
         }
       } catch (err) {
-        console.warn('Could not read auth from localStorage', err);
+        console.warn("Could not read auth from localStorage", err);
       }
-      // No token found, redirect to login
-      console.warn('Payment page - No token found, redirecting to login');
+      if (token) {
+        setAccessToken(token);
+      }
       setIsCheckingAuth(false);
-      router.push('/auth/login?callbackUrl=/pricing');
     };
 
     checkAuth();
   }, [router]);
 
+  // Sync plan from query string
+  useEffect(() => {
+    if (plan) {
+      setSelectedPlan(plan);
+    }
+  }, [plan]);
+
   const handlePayment = async (planId: string) => {
     if (!accessToken) {
-      setError('You must be logged in to proceed with payment');
+      setError('');
+      setLoginPrompt({ open: true, planId });
       return;
     }
 
@@ -214,45 +215,36 @@ export const PricingPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
+
+      {/* Login prompt modal */}
+      {loginPrompt.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Sign in required</h3>
+            <p className="text-gray-600 mb-6">
+              You need to log in to subscribe to a plan. Continue to login and come back to complete your purchase.
+            </p>
+            <div className="flex gap-3">
               <button
-                className="md:hidden"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                onClick={() => setLoginPrompt({ open: false, planId: null })}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
               >
-                <MenuIcon className="h-6 w-6" />
+                Cancel
               </button>
-              <a href="/" className="text-2xl font-bold text-gray-900">
-                Qresto
-              </a>
-            </div>
-
-            <div className="hidden md:flex items-center gap-8">
-              <a href="/" className="text-gray-700 hover:text-orange-500 transition-colors">
-                Home
-              </a>
-              <a href="/pricing" className="text-gray-700 hover:text-orange-500 transition-colors">
-                Pricing
-              </a>
-              <a href="#" className="text-gray-700 hover:text-orange-500 transition-colors">
-                About
-              </a>
-            </div>
-
-            <div className="hidden md:flex items-center gap-4">
-              <Button variant="ghost" className="text-gray-700">
-                Sign in
-              </Button>
-              <Button className="bg-gray-900 hover:bg-gray-800 text-white">
-                Get Started
-              </Button>
+              <button
+                onClick={() => {
+                  const callback = `/pricing${loginPrompt.planId ? `?plan=${loginPrompt.planId}` : ''}`;
+                  router.push(`/auth/login?callbackUrl=${encodeURIComponent(callback)}`);
+                }}
+                className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
+              >
+                Go to login
+              </button>
             </div>
           </div>
         </div>
-      </nav>
+      )}
+
 
       {/* Hero Section */}
       <section className="pt-32 pb-16 bg-white">
@@ -441,32 +433,7 @@ export const PricingPage = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Still have questions?
-          </h2>
-          <p className="text-lg text-gray-600 mb-8">
-            Our team is here to help you choose the right plan for your restaurant
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button variant="outline" className="border-2 border-gray-300 text-gray-900 hover:bg-gray-100">
-              Contact Support
-            </Button>
-            <Button className="bg-orange-500 hover:bg-orange-600 text-white">
-              Start Free Trial
-            </Button>
-          </div>
-        </div>
-      </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-gray-400">© 2025 Qresto. All rights reserved.</p>
-        </div>
-      </footer>
     </div>
   );
 };

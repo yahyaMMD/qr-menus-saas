@@ -16,32 +16,26 @@ export default function Pricing() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [showPaymentMethods, setShowPaymentMethods] = useState(false);
+  const [loginPrompt, setLoginPrompt] = useState<{ open: boolean; planId: string | null }>({ open: false, planId: null });
 
   // Check auth on component mount
   useEffect(() => {
     const checkAuth = () => {
       try {
-        const authRaw = localStorage.getItem('auth');
-        console.log('Pricing section - Auth raw:', authRaw ? authRaw.substring(0, 100) + '...' : 'null');
-        if (authRaw) {
-          const auth = JSON.parse(authRaw);
-          console.log('Pricing section - Auth parsed:', { 
-            hasTokens: !!auth?.tokens,
-            hasAccessToken: !!auth?.tokens?.accessToken,
-            tokenStart: auth?.tokens?.accessToken?.substring(0, 30)
-          });
-          const token = auth?.tokens?.accessToken || null;
-          if (token) {
-            console.log('Pricing section - Token found:', token.substring(0, 30) + '...');
-            setAccessToken(token);
-            setIsCheckingAuth(false);
-            return;
+        let token: string | null = localStorage.getItem('accessToken');
+        if (!token) {
+          const authRaw = localStorage.getItem('authTokens') || localStorage.getItem('auth');
+          if (authRaw) {
+            const auth = JSON.parse(authRaw);
+            token = auth?.accessToken || auth?.tokens?.accessToken || null;
           }
+        }
+        if (token) {
+          setAccessToken(token);
         }
       } catch (err) {
         console.warn('Could not read auth from localStorage', err);
       }
-      console.warn('Pricing section - No token found');
       setIsCheckingAuth(false);
     };
 
@@ -50,8 +44,8 @@ export default function Pricing() {
 
   const handlePayment = async (planId: string, planName: string) => {
     if (!accessToken) {
-      setError('You must be logged in to proceed with payment');
-      router.push('/auth/login?callbackUrl=/');
+      setError('');
+      setLoginPrompt({ open: true, planId });
       return;
     }
 
@@ -227,6 +221,35 @@ export default function Pricing() {
       <div className="absolute bottom-0 left-20 w-96 h-96 bg-blue-100/30 rounded-full blur-3xl"></div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Login prompt modal */}
+        {loginPrompt.open && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+            <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Sign in required</h3>
+              <p className="text-gray-600 mb-6">
+                You need to log in to subscribe to a plan. Continue to login and come back to complete your purchase.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setLoginPrompt({ open: false, planId: null })}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    const callback = '/pricing';
+                    router.push(`/auth/login?callbackUrl=${encodeURIComponent(callback)}`);
+                  }}
+                  className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
+                >
+                  Go to login
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Section Header */}
         <div className="text-center mb-16">
           <div className="inline-block mb-4">
