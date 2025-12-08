@@ -1,19 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { sendEmail } from '@/lib/email';
+import { authenticateRequest } from '@/lib/auth/middleware';
+import { findUserByEmail } from '@/lib/auth/db';
+import prisma from '@/lib/prisma';
 
-const contactSchema = z.object({
+const schema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Invalid email'),
-  message: z.string().min(10, 'Message is too short'),
+  subject: z.string().min(3, 'Subject is required'),
+  message: z.string().min(10, 'Message must be at least 10 characters'),
 });
-
-const SUPPORT_INBOX = process.env.SUPPORT_EMAIL || 'support@qresto.com';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const parsed = contactSchema.safeParse(body);
+    const parsed = schema.safeParse(body);
 
     if (!parsed.success) {
       const issue = parsed.error.issues[0];
@@ -23,35 +24,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, email, message } = parsed.data;
+    const { name, email, subject, message } = parsed.data;
 
-    const html = `
-      <h2>New Contact Form Submission</h2>
-      <p><strong>Name:</strong> ${name}</p>
-      <p><strong>Email:</strong> ${email}</p>
-      <p><strong>Message:</strong></p>
-      <p>${message.replace(/\n/g, '<br/>')}</p>
-    `;
+    // Resolve userId: prefer auth header, fallback to existing user by email
+    let userId: string | null = null;
+    const authResult = await authenticateRequest(request);
+    if (authResult.success && authResult.payload?.userId) {
+      userId = authResult.payload.userId;
+    } else {
+      const existingUser = await findUserByEmail(email);
+      if (existingUser) {
+        userId = existingUser.id;
+      }
+    }
 
-    const result = await sendEmail({
-      to: SUPPORT_INBOX,
-      subject: `Contact form: ${name}`,
-      html,
-      text: `Name: ${name}\nEmail: ${email}\nMessage:\n${message}`,
-    });
-
-    if (!result.success) {
+    if (!userId) {
       return NextResponse.json(
-        { error: 'Failed to send message. Please try again later.' },
-        { status: 502 }
+        { error: 'Please log in to submit a ticket.' },
+        { status: 401 }
       );
     }
 
-    return NextResponse.json({ message: 'Sent' }, { status: 200 });
-  } catch (error) {
-    console.error('Contact form error:', error);
+    const ticketMessage = `${message}\n\n--\nName: ${name}\nEmail: ${email}`;
+
+    const ticket = await prisma.supportTicket.create({
+      data: {
+        userId,
+        subject,
+        message: ticketMessage,
+      },
+    });
+
     return NextResponse.json(
-      { error: 'Something went wrong. Please try again.' },
+      { ticketId: ticket.id, status: ticket.status },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error('Contact form ticket error:', error);
+    return NextResponse.json(
+      { error: 'Failed to create support ticket.' },
       { status: 500 }
     );
   }

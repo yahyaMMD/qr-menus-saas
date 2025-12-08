@@ -7,6 +7,7 @@ import { Send } from "lucide-react";
 export const Contact = () => {
   const [formData, setFormData] = useState({
     name: "",
+    subject: "",
     email: "",
     message: "",
   });
@@ -32,18 +33,44 @@ export const Contact = () => {
     setSubmitStatus({ type: null, message: "" });
 
     try {
-      // TODO: Replace with actual API call to /api/contact
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      let accessToken: string | null = null;
+      try {
+        accessToken = localStorage.getItem("accessToken");
+        if (!accessToken) {
+          const authRaw = localStorage.getItem("authTokens") || localStorage.getItem("auth");
+          if (authRaw) {
+            const parsed = JSON.parse(authRaw);
+            accessToken = parsed?.accessToken || parsed?.tokens?.accessToken || null;
+          }
+        }
+      } catch {
+        accessToken = null;
+      }
+
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to send message.");
+      }
 
       setSubmitStatus({
         type: "success",
         message: "✓ Thank you! We'll get back to you soon.",
       });
-      setFormData({ name: "", email: "", message: "" });
-    } catch (error) {
+      setFormData({ name: "", subject: "", email: "", message: "" });
+    } catch (error: any) {
       setSubmitStatus({
         type: "error",
-        message: "Something went wrong. Please try again.",
+        message: error?.message || "Something went wrong. Please try again.",
       });
     } finally {
       setIsSubmitting(false);
@@ -132,6 +159,30 @@ export const Contact = () => {
                         value={formData.name}
                         onChange={handleChange}
                         placeholder="John Doe"
+                        required
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white
+                                   focus:border-orange-500 focus:ring-4 focus:ring-orange-100 
+                                   outline-none transition-all shadow-sm hover:border-gray-300"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Subject */}
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="subject"
+                      className="block text-sm font-semibold text-gray-700"
+                    >
+                      Subject
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        id="subject"
+                        name="subject"
+                        value={formData.subject}
+                        onChange={handleChange}
+                        placeholder="How can we help?"
                         required
                         className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white
                                    focus:border-orange-500 focus:ring-4 focus:ring-orange-100 
