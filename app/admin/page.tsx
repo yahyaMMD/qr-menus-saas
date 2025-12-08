@@ -1,6 +1,6 @@
 "use client";
 
-import { JSX, useEffect, useMemo, useState } from "react";
+import { JSX, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   BarChart3,
@@ -215,7 +215,7 @@ export default function AdminPage() {
     }
   }, []);
 
-  useEffect(() => {
+  const loadData = useCallback(async () => {
     if (!tokens || !user) return;
     if (user.role !== ADMIN_ROLE) {
       router.replace("/");
@@ -232,7 +232,6 @@ export default function AdminPage() {
         },
       });
       if (res.status === 401 || res.status === 403) {
-        // Try refresh token once
         const refreshToken =
           localStorage.getItem(REFRESH_KEY) ||
           (tokens?.refreshToken ?? null);
@@ -250,7 +249,6 @@ export default function AdminPage() {
               localStorage.setItem(ACCESS_KEY, newTokens.accessToken);
               localStorage.setItem(REFRESH_KEY, newTokens.refreshToken);
               setTokens(newTokens);
-              // Retry original request with new access token
               return await fetch(input, {
                 ...init,
                 headers: {
@@ -276,65 +274,65 @@ export default function AdminPage() {
       return res;
     };
 
-    async function load() {
-      try {
-        setLoading(true);
-        const [
-          profilesRes,
-          usersRes,
-          subsRes,
-          payRes,
-          plansRes,
-          feedbackRes,
-          ticketsRes,
-          analyticsRes,
-        ] = await Promise.all([
-          safeFetch("/api/admin/profiles"),
-          safeFetch("/api/admin/users"),
-          safeFetch("/api/admin/subscriptions"),
-          safeFetch("/api/admin/payments"),
-          safeFetch("/api/admin/plans"),
-          safeFetch("/api/admin/feedback"),
-          safeFetch("/api/admin/support"),
-          safeFetch("/api/admin/analytics"),
-        ]);
+    try {
+      setLoading(true);
+      const [
+        profilesRes,
+        usersRes,
+        subsRes,
+        payRes,
+        plansRes,
+        feedbackRes,
+        ticketsRes,
+        analyticsRes,
+      ] = await Promise.all([
+        safeFetch("/api/admin/profiles"),
+        safeFetch("/api/admin/users"),
+        safeFetch("/api/admin/subscriptions"),
+        safeFetch("/api/admin/payments"),
+        safeFetch("/api/admin/plans"),
+        safeFetch("/api/admin/feedback"),
+        safeFetch("/api/admin/support"),
+        safeFetch("/api/admin/analytics"),
+      ]);
 
-        if (!profilesRes.ok) throw new Error("Failed to load profiles");
-        if (!usersRes.ok) throw new Error("Failed to load users");
-        if (!subsRes.ok) throw new Error("Failed to load subscriptions");
-        if (!payRes.ok) throw new Error("Failed to load payments");
-        if (!plansRes.ok) throw new Error("Failed to load plans");
-        if (!feedbackRes.ok) throw new Error("Failed to load feedback");
-        if (!ticketsRes.ok) throw new Error("Failed to load tickets");
-        if (!analyticsRes.ok) throw new Error("Failed to load analytics");
+      if (!profilesRes.ok) throw new Error("Failed to load profiles");
+      if (!usersRes.ok) throw new Error("Failed to load users");
+      if (!subsRes.ok) throw new Error("Failed to load subscriptions");
+      if (!payRes.ok) throw new Error("Failed to load payments");
+      if (!plansRes.ok) throw new Error("Failed to load plans");
+      if (!feedbackRes.ok) throw new Error("Failed to load feedback");
+      if (!ticketsRes.ok) throw new Error("Failed to load tickets");
+      if (!analyticsRes.ok) throw new Error("Failed to load analytics");
 
-        const profilesJson = await profilesRes.json();
-        const usersJson = await usersRes.json();
-        const subsJson = await subsRes.json();
-        const payJson = await payRes.json();
-        const plansJson = await plansRes.json();
-        const feedbackJson = await feedbackRes.json();
-        const ticketsJson = await ticketsRes.json();
-        const analyticsJson = await analyticsRes.json();
+      const profilesJson = await profilesRes.json();
+      const usersJson = await usersRes.json();
+      const subsJson = await subsRes.json();
+      const payJson = await payRes.json();
+      const plansJson = await plansRes.json();
+      const feedbackJson = await feedbackRes.json();
+      const ticketsJson = await ticketsRes.json();
+      const analyticsJson = await analyticsRes.json();
 
-        setProfiles(profilesJson.profiles ?? []);
-        setUsers(usersJson.users ?? []);
-        setSubscriptions(subsJson.subscriptions ?? []);
-        setPayments(payJson.payments ?? []);
-        setPlans(plansJson.plans ?? []);
-        setFeedback(feedbackJson.feedback ?? []);
-        setTickets(ticketsJson.tickets ?? []);
-        setAnalytics(analyticsJson);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load admin data");
-      } finally {
-        setLoading(false);
-      }
+      setProfiles(profilesJson.profiles ?? []);
+      setUsers(usersJson.users ?? []);
+      setSubscriptions(subsJson.subscriptions ?? []);
+      setPayments(payJson.payments ?? []);
+      setPlans(plansJson.plans ?? []);
+      setFeedback(feedbackJson.feedback ?? []);
+      setTickets(ticketsJson.tickets ?? []);
+      setAnalytics(analyticsJson);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load admin data");
+    } finally {
+      setLoading(false);
     }
-
-    load();
   }, [tokens, user, router]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   useEffect(() => {
     if (!feedback.length) return;
@@ -450,7 +448,7 @@ export default function AdminPage() {
     }
     setTokens(null);
     setUser(null);
-    router.replace("/test/login");
+    router.replace("/auth/login");
   };
 
   // Actions
@@ -567,6 +565,10 @@ export default function AdminPage() {
     } finally {
       setActionLoading(null);
     }
+  };
+
+  const refreshAll = () => {
+    loadData();
   };
 
   const updatePlan = async (plan: PlanCatalog, updates: Partial<PlanCatalog>) => {
@@ -769,6 +771,15 @@ export default function AdminPage() {
                 </button>
               ))}
             </nav>
+            <div className="pt-4">
+              <button
+                onClick={refreshAll}
+                className="flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-sm font-semibold text-blue-600 transition-all duration-200 hover:bg-blue-50 hover:text-blue-700"
+              >
+                <TrendingUp className="h-4 w-4" />
+                Refresh data
+              </button>
+            </div>
             <div className="border-t border-slate-200 pt-4">
               <button
                 onClick={handleLogout}
@@ -783,11 +794,17 @@ export default function AdminPage() {
 
         <main className="flex-1 space-y-8 lg:min-w-0">
           {error && (
-            <div className="rounded-2xl border border-orange-200 bg-gradient-to-r from-orange-50 to-orange-100 px-4 py-3 text-sm text-orange-700 shadow-sm">
+            <div className="rounded-2xl border border-orange-200 bg-gradient-to-r from-orange-50 to-orange-100 px-4 py-3 text-sm text-orange-700 shadow-sm flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <div className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-xs text-white">!</div>
                 {error}
               </div>
+              <button
+                onClick={loadData}
+                className="rounded-lg border border-orange-300 px-3 py-1 text-xs font-semibold text-orange-700 hover:bg-orange-100 transition"
+              >
+                Retry
+              </button>
             </div>
           )}
           

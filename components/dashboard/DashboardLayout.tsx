@@ -91,7 +91,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
             <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
               <MenuIcon className="h-6 w-6 text-white" />
             </div>
-            <span className="text-xl font-bold text-gray-900">MenuLix</span>
+            <span className="text-xl font-bold text-gray-900">QResto</span>
           </div>
 
           {/* Navigation */}

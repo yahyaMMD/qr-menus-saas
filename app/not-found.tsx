@@ -40,7 +40,7 @@ export default function NotFound() {
     },
     {
       title: 'About',
-      description: 'Learn more about MenuLix',
+      description: 'Learn more about QResto',
       icon: Info,
       href: '/about',
       color: 'green',

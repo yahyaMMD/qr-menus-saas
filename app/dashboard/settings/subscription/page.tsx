@@ -643,7 +643,7 @@ export default function ManageSubscriptionPage() {
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900 mb-2">Cancel Subscription</h3>
                     <p className="text-sm text-gray-600 mb-4">
-                      No longer need MenuLix? Cancel your subscription anytime. You'll keep access until the end of your billing period.
+                      No longer need QResto? Cancel your subscription anytime. You'll keep access until the end of your billing period.
                     </p>
                     <button
                       onClick={() => setShowCancelModal(true)}

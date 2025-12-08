@@ -88,7 +88,7 @@ export default function AboutPage() {
   ];
 
   const timeline = [
-    { year: '2025', event: 'MenuLix founded in Algiers', description: 'Started with a vision to digitalize restaurant menus' },
+    { year: '2025', event: 'QResto founded in Algiers', description: 'Started with a vision to digitalize restaurant menus' },
     { year: '2026', event: 'Reached 100 restaurants', description: 'Expanded across Algeria' },
     { year: '2027', event: 'International expansion', description: 'Now serving restaurants in 10 countries' },
     { year: '2028', event: '1,000+ restaurants', description: 'Became the leading digital menu platform in the region' },
@@ -146,13 +146,13 @@ export default function AboutPage() {
               <h2 className="text-4xl font-bold text-gray-900 mb-6">Our Story</h2>
               <div className="space-y-4 text-gray-600 leading-relaxed">
                 <p>
-                  MenuLix was born from a simple observation: restaurants were struggling to adapt to the digital world. Traditional paper menus were outdated, expensive to update, and didn't meet modern hygiene standards.
+                  QResto was born from a simple observation: restaurants were struggling to adapt to the digital world. Traditional paper menus were outdated, expensive to update, and didn't meet modern hygiene standards.
                 </p>
                 <p>
                   We set out to create a solution that would be beautiful, easy to use, and affordable for restaurants of all sizes.
                 </p>
                 <p>
-                  Today, MenuLix is more than just digital menus. We're a complete platform that helps restaurants manage their offerings, understand their customers, and grow their business.
+                  Today, QResto is more than just digital menus. We're a complete platform that helps restaurants manage their offerings, understand their customers, and grow their business.
                 </p>
                 <p className="font-semibold text-gray-900">
                   Our mission is simple: empower every restaurant to succeed in the digital age.
@@ -298,7 +298,7 @@ export default function AboutPage() {
               Ready to transform your restaurant?
             </h2>
             <p className="text-xl text-orange-100 mb-8 max-w-2xl mx-auto">
-              Join thousands of restaurants already using MenuLix to create beautiful digital menus
+              Join thousands of restaurants already using QResto to create beautiful digital menus
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link

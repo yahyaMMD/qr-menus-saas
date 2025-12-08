@@ -19,7 +19,7 @@ export default function AuthPage() {
                 <div className="w-6 h-0.5 bg-orange-500"></div>
                 <div className="w-6 h-0.5 bg-orange-500"></div>
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">MenuLix</h1>
+              <h1 className="text-2xl font-bold text-gray-900">QResto</h1>
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
               {isSignIn ? 'Welcome back' : 'Create an account'}
