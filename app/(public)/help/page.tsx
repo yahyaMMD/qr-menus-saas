@@ -1,13 +1,9 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import Navbar from '@/components/landing/Navbar';
-import Footer from '@/components/landing/Footer';
-import { 
-  Search, 
+import React, { useState } from "react";
+import {
+  Search,
   Book,
-  MessageCircle,
   Mail,
   Phone,
   FileText,
@@ -18,11 +14,10 @@ import {
   QrCode,
   ChevronDown,
   ChevronUp,
-  ExternalLink,
   Clock,
   CheckCircle,
-  ArrowRight
-} from 'lucide-react';
+  ArrowRight,
+} from "lucide-react";
 
 export default function HelpCenterPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -173,7 +168,7 @@ export default function HelpCenterPage() {
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">How can we help you?</h1>
             <p className="text-lg text-orange-100 mb-8 max-w-2xl mx-auto">
-              Search our knowledge base or browse categories to find answers
+              Search our knowledge base or browse categories to find step-by-step answers.
             </p>
             
             {/* Search Bar */}
@@ -319,9 +314,9 @@ export default function HelpCenterPage() {
                 <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
                   <Mail className="w-8 h-8 mx-auto mb-3" />
                   <h3 className="font-semibold mb-2">Email Support</h3>
-                  <p className="text-sm text-orange-100 mb-4">support@QResto.com</p>
+                  <p className="text-sm text-orange-100 mb-4">support@qresto.com</p>
                   <a
-                    href="mailto:support@QResto.com"
+                    href="mailto:support@qresto.com"
                     className="inline-block px-4 py-2 bg-white text-orange-600 rounded-lg hover:bg-orange-50 transition-colors font-medium text-sm"
                   >
                     Send Email
@@ -343,7 +338,7 @@ export default function HelpCenterPage() {
               
               <div className="mt-8 pt-8 border-t border-white/20">
                 <p className="text-sm text-orange-100">
-                  Support Hours: Sunday - Thursday, 9:00 AM - 6:00 PM (GMT+1)
+                  Support hours: Sunday - Thursday, 9:00 AM - 6:00 PM (GMT+1)
                 </p>
               </div>
             </div>

@@ -3,8 +3,6 @@
 
 import Link from "next/link";
 import { Scale, FileText, AlertCircle, CheckCircle, XCircle, UserCheck } from "lucide-react";
-import Navbar from '@/components/landing/Navbar';
-import Footer from '@/components/landing/Footer';
 
 export default function TermsOfService() {
   return (
@@ -19,7 +17,7 @@ export default function TermsOfService() {
               Terms of Service
             </h1>
             <p className="text-lg text-gray-600">
-              Last Updated: November 30, 2025
+              Last updated: March 4, 2024
             </p>
           </div>
         </div>
@@ -32,20 +30,20 @@ export default function TermsOfService() {
             {/* Introduction */}
             <div>
               <p className="text-gray-700 text-lg leading-relaxed">
-                Welcome to Qresto! These Terms of Service ("Terms") govern your access to and use
-                of Qresto's digital menu platform, QR code generation services, analytics tools,
+                Welcome to QResto. These Terms of Service ("Terms") explain how you may access and use
+                QResto's digital menu platform, QR code generation services, analytics tools,
                 and related services (collectively, the "Service").
               </p>
               <p className="text-gray-700 text-lg leading-relaxed mt-4">
-                By accessing or using Qresto, you agree to be bound by these Terms. If you do not
-                agree to these Terms, you may not use our Service. Please read these Terms carefully
-                before using Qresto.
+                By accessing or using QResto, you agree to be bound by these Terms and by our Privacy Policy.
+                If you do not agree, please do not use the Service. Review these Terms carefully so you understand
+                your rights and responsibilities.
               </p>
               
               <div className="mt-6 p-4 bg-orange-50 rounded-lg border border-orange-200">
                 <p className="text-gray-700">
-                  <strong>Important:</strong> These Terms contain an arbitration clause and class
-                  action waiver that affect your legal rights. Please review Section 13 carefully.
+                  <strong>Important:</strong> These Terms include limitations of liability and rules for resolving disputes.
+                  Please review Section 13 carefully.
                 </p>
               </div>
             </div>
@@ -86,7 +84,7 @@ export default function TermsOfService() {
               </div>
 
               <p className="text-gray-700 mb-4">
-                Qresto provides a SaaS platform that enables restaurants and food service
+                QResto provides a SaaS platform that enables restaurants and food service
                 businesses to:
               </p>
 
@@ -118,7 +116,7 @@ export default function TermsOfService() {
                     3.1 Account Creation
                   </h3>
                   <p className="text-gray-700">
-                    To use certain features of MenuMaster, you must create an account. You agree to:
+                    To use certain features of QResto, you must create an account. You agree to:
                   </p>
                   <ul className="list-disc list-inside space-y-1 text-gray-700 ml-4 mt-2">
                     <li>Provide accurate, current, and complete information</li>
@@ -165,7 +163,7 @@ export default function TermsOfService() {
                     4.1 Subscription Plans
                   </h3>
                   <p className="text-gray-700 mb-2">
-                    Qresto offers multiple subscription tiers:
+                    QResto offers multiple subscription tiers:
                   </p>
                   <ul className="list-disc list-inside space-y-1 text-gray-700 ml-4">
                     <li>
@@ -244,7 +242,7 @@ export default function TermsOfService() {
                     5.1 Your Content
                   </h3>
                   <p className="text-gray-700">
-                    You retain ownership of all content you upload to Qresto, including menu
+                    You retain ownership of all content you upload to QResto, including menu
                     items, descriptions, images, and restaurant information ("User Content"). By
                     uploading User Content, you grant us a worldwide, non-exclusive, royalty-free
                     license to use, store, display, and distribute your User Content solely for the
@@ -274,7 +272,7 @@ export default function TermsOfService() {
                   <p className="text-gray-700">
                     You are solely responsible for ensuring that all menu information (prices,
                     descriptions, ingredients, allergen information) is accurate, current, and
-                    compliant with applicable food safety and labeling regulations. Qresto is
+                    compliant with applicable food safety and labeling regulations. QResto is
                     not liable for any inaccuracies in your menu content.
                   </p>
                 </div>
@@ -298,7 +296,7 @@ export default function TermsOfService() {
                 <h2 className="text-3xl font-bold text-gray-900">6. Prohibited Uses</h2>
               </div>
 
-              <p className="text-gray-700 mb-4">You may not use Qresto to:</p>
+              <p className="text-gray-700 mb-4">You may not use QResto to:</p>
 
               <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4">
                 <li>Violate any local, national, or international laws or regulations</li>
@@ -325,11 +323,11 @@ export default function TermsOfService() {
               <div className="space-y-4">
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    7.1 Qresto Property
+                    7.1 QResto Property
                   </h3>
                   <p className="text-gray-700">
                     The Service, including all software, designs, text, graphics, logos, and other
-                    content (excluding User Content), is owned by Qresto and protected by
+                    content (excluding User Content), is owned by QResto and protected by
                     copyright, trademark, and other intellectual property laws. You may not copy,
                     modify, distribute, or create derivative works without our express written
                     permission.
@@ -341,7 +339,7 @@ export default function TermsOfService() {
                     7.2 Trademarks
                   </h3>
                   <p className="text-gray-700">
-                    "Qresto" and our logo are trademarks of Qresto. You may not use our
+                    "QResto" and our logo are trademarks of QResto. You may not use our
                     trademarks without our prior written consent.
                   </p>
                 </div>
@@ -366,7 +364,7 @@ export default function TermsOfService() {
               </h2>
 
               <p className="text-gray-700 mb-4">
-                Qresto collects analytics data about QR code scans, menu views, and user
+                QResto collects analytics data about QR code scans, menu views, and user
                 interactions to provide you with insights about your menu performance. You acknowledge
                 and agree that:
               </p>
@@ -389,7 +387,7 @@ export default function TermsOfService() {
               </h2>
 
               <p className="text-gray-700">
-                Qresto integrates with third-party services (such as Chargily for payment
+                QResto integrates with third-party services (such as Chargily for payment
                 processing). Your use of these third-party services is subject to their respective
                 terms and privacy policies. We are not responsible for the actions, policies, or
                 content of third-party services. Links to third-party websites are provided for
@@ -411,7 +409,7 @@ export default function TermsOfService() {
                 </p>
 
                 <p className="text-gray-700">
-                  Qresto disclaims all warranties, including but not limited to:
+                  QResto disclaims all warranties, including but not limited to:
                 </p>
 
                 <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4">
@@ -471,7 +469,7 @@ export default function TermsOfService() {
               <h2 className="text-3xl font-bold text-gray-900 mb-4">12. Indemnification</h2>
 
               <p className="text-gray-700">
-                You agree to indemnify, defend, and hold harmless Qresto, its officers,
+                You agree to indemnify, defend, and hold harmless QResto, its officers,
                 directors, employees, and agents from and against any claims, liabilities, damages,
                 losses, costs, or expenses (including reasonable attorneys' fees) arising out of or
                 relating to:
@@ -587,7 +585,7 @@ export default function TermsOfService() {
                   </h3>
                   <p className="text-gray-700">
                     These Terms, together with our Privacy Policy, constitute the entire agreement
-                    between you and Qresto regarding the Service.
+                    between you and QResto regarding the Service.
                   </p>
                 </div>
 
@@ -631,7 +629,7 @@ export default function TermsOfService() {
                     15.6 Force Majeure
                   </h3>
                   <p className="text-gray-700">
-                    Qresto shall not be liable for any failure to perform due to circumstances
+                    QResto shall not be liable for any failure to perform due to circumstances
                     beyond our reasonable control, including acts of God, natural disasters, war,
                     terrorism, pandemics, or government actions.
                   </p>
@@ -670,13 +668,13 @@ export default function TermsOfService() {
                   </a>
                 </p>
                 <p>
-                  <strong>Address:</strong> Qresto, Algiers, Algeria
+                  <strong>Address:</strong> QResto, Algiers, Algeria
                 </p>
               </div>
 
               <div className="mt-6 p-4 bg-white rounded-lg">
                 <p className="text-gray-700 text-sm">
-                  By using Qresto, you acknowledge that you have read, understood, and agree to
+                  By using QResto, you acknowledge that you have read, understood, and agree to
                   be bound by these Terms of Service.
                 </p>
               </div>

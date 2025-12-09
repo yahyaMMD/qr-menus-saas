@@ -3,8 +3,6 @@
 
 import Link from "next/link";
 import { Shield, Lock, Eye, Database, Users, FileText } from "lucide-react";
-import Navbar from '@/components/landing/Navbar';
-import Footer from '@/components/landing/Footer';
 
 export default function PrivacyPolicy() {
   return (
@@ -19,7 +17,7 @@ export default function PrivacyPolicy() {
               Privacy Policy
             </h1>
             <p className="text-lg text-gray-600">
-              Last Updated: November 30, 2025
+              Last updated: March 4, 2024
             </p>
           </div>
         </div>
@@ -32,12 +30,12 @@ export default function PrivacyPolicy() {
             {/* Introduction */}
             <div>
               <p className="text-gray-700 text-lg leading-relaxed">
-                At Qresto, we are committed to protecting your privacy and ensuring the security
+                At QResto, we are committed to protecting your privacy and ensuring the security
                 of your personal information. This Privacy Policy explains how we collect, use, disclose,
                 and safeguard your information when you use our digital menu platform and services.
               </p>
               <p className="text-gray-700 text-lg leading-relaxed mt-4">
-                By using Qresto, you agree to the collection and use of information in accordance
+                By using QResto, you agree to the collection and use of information in accordance
                 with this policy. If you do not agree with our policies and practices, please do not use
                 our services.
               </p>
@@ -204,7 +202,7 @@ export default function PrivacyPolicy() {
                     3.2 Business Transfers
                   </h3>
                   <p className="text-gray-700">
-                    If MenuMaster is involved in a merger, acquisition, or sale of assets, your
+                    If QResto is involved in a merger, acquisition, or sale of assets, your
                     information may be transferred as part of that transaction.
                   </p>
                 </div>
@@ -349,7 +347,7 @@ export default function PrivacyPolicy() {
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-4">8. Children's Privacy</h2>
               <p className="text-gray-700">
-                MenuMaster is not intended for individuals under the age of 18. We do not knowingly
+                QResto is not intended for individuals under the age of 18. We do not knowingly
                 collect personal information from children. If we become aware that we have collected
                 personal information from a child without parental consent, we will take steps to
                 delete that information.
@@ -363,7 +361,7 @@ export default function PrivacyPolicy() {
               </h2>
               <p className="text-gray-700">
                 Your information may be transferred to and maintained on servers located outside of
-                your country where data protection laws may differ. By using Qresto, you consent
+                your country where data protection laws may differ. By using QResto, you consent
                 to the transfer of your information to these locations. We take appropriate safeguards
                 to ensure your data is treated securely and in accordance with this Privacy Policy.
               </p>
@@ -378,7 +376,7 @@ export default function PrivacyPolicy() {
                 We may update this Privacy Policy from time to time. We will notify you of any material
                 changes by posting the new Privacy Policy on this page and updating the "Last Updated"
                 date. We encourage you to review this Privacy Policy periodically for any changes.
-                Your continued use of Qresto after changes are posted constitutes your acceptance
+                Your continued use of QResto after changes are posted constitutes your acceptance
                 of the updated policy.
               </p>
             </div>
@@ -410,7 +408,7 @@ export default function PrivacyPolicy() {
                   </a>
                 </p>
                 <p>
-                  <strong>Address:</strong> Qresto, Algiers, Algeria
+                  <strong>Address:</strong> QResto, Algiers, Algeria
                 </p>
               </div>
             </div>
