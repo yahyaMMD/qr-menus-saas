@@ -93,7 +93,7 @@ async function handleRegister(request: NextRequest): Promise<NextResponse> {
       console.error('Failed to create welcome notification:', err)
     );
 
-    const response: AuthResponse = {
+    const responseBody: AuthResponse = {
       user: {
         id: user.id,
         name: user.name,
@@ -103,7 +103,14 @@ async function handleRegister(request: NextRequest): Promise<NextResponse> {
       tokens,
     };
 
-    return NextResponse.json(response, { status: 201 });
+    const res = NextResponse.json(responseBody, { status: 201 });
+    res.cookies.set('accessToken', tokens.accessToken, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+    });
+    return res;
   } catch (error) {
     console.error('Register error:', error);
     return NextResponse.json(
@@ -158,7 +165,7 @@ async function handleLogin(request: NextRequest): Promise<NextResponse> {
     // Generate tokens and save refresh token to DB
     const tokens = await generateAndSaveTokens(user);
     
-    const response: AuthResponse = {
+    const responseBody: AuthResponse = {
       user: {
         id: user.id,
         name: user.name,
@@ -168,7 +175,14 @@ async function handleLogin(request: NextRequest): Promise<NextResponse> {
       tokens,
     };
 
-    return NextResponse.json(response, { status: 200 });
+    const res = NextResponse.json(responseBody, { status: 200 });
+    res.cookies.set('accessToken', tokens.accessToken, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+    });
+    return res;
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
@@ -261,10 +275,12 @@ async function handleLogout(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    return NextResponse.json(
+    const res = NextResponse.json(
       { message: 'Logged out successfully' },
       { status: 200 }
     );
+    res.cookies.delete('accessToken');
+    return res;
   } catch (error) {
     console.error('Logout error:', error);
     return NextResponse.json(
@@ -319,7 +335,14 @@ async function handleRefresh(request: NextRequest): Promise<NextResponse> {
       role: payload.role,
     });
 
-    return NextResponse.json({ tokens }, { status: 200 });
+    const res = NextResponse.json({ tokens }, { status: 200 });
+    res.cookies.set('accessToken', tokens.accessToken, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+    });
+    return res;
   } catch (error) {
     console.error('Refresh error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

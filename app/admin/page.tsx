@@ -345,6 +345,18 @@ export default function AdminPage() {
     downloadCsv([header, ...rows], "payments.csv");
   };
 
+  const exportFeedbackCsv = () => {
+    const header = ["User", "Rating", "Comment", "Profile", "Created"];
+    const rows = feedback.map((f) => [
+      f.userName,
+      String(f.rating),
+      f.comment ?? "",
+      f.profile?.name ?? "—",
+      new Date(f.createdAt).toLocaleDateString(),
+    ]);
+    downloadCsv([header, ...rows], "feedback.csv");
+  };
+
   const goToSection = (section: typeof activeSection) => {
     setActiveSection(section);
     setMobileMenuOpen(false);
@@ -507,6 +519,27 @@ export default function AdminPage() {
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update plan");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const reconcileSubscription = async (sub: SubscriptionRow) => {
+    if (!authHeaders) return;
+    const ref = window.prompt("Enter payment reference to reconcile", sub.paymentRef ?? "");
+    if (!ref) return;
+    setActionLoading(`reconcile-${sub.id}`);
+    try {
+      const res = await fetch(`/api/admin/subscriptions/${sub.id}/reconcile`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({ paymentRef: ref }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to reconcile subscription");
+      setSubscriptions((prev) => prev.map((s) => (s.id === sub.id ? data.subscription : s)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to reconcile subscription");
     } finally {
       setActionLoading(null);
     }
@@ -773,14 +806,15 @@ export default function AdminPage() {
               actionLoading={actionLoading}
               subscriptionQuery={subscriptionQuery}
               setSubscriptionQuery={setSubscriptionQuery}
-              onExport={() => {
-                exportSubscriptionsCsv();
-                exportPaymentsCsv();
-              }}
-              onShowSubscription={(s) => openDetails({ type: "subscription", data: s })}
-              onShowPayment={(p) => openDetails({ type: "payment", data: p })}
-              users={users}
-            />
+      onExport={() => {
+        exportSubscriptionsCsv();
+        exportPaymentsCsv();
+      }}
+      onShowSubscription={(s) => openDetails({ type: "subscription", data: s })}
+      onShowPayment={(p) => openDetails({ type: "payment", data: p })}
+      onReconcile={reconcileSubscription}
+      users={users}
+    />
           )}
           {activeSection === "analytics" && (
             <AnalyticsSection analytics={analytics} payments={payments} loading={loading} totals={totals} subscriptions={subscriptions} onExport={exportData} />
@@ -793,7 +827,7 @@ export default function AdminPage() {
               tickets={tickets}
               onRespond={respondTicket}
               actionLoading={actionLoading}
-              onExport={exportData}
+              onExport={exportFeedbackCsv}
               feedbackQuery={feedbackQuery}
               setFeedbackQuery={setFeedbackQuery}
               feedbackStatuses={feedbackStatuses}

@@ -30,6 +30,7 @@ export type SubscriptionRow = {
   active: boolean;
   priceCents: number | null;
   currency: string | null;
+  paymentRef?: string | null;
   user?: { id: string; email: string; name: string; role: string; isActive: boolean };
 };
 
