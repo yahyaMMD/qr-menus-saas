@@ -1,19 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
 
 export default function PaymentFailed() {
-  const { data: session } = useSession();
-
-  if (!session) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div>Please log in to view this page</div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6 text-center">

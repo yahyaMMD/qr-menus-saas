@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { Role } from '@/lib/auth/types';
 import { prisma } from '@/lib/prisma';
 
@@ -101,9 +102,16 @@ export async function updateUser(
   id: string,
   data: Partial<Pick<UserData, 'name' | 'email' | 'password' | 'phone' | 'location' | 'avatar' | 'preferences' | 'isActive' | 'role'>>
 ): Promise<UserData> {
+  const { preferences, ...rest } = data;
+  const updateData: Prisma.UserUpdateInput = { ...rest };
+
+  if (preferences !== undefined) {
+    updateData.preferences = preferences as Prisma.InputJsonValue;
+  }
+
   const user = await prisma.user.update({
     where: { id },
-    data,
+    data: updateData,
   });
 
   return {

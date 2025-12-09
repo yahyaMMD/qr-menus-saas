@@ -21,7 +21,7 @@ export const GET = withAdmin(async () => {
     return NextResponse.json({ plans }, { status: 200 });
   } catch (error) {
     console.error('Error fetching plans:', error);
-    return NextResponse.json({ error: 'Failed to load plans' }, { status: 500 });
+    throw new Error('Failed to load plans');
   }
 });
 
@@ -42,6 +42,6 @@ export const PATCH = withAdmin(async (request: NextRequest) => {
     return NextResponse.json({ plan }, { status: 200 });
   } catch (error) {
     console.error('Error updating plan:', error);
-    return NextResponse.json({ error: 'Failed to update plan' }, { status: 500 });
+    throw new Error('Failed to update plan');
   }
 });

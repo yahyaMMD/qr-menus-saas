@@ -318,7 +318,7 @@ export default async function items(prisma: PrismaClient, { types, categories, t
   
   for (const itemData of allItems) {
     if (!itemData.menuId) continue;
-    
+    const menuId = itemData.menuId;
     const { tagIds, ...rest } = itemData;
 
     await prisma.item.create({
@@ -330,7 +330,7 @@ export default async function items(prisma: PrismaClient, { types, categories, t
         originalPrice: rest.originalPrice || null,
         isPromotion: rest.isPromotion || false,
         categoryId: rest.categoryId || null,
-        menuId: rest.menuId,
+        menuId,
         itemTags: {
           create: tagIds.map(id => ({ tagId: id }))
         }

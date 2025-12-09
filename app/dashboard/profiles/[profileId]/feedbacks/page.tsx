@@ -87,9 +87,10 @@ export default function CustomerFeedbackPage({ params }: { params: { profileId: 
     );
   }
 
-  const { profile, stats, feedbacks } = data;
+  type Feedback = { id: string; userName: string; rating: number; comment: string; createdAt: string };
+  const { profile, stats, feedbacks } = data as { profile: any; stats: any; feedbacks: Feedback[] };
 
-  const filteredFeedbacks = feedbacks.filter(f => {
+  const filteredFeedbacks = feedbacks.filter((f: Feedback) => {
     const matchesRating = filterRating === 'all' || f.rating.toString() === filterRating;
     const matchesSearch = f.comment.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          f.userName.toLowerCase().includes(searchQuery.toLowerCase());

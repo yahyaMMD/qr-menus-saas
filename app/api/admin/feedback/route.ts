@@ -30,6 +30,6 @@ export const GET = withAdmin(async (_request: NextRequest) => {
     );
   } catch (error) {
     console.error('Error fetching feedback:', error);
-    return NextResponse.json({ error: 'Failed to load feedback' }, { status: 500 });
+    throw new Error('Failed to load feedback');
   }
 });

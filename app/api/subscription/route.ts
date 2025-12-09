@@ -90,12 +90,14 @@ export async function GET(request: NextRequest) {
         priceCents: subscription.priceCents,
         currency: subscription.currency || 'DZD',
       },
-      planDetails: planDetails ? {
-        name: planDetails.name,
-        price: planDetails.price,
-        features: planDetails.features,
-        limitations: planDetails.limitations,
-      } : null,
+      planDetails: planDetails
+        ? {
+            plan: planDetails.plan,
+            description: planDetails.description,
+            priceCents: planDetails.priceCents,
+            currency: planDetails.currency,
+          }
+        : null,
       usage: {
         profiles: profileCount,
         menus: menuCount,
@@ -306,4 +308,3 @@ export async function PATCH(request: NextRequest) {
     );
   }
 }
-
