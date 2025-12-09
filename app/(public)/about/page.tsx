@@ -1,12 +1,10 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import Navbar from '@/components/landing/Navbar';
-import Footer from '@/components/landing/Footer';
-import { 
-  Zap, 
-  Users, 
+import React from "react";
+import Link from "next/link";
+import {
+  Zap,
+  Users,
   Target,
   Award,
   Globe,
@@ -16,82 +14,106 @@ import {
   CheckCircle,
   ArrowRight,
   Linkedin,
-  Mail
-} from 'lucide-react';
+  Mail,
+} from "lucide-react";
 
 export default function AboutPage() {
   const stats = [
-    { label: 'Restaurants', value: '1,000+', icon: Users },
-    { label: 'Digital Menus', value: '5,000+', icon: Sparkles },
-    { label: 'QR Scans', value: '100K+', icon: TrendingUp },
-    { label: 'Countries', value: 'MELYAR+', icon: Globe },
+    { label: "Restaurants served", value: "450+", icon: Users },
+    { label: "Digital menus published", value: "2,800+", icon: Sparkles },
+    { label: "QR scans each month", value: "1.2M+", icon: TrendingUp },
+    { label: "Countries", value: "8", icon: Globe },
   ];
 
   const values = [
     {
-      title: 'Innovation First',
-      description: 'We constantly innovate to provide cutting-edge solutions for modern restaurants.',
+      title: "Innovation first",
+      description:
+        "We constantly experiment and ship what actually helps restaurants serve guests faster.",
       icon: Zap,
-      color: 'orange',
+      color: "orange",
     },
     {
-      title: 'Customer Success',
-      description: 'Your success is our success. We\'re committed to helping you grow your business.',
+      title: "Customer success",
+      description:
+        "We build with our customers, pairing practical tools with responsive, human support.",
       icon: Target,
-      color: 'blue',
+      color: "blue",
     },
     {
-      title: 'Simplicity',
-      description: 'We believe powerful tools should be simple to use. No complexity, just results.',
+      title: "Simplicity",
+      description:
+        "Powerful doesn't have to be complicated. Every screen is designed to be clear and actionable.",
       icon: CheckCircle,
-      color: 'green',
+      color: "green",
     },
     {
-      title: 'Quality',
-      description: 'We maintain the highest standards in everything we do, from code to customer service.',
+      title: "Quality",
+      description:
+        "From reliability to design, we sweat the details so your team can stay focused on guests.",
       icon: Award,
-      color: 'purple',
+      color: "purple",
     },
   ];
 
   const team = [
     {
-      name: 'Yassir CHERDOUH',
-      role: 'Zawali Kheddam',
-      image: '',
-      bio: 'slt frr cv hh',
+      name: "Yassir Cherdouh",
+      role: "Co-founder & Product Lead",
+      image: "",
+      bio: "Keeps the platform fast, stable, and intuitive so busy restaurant teams can trust it daily.",
     },
     {
-      name: 'Yahya Abderrahmane Mehdi',
-      role: 'TablaQR',
-      image: '',
-      bio: 'slm',
+      name: "Yahya Abderrahmane Mehdi",
+      role: "Engineering Lead",
+      image: "",
+      bio: "Transforms feedback into polished features and safeguards the reliability of every release.",
     },
     {
-      name: 'Hala Boutaya',
-      role: 'Win Rah L\'Mariné',
-      image: '',
-      bio: 'slm',
+      name: "Hala Boutaya",
+      role: "Design & CX",
+      image: "",
+      bio: "Shapes every touchpoint-from QR scan to checkout-so guests enjoy a calm, modern experience.",
     },
     {
-      name: 'Amani Haichour',
-      role: 'Designer Zawaliya',
-      image: '',
-      bio: 'slm',
+      name: "Amani Haichour",
+      role: "Customer Success",
+      image: "",
+      bio: "Guides restaurants from onboarding to growth with hands-on training and clear playbooks.",
     },
     {
-      name: 'Baha Eddine Bennacer',
-      role: 'Ekhdem',
-      image: '',
-      bio: 'slm',
+      name: "Baha Eddine Bennacer",
+      role: "Partnerships",
+      image: "",
+      bio: "Builds relationships with suppliers and hospitality groups to help our customers scale faster.",
     },
   ];
 
   const timeline = [
-    { year: '2025', event: 'QResto founded in Algiers', description: 'Started with a vision to digitalize restaurant menus' },
-    { year: '2026', event: 'Reached 100 restaurants', description: 'Expanded across Algeria' },
-    { year: '2027', event: 'International expansion', description: 'Now serving restaurants in 10 countries' },
-    { year: '2028', event: '1,000+ restaurants', description: 'Became the leading digital menu platform in the region' },
+    {
+      year: "2021",
+      event: "Idea to MVP",
+      description:
+        "Built the first QR menu generator for a handful of cafes in Algiers.",
+    },
+    {
+      year: "2022",
+      event: "Product-market fit",
+      description:
+        "Hit 100 restaurants and launched analytics so owners could see what guests love.",
+    },
+    {
+      year: "2023",
+      event: "Regional rollout",
+      description:
+        "Expanded across North Africa with multilingual menus and better customization.",
+    },
+    {
+      year: "2024",
+      event: "Platform scale",
+      description:
+        "Introduced enterprise tools for chains and signed strategic hospitality partners.",
+    },
   ];
 
   return (
@@ -100,11 +122,11 @@ export default function AboutPage() {
       <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6">
-              Transforming the dining experience, one menu at a time
-            </h1>
+              <h1 className="text-5xl md:text-6xl font-bold mb-6">
+                Transforming the dining experience, one menu at a time
+              </h1>
             <p className="text-xl text-orange-100 mb-8">
-              We're on a mission to help restaurants thrive in the digital age with beautiful, contactless digital menus.
+              We help restaurants deliver effortless, contactless dining with beautifully branded QR menus.
             </p>
             <Link
               href="/auth/register"
@@ -145,16 +167,19 @@ export default function AboutPage() {
               <h2 className="text-4xl font-bold text-gray-900 mb-6">Our Story</h2>
               <div className="space-y-4 text-gray-600 leading-relaxed">
                 <p>
-                  QResto was born from a simple observation: restaurants were struggling to adapt to the digital world. Traditional paper menus were outdated, expensive to update, and didn't meet modern hygiene standards.
+                  QResto started with one promise: QR menus should feel as polished as the dining room they represent.
+                  Paper was slow, costly to update, and didn't meet modern hygiene standards-so we built a better way.
                 </p>
                 <p>
-                  We set out to create a solution that would be beautiful, easy to use, and affordable for restaurants of all sizes.
+                  From the first prototype to thousands of live menus, we've focused on two things: making updates instant
+                  for staff and making the guest experience effortless on any device.
                 </p>
                 <p>
-                  Today, QResto is more than just digital menus. We're a complete platform that helps restaurants manage their offerings, understand their customers, and grow their business.
+                  Today, QResto powers menus, analytics, and feedback loops for restaurants that care about the little details.
+                  We keep improving so you can stay focused on great hospitality.
                 </p>
                 <p className="font-semibold text-gray-900">
-                  Our mission is simple: empower every restaurant to succeed in the digital age.
+                  Our mission is simple: help every restaurant deliver modern service without adding extra work.
                 </p>
               </div>
             </div>
@@ -183,7 +208,7 @@ export default function AboutPage() {
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Values</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              These core values guide everything we do and every decision we make
+              These principles guide what we build and how we support the teams who trust us.
             </p>
           </div>
           
@@ -215,9 +240,9 @@ export default function AboutPage() {
       <div className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Journey</h2>
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Journey</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              From a small startup to serving thousands of restaurants worldwide
+              From a handful of cafes to hundreds of restaurants across the region.
             </p>
           </div>
 
@@ -254,37 +279,53 @@ export default function AboutPage() {
       <div className="bg-gray-50 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Meet Our Team</h2>
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">Meet Our Team</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Passionate professionals dedicated to helping your restaurant succeed
+              A team of builders, designers, and operators dedicated to hospitality.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {team.map((member, idx) => (
-              <div key={idx} className="bg-white rounded-xl border border-gray-200 overflow-hidden group hover:shadow-lg transition-all">
-                <div className="aspect-square overflow-hidden">
-                  <img
-                    src={member.image}
-                    alt={member.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                  />
-                </div>
-                <div className="p-6">
-                  <h3 className="font-bold text-gray-900 text-lg mb-1">{member.name}</h3>
-                  <p className="text-orange-600 font-medium text-sm mb-3">{member.role}</p>
-                  <p className="text-gray-600 text-sm mb-4">{member.bio}</p>
-                  <div className="flex gap-3">
-                    <button className="p-2 bg-gray-100 hover:bg-orange-100 rounded-lg transition-colors">
-                      <Linkedin className="w-4 h-4 text-gray-600" />
-                    </button>
-                    <button className="p-2 bg-gray-100 hover:bg-orange-100 rounded-lg transition-colors">
-                      <Mail className="w-4 h-4 text-gray-600" />
-                    </button>
+            {team.map((member, idx) => {
+              const initials = member.name
+                .split(" ")
+                .map((part) => part[0])
+                .join("")
+                .slice(0, 2)
+                .toUpperCase();
+
+              return (
+                <div
+                  key={idx}
+                  className="bg-white rounded-xl border border-gray-200 overflow-hidden group hover:shadow-lg transition-all"
+                >
+                  <div className="aspect-square overflow-hidden bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center">
+                    {member.image ? (
+                      <img
+                        src={member.image}
+                        alt={member.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    ) : (
+                      <span className="text-3xl font-bold text-orange-600">{initials}</span>
+                    )}
+                  </div>
+                  <div className="p-6">
+                    <h3 className="font-bold text-gray-900 text-lg mb-1">{member.name}</h3>
+                    <p className="text-orange-600 font-medium text-sm mb-3">{member.role}</p>
+                    <p className="text-gray-600 text-sm mb-4">{member.bio}</p>
+                    <div className="flex gap-3">
+                      <button className="p-2 bg-gray-100 hover:bg-orange-100 rounded-lg transition-colors">
+                        <Linkedin className="w-4 h-4 text-gray-600" />
+                      </button>
+                      <button className="p-2 bg-gray-100 hover:bg-orange-100 rounded-lg transition-colors">
+                        <Mail className="w-4 h-4 text-gray-600" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
@@ -297,7 +338,7 @@ export default function AboutPage() {
               Ready to transform your restaurant?
             </h2>
             <p className="text-xl text-orange-100 mb-8 max-w-2xl mx-auto">
-              Join thousands of restaurants already using QResto to create beautiful digital menus
+              Join restaurants across the region using QResto to serve faster, gather insight, and keep guests coming back.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
