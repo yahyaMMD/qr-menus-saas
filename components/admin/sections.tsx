@@ -55,6 +55,10 @@ export function DashboardSection({
   setAnnouncement,
   onSendAnnouncement,
   actionLoading,
+  emailBlast,
+  setEmailBlast,
+  onSendEmail,
+  users,
 }: {
   totals: Totals;
   analytics: AnalyticsSummary | null;
@@ -66,6 +70,10 @@ export function DashboardSection({
   setAnnouncement: Dispatch<SetStateAction<{ title: string; message: string; link: string }>>;
   onSendAnnouncement: () => Promise<void>;
   actionLoading: string | null;
+  emailBlast: { target: string; email: string; subject: string; message: string };
+  setEmailBlast: Dispatch<SetStateAction<{ target: string; email: string; subject: string; message: string }>>;
+  onSendEmail: () => Promise<void>;
+  users: UserRow[];
 }) {
   return (
     <div className="space-y-6">
@@ -168,6 +176,84 @@ export function DashboardSection({
                   className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-500/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-orange-500/40 disabled:opacity-60"
                 >
                   {actionLoading === "announcement" ? "Sending..." : "Send"}
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm shadow-slate-200/50">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Send Email</p>
+                <p className="text-xs text-slate-600">Email all users or a single user</p>
+              </div>
+              <Badge tone="muted">{emailBlast.target === "all" ? "All users" : "Single user"}</Badge>
+            </div>
+            <div className="mt-3 space-y-3">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setEmailBlast((p) => ({ ...p, target: "all" }))}
+                  className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${emailBlast.target === "all" ? "bg-orange-500 text-white" : "border border-slate-200 text-slate-700"}`}
+                >
+                  All users
+                </button>
+                <button
+                  onClick={() => setEmailBlast((p) => ({ ...p, target: "single" }))}
+                  className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${emailBlast.target === "single" ? "bg-orange-500 text-white" : "border border-slate-200 text-slate-700"}`}
+                >
+                  Single user
+                </button>
+              </div>
+              {emailBlast.target === "single" && (
+                <div className="space-y-2">
+                  <input
+                    value={emailBlast.email}
+                    onChange={(e) => setEmailBlast((p) => ({ ...p, email: e.target.value }))}
+                    placeholder="Search or type email"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
+                  />
+                  <div className="max-h-48 overflow-auto divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white shadow-sm">
+                    {users
+                      .filter((u) => u.email.toLowerCase().includes(emailBlast.email.toLowerCase()))
+                      .slice(0, 10)
+                      .map((u) => (
+                        <button
+                          key={u.id}
+                          onClick={() => setEmailBlast((p) => ({ ...p, email: u.email }))}
+                          className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-orange-50"
+                        >
+                          <div>
+                            <p className="font-semibold text-slate-900">{u.name}</p>
+                            <p className="text-xs text-slate-500">{u.email}</p>
+                          </div>
+                          <Badge tone="muted">{u.role}</Badge>
+                        </button>
+                      ))}
+                    {emailBlast.email && users.filter((u) => u.email.toLowerCase().includes(emailBlast.email.toLowerCase())).length === 0 && (
+                      <div className="px-3 py-2 text-xs text-slate-500">No users matched.</div>
+                    )}
+                  </div>
+                </div>
+              )}
+              <input
+                value={emailBlast.subject}
+                onChange={(e) => setEmailBlast((p) => ({ ...p, subject: e.target.value }))}
+                placeholder="Subject"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
+              />
+              <textarea
+                value={emailBlast.message}
+                onChange={(e) => setEmailBlast((p) => ({ ...p, message: e.target.value }))}
+                placeholder="Message body"
+                rows={3}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
+              />
+              <div className="flex items-center justify-end">
+                <button
+                  onClick={onSendEmail}
+                  disabled={actionLoading === "email-blast"}
+                  className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-500/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-orange-500/40 disabled:opacity-60"
+                >
+                  {actionLoading === "email-blast" ? "Sending..." : "Send Email"}
                 </button>
               </div>
             </div>

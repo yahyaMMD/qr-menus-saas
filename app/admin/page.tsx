@@ -82,6 +82,7 @@ export default function AdminPage() {
   const [detailItem, setDetailItem] = useState<DetailItem | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [announcement, setAnnouncement] = useState({ title: "", message: "", link: "" });
+  const [emailBlast, setEmailBlast] = useState({ target: "all", email: "", subject: "", message: "" });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -381,6 +382,39 @@ export default function AdminPage() {
       alert(`Announcement sent to ${data.sent ?? 0} users.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send announcement");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const sendEmailBlast = async () => {
+    if (!authHeaders) return;
+    if (!emailBlast.subject || !emailBlast.message) {
+      setError("Email subject and message are required");
+      return;
+    }
+    if (emailBlast.target === "single" && !emailBlast.email) {
+      setError("Email address is required for single target");
+      return;
+    }
+    setActionLoading("email-blast");
+    try {
+      const res = await fetch("/api/admin/email", {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({
+          target: emailBlast.target,
+          email: emailBlast.target === "single" ? emailBlast.email : undefined,
+          subject: emailBlast.subject,
+          message: emailBlast.message,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to send email");
+      setEmailBlast({ target: "all", email: "", subject: "", message: "" });
+      alert(`Email sent to ${data.sent ?? 0}/${data.total ?? 0}. Failed: ${data.failed ?? 0}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send email");
     } finally {
       setActionLoading(null);
     }
@@ -785,18 +819,22 @@ export default function AdminPage() {
           )}
           
           {activeSection === "dashboard" && (
-            <DashboardSection
-              totals={totals}
-              analytics={analytics}
-              loading={loading}
-              onExport={exportData}
-              onSupport={handleSupportNavigate}
-              onQuickAction={handleQuickAction}
-              announcement={announcement}
-              setAnnouncement={setAnnouncement}
-              onSendAnnouncement={sendAnnouncement}
-              actionLoading={actionLoading}
-            />
+          <DashboardSection
+            totals={totals}
+            analytics={analytics}
+            loading={loading}
+            onExport={exportData}
+            onSupport={handleSupportNavigate}
+            onQuickAction={handleQuickAction}
+            announcement={announcement}
+            setAnnouncement={setAnnouncement}
+            onSendAnnouncement={sendAnnouncement}
+            actionLoading={actionLoading}
+            emailBlast={emailBlast}
+            setEmailBlast={setEmailBlast}
+            onSendEmail={sendEmailBlast}
+            users={users}
+          />
           )}
           {activeSection === "users" && (
             <UsersSection
