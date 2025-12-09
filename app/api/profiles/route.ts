@@ -4,6 +4,7 @@ import { authenticateRequest } from '@/lib/auth/middleware';
 import { findUserByEmail, findUserById, updateUser } from '@/lib/auth/db';
 import { hashPassword, verifyPassword } from '@/lib/auth/password';
 import { PrismaClient } from '@prisma/client';
+import { notifyAdminsNewRestaurant } from '@/lib/notifications';
 import { canCreateProfile } from '@/lib/plan-limits';
 
 const prisma = new PrismaClient();
@@ -170,6 +171,11 @@ export async function POST(request: NextRequest) {
         _count: { select: { menus: true, feedbacks: true } },
       },
     });
+
+    // Notify admins about new restaurant
+    notifyAdminsNewRestaurant(profile.id, profile.name, user.email).catch((err) =>
+      console.error('Failed to notify admins for new restaurant:', err)
+    );
 
     return NextResponse.json(
       { message: 'Profile created successfully', profile },

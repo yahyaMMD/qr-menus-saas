@@ -96,7 +96,6 @@ export default function AboutPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
@@ -317,7 +316,6 @@ export default function AboutPage() {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 }
