@@ -189,7 +189,7 @@ export default function RestaurantAnalyticsPage({ params }: { params: { profileI
           <p className="text-sm text-gray-500 mb-4">QR code scans over the last 30 days</p>
 
           <div className="h-64 flex items-end gap-1">
-            {dailyScans.map((value, idx) => (
+            {dailyScans.map((value: number, idx: number) => (
               <div key={idx} className="flex-1 flex flex-col items-center gap-1">
                 <div
                   className="w-full bg-gradient-to-t from-orange-500 to-orange-400 rounded-t hover:from-orange-600 hover:to-orange-500 transition-all cursor-pointer"
@@ -206,7 +206,7 @@ export default function RestaurantAnalyticsPage({ params }: { params: { profileI
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Peak Hours</h3>
           <p className="text-sm text-gray-500 mb-4">When customers are viewing your menu</p>
           <div className="space-y-3">
-            {hourlyData.map((item, idx) => {
+            {hourlyData.map((item: { hour: string; value: number }, idx: number) => {
               // Map value to gradient color similar to Most Viewed Items
               let color = '';
               if (item.value >= 90) color = 'from-orange-500 to-red-500';
@@ -252,10 +252,10 @@ export default function RestaurantAnalyticsPage({ params }: { params: { profileI
             </div>
 
             {/* Heatmap grid */}
-            {heatmapData.map((row, dayIdx) => (
+            {heatmapData.map((row: number[], dayIdx: number) => (
               <div key={dayIdx} className="flex items-center mb-2">
                 <div className="w-16 text-sm text-gray-600">{days[dayIdx]}</div>
-                {row.map((value, hourIdx) => (
+                {row.map((value: number, hourIdx: number) => (
                   <div
                     key={hourIdx}
                     className={`w-20 h-12 mr-2 rounded ${getHeatColor(value)} hover:opacity-80 transition-opacity cursor-pointer flex items-center justify-center`}

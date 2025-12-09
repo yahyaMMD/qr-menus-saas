@@ -14,10 +14,13 @@ export interface RouteGuardOptions {
   requireAdmin?: boolean;
 }
 
-export function withAuth<T = any>(
-  handler: (request: NextRequest, user: { userId: string; email: string; role: Role }) => Promise<NextResponse<T>>,
+export function withAuth(
+  handler: (
+    request: NextRequest,
+    user: { userId: string; email: string; role: Role }
+  ) => Promise<NextResponse<unknown>>,
   options: RouteGuardOptions = {}
-): (request: NextRequest) => Promise<NextResponse<T | { error: string }>> {
+): (request: NextRequest) => Promise<NextResponse<unknown>> {
   return async (request: NextRequest) => {
     // Authenticate request
     const authResult = await authenticateRequest(request);
@@ -70,15 +73,21 @@ export function withAuth<T = any>(
   };
 }
 
-export function withAdmin<T = any>(
-  handler: (request: NextRequest, user: { userId: string; email: string; role: Role }) => Promise<NextResponse<T>>
-): (request: NextRequest) => Promise<NextResponse<T | { error: string }>> {
+export function withAdmin(
+  handler: (
+    request: NextRequest,
+    user: { userId: string; email: string; role: Role }
+  ) => Promise<NextResponse<unknown>>
+): (request: NextRequest) => Promise<NextResponse<unknown>> {
   return withAuth(handler, { requireAdmin: true });
 }
 
-export function withRole<T = any>(
-  handler: (request: NextRequest, user: { userId: string; email: string; role: Role }) => Promise<NextResponse<T>>,
+export function withRole(
+  handler: (
+    request: NextRequest,
+    user: { userId: string; email: string; role: Role }
+  ) => Promise<NextResponse<unknown>>,
   requiredRole: Role
-): (request: NextRequest) => Promise<NextResponse<T | { error: string }>> {
+): (request: NextRequest) => Promise<NextResponse<unknown>> {
   return withAuth(handler, { requiredRole });
 }

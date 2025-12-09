@@ -1,28 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 export default function PaymentSuccess() {
-  const { data: session } = useSession();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // You can verify the payment status here if needed
-    setTimeout(() => setIsLoading(false), 2000);
-  }, []);
-
-  if (!session) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div>Please log in to view this page</div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">

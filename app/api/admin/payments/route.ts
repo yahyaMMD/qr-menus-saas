@@ -23,6 +23,6 @@ export const GET = withAdmin(async (request: NextRequest) => {
     return NextResponse.json({ payments }, { status: 200 });
   } catch (error) {
     console.error('Error fetching payments:', error);
-    return NextResponse.json({ error: 'Failed to load payments' }, { status: 500 });
+    throw new Error('Failed to load payments');
   }
 });

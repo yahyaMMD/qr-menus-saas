@@ -6,9 +6,9 @@ import Image from 'next/image'
 import menuIcon from '@/public/assets/menu-icon.svg'
 import qrIcon from '@/public/assets/qr-icon.svg'
 import analyticsIcon from '@/public/assets/analytics-icon.svg'
-import imageMenu from '@/public/assets/image-menu.png'
-import imageQr from '@/public/assets/image-qr.png'
-import imageAnalytics from '@/public/assets/image-analytics.png'
+import step1 from '@/public/assets/step1.png'
+import step2 from '@/public/assets/step2.png'
+import step3 from '@/public/assets/step3.png'
 
 export default function HowItWorks() {
   const steps = [
@@ -18,7 +18,7 @@ export default function HowItWorks() {
       description:
         'Build your menu with our intuitive interface. Add items, photos, and customize everything to match your brand.',
       icon: menuIcon,
-      image: imageMenu,
+      image: step1,
     },
     {
       number: '2',
@@ -26,7 +26,7 @@ export default function HowItWorks() {
       description:
         'Instantly generate a QR code for your digital menu. Print it everywhere in your restaurant.',
       icon: qrIcon,
-      image: imageQr,
+      image: step2,
     },
     {
       number: '3',
@@ -34,7 +34,7 @@ export default function HowItWorks() {
       description:
         'Customers scan and browse your menu. Get analytics on popular items and user counts.',
       icon: analyticsIcon,
-      image: imageAnalytics,
+      image: step3,
     },
   ]
 

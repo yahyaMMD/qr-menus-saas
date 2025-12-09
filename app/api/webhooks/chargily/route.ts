@@ -83,19 +83,7 @@ async function handleSuccessfulPayment(event: any) {
     // Update payment status in database
     await prisma.payment.updateMany({
       where: { reference: checkout.id },
-      data: { 
-        status: 'PAID',
-        metadata: {
-          ...checkout.metadata,
-          webhookReceivedAt: new Date().toISOString(),
-          checkoutData: {
-            id: checkout.id,
-            status: checkout.status,
-            amount: checkout.amount,
-            currency: checkout.currency
-          }
-        }
-      }
+      data: { status: 'PAID' },
     });
 
     // Get payment record to find user
@@ -268,13 +256,7 @@ async function handleFailedPayment(event: any) {
   try {
     await prisma.payment.updateMany({
       where: { reference: checkout.id },
-      data: { 
-        status: 'FAILED',
-        metadata: {
-          failureReason: checkout.failure_message || 'Payment failed',
-          webhookReceivedAt: new Date().toISOString()
-        }
-      }
+      data: { status: 'FAILED' }
     });
 
     // Optionally, you can also update the subscription status
@@ -306,13 +288,7 @@ async function handleExpiredPayment(event: any) {
   try {
     await prisma.payment.updateMany({
       where: { reference: checkout.id },
-      data: { 
-        status: 'FAILED',
-        metadata: {
-          failureReason: 'Payment session expired',
-          webhookReceivedAt: new Date().toISOString()
-        }
-      }
+      data: { status: 'FAILED' }
     });
   } catch (error) {
     console.error('Error handling expired payment:', error);

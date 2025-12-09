@@ -1,5 +1,5 @@
 import prisma from '@/lib/prisma';
-import { NotificationType } from '@prisma/client';
+import { NotificationType, Prisma } from '@prisma/client';
 
 // Notification data types for different notification types
 interface NotificationData {
@@ -33,7 +33,7 @@ export async function createNotification(
         type,
         title,
         message,
-        data: data || null,
+        data: (data as Prisma.InputJsonValue) || null,
       },
     });
     return notification;
@@ -344,4 +344,3 @@ export async function notifySecurityAlert(userId: string, message: string) {
     { link: '/dashboard/settings' }
   );
 }
-

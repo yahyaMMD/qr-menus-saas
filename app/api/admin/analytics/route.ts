@@ -47,6 +47,6 @@ export const GET = withAdmin(async (_request: NextRequest) => {
     );
   } catch (error) {
     console.error('Error fetching analytics:', error);
-    return NextResponse.json({ error: 'Failed to load analytics' }, { status: 500 });
+    throw new Error('Failed to load analytics');
   }
 });
