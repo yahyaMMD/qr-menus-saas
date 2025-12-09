@@ -51,6 +51,10 @@ export function DashboardSection({
   onExport,
   onSupport,
   onQuickAction,
+  announcement,
+  setAnnouncement,
+  onSendAnnouncement,
+  actionLoading,
 }: {
   totals: Totals;
   analytics: AnalyticsSummary | null;
@@ -58,6 +62,10 @@ export function DashboardSection({
   onExport: () => void;
   onSupport: () => void;
   onQuickAction: (action: "add-user" | "suspend-restaurant" | "upgrade-plan" | "export-data") => void;
+  announcement: { title: string; message: string; link: string };
+  setAnnouncement: Dispatch<SetStateAction<{ title: string; message: string; link: string }>>;
+  onSendAnnouncement: () => Promise<void>;
+  actionLoading: string | null;
 }) {
   return (
     <div className="space-y-6">
@@ -98,30 +106,71 @@ export function DashboardSection({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <ChartCard title="Plan Distribution" subtitle="Users by subscription plan" loading={loading} data={analytics?.scans} />
-        <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm shadow-slate-200/50">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-slate-900">Quick Actions</p>
-              <p className="text-xs text-slate-600">Most requested admin tasks</p>
+        <div className="space-y-4">
+          <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm shadow-slate-200/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Quick Actions</p>
+                <p className="text-xs text-slate-600">Most requested admin tasks</p>
+              </div>
+              <MoreHorizontal className="h-4 w-4 text-slate-400" />
             </div>
-            <MoreHorizontal className="h-4 w-4 text-slate-400" />
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {[
+                { label: "Add new user", action: "add-user", icon: <UserRoundPlus className="h-4 w-4" /> },
+                { label: "Suspend restaurant", action: "suspend-restaurant", icon: <ShieldCheck className="h-4 w-4" /> },
+                { label: "Upgrade plan", action: "upgrade-plan", icon: <TrendingUp className="h-4 w-4" /> },
+                { label: "Export data", action: "export-data", icon: <Download className="h-4 w-4" /> },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => onQuickAction(item.action as "add-user" | "suspend-restaurant" | "upgrade-plan" | "export-data")}
+                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 text-left text-sm font-semibold text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:border-orange-200 hover:bg-orange-50 hover:shadow-md"
+                >
+                  <span>{item.label}</span>
+                  <div className="text-orange-500">{item.icon}</div>
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {[
-              { label: "Add new user", action: "add-user", icon: <UserRoundPlus className="h-4 w-4" /> },
-              { label: "Suspend restaurant", action: "suspend-restaurant", icon: <ShieldCheck className="h-4 w-4" /> },
-              { label: "Upgrade plan", action: "upgrade-plan", icon: <TrendingUp className="h-4 w-4" /> },
-              { label: "Export data", action: "export-data", icon: <Download className="h-4 w-4" /> },
-            ].map((item) => (
-              <button
-                key={item.label}
-                onClick={() => onQuickAction(item.action as "add-user" | "suspend-restaurant" | "upgrade-plan" | "export-data")}
-                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 text-left text-sm font-semibold text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:border-orange-200 hover:bg-orange-50 hover:shadow-md"
-              >
-                <span>{item.label}</span>
-                <div className="text-orange-500">{item.icon}</div>
-              </button>
-            ))}
+          <div className="rounded-3xl border border-orange-100 bg-gradient-to-br from-orange-50 via-white to-white p-6 shadow-sm shadow-orange-100/60">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Send Announcement</p>
+                <p className="text-xs text-slate-600">Notify all users about updates</p>
+              </div>
+              <Badge tone="muted">Broadcast</Badge>
+            </div>
+            <div className="mt-3 space-y-3">
+              <input
+                value={announcement.title}
+                onChange={(e) => setAnnouncement((p) => ({ ...p, title: e.target.value }))}
+                placeholder="Announcement title"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
+              />
+              <textarea
+                value={announcement.message}
+                onChange={(e) => setAnnouncement((p) => ({ ...p, message: e.target.value }))}
+                placeholder="Message"
+                rows={3}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
+              />
+              <input
+                value={announcement.link}
+                onChange={(e) => setAnnouncement((p) => ({ ...p, link: e.target.value }))}
+                placeholder="Optional link (https://...)"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm transition-all duration-200 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20"
+              />
+              <div className="flex items-center justify-end">
+                <button
+                  onClick={onSendAnnouncement}
+                  disabled={actionLoading === "announcement"}
+                  className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-orange-500/30 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-orange-500/40 disabled:opacity-60"
+                >
+                  {actionLoading === "announcement" ? "Sending..." : "Send"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

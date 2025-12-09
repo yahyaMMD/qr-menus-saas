@@ -81,6 +81,7 @@ export default function AdminPage() {
   const [feedbackLimit, setFeedbackLimit] = useState(6);
   const [detailItem, setDetailItem] = useState<DetailItem | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [announcement, setAnnouncement] = useState({ title: "", message: "", link: "" });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -355,6 +356,34 @@ export default function AdminPage() {
       new Date(f.createdAt).toLocaleDateString(),
     ]);
     downloadCsv([header, ...rows], "feedback.csv");
+  };
+
+  const sendAnnouncement = async () => {
+    if (!authHeaders) return;
+    if (!announcement.title || !announcement.message) {
+      setError("Announcement title and message are required");
+      return;
+    }
+    setActionLoading("announcement");
+    try {
+      const res = await fetch("/api/admin/announcements", {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({
+          title: announcement.title,
+          message: announcement.message,
+          link: announcement.link || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to send announcement");
+      setAnnouncement({ title: "", message: "", link: "" });
+      alert(`Announcement sent to ${data.sent ?? 0} users.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to send announcement");
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const goToSection = (section: typeof activeSection) => {
@@ -763,6 +792,10 @@ export default function AdminPage() {
               onExport={exportData}
               onSupport={handleSupportNavigate}
               onQuickAction={handleQuickAction}
+              announcement={announcement}
+              setAnnouncement={setAnnouncement}
+              onSendAnnouncement={sendAnnouncement}
+              actionLoading={actionLoading}
             />
           )}
           {activeSection === "users" && (

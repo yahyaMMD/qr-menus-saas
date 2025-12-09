@@ -16,6 +16,7 @@ interface NotificationData {
   rating?: number;
   feedbackId?: string;
   link?: string;
+  context?: string;
 }
 
 // Create a notification
@@ -343,4 +344,44 @@ export async function notifySecurityAlert(userId: string, message: string) {
     message,
     { link: '/dashboard/settings' }
   );
+}
+
+export async function notifyAnnouncementAll(title: string, message: string, link?: string) {
+  const adminsAndUsers = await prisma.user.findMany({
+    where: { isActive: true },
+    select: { id: true },
+  });
+  const notifications = adminsAndUsers.map((u) =>
+    prisma.notification.create({
+      data: {
+        userId: u.id,
+        type: 'SYSTEM_UPDATE',
+        title,
+        message,
+        data: link ? ({ link } as Prisma.InputJsonValue) : null,
+      },
+    })
+  );
+  await Promise.all(notifications);
+  return adminsAndUsers.length;
+}
+
+export async function notifyAdminsNewRestaurant(profileId: string, profileName: string, ownerEmail: string) {
+  const admins = await prisma.user.findMany({
+    where: { role: 'ADMIN', isActive: true },
+    select: { id: true },
+  });
+  const notifications = admins.map((a) =>
+    prisma.notification.create({
+      data: {
+        userId: a.id,
+        type: 'SYSTEM_UPDATE',
+        title: 'New restaurant joined',
+        message: `${profileName} has been created by ${ownerEmail}`,
+        data: { profileId, profileName, context: 'new-restaurant' } as Prisma.InputJsonValue,
+      },
+    })
+  );
+  await Promise.all(notifications);
+  return admins.length;
 }

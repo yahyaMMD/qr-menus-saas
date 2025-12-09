@@ -9,7 +9,6 @@ import Footer from '@/components/landing/Footer';
 export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
 
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-orange-50 to-white py-16">
@@ -432,7 +431,6 @@ export default function PrivacyPolicy() {
         </div>
       </section>
 
-      <Footer />
     </div>
   );
 }
