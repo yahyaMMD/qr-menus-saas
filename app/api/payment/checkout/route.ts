@@ -171,7 +171,11 @@ export async function POST(request: NextRequest) {
       });
 
       // Generate unique success URL with additional parameters
-      const successUrl = new URL(`${process.env.NEXTAUTH_URL}/payment/success`);
+      const baseUrl =
+        process.env.NEXT_PUBLIC_APP_URL ||
+        process.env.NEXTAUTH_URL ||
+        request.nextUrl.origin;
+      const successUrl = new URL(`${baseUrl}/payment/success`);
       successUrl.searchParams.set('session_id', '{checkout_id}');
       successUrl.searchParams.set('plan', plan);
       successUrl.searchParams.set('amount', planCatalog.priceCents.toString());
@@ -224,9 +228,9 @@ export async function POST(request: NextRequest) {
           where: { id: existingSubscription.id },
           data: {
             plan: plan as any,
-            status: 'ACTIVE',
-            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-            active: false, // Will be activated after payment
+            status: 'PENDING',
+            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days placeholder until webhook confirms
+            active: false,
             paymentRef: checkout.id,
             priceCents: planCatalog.priceCents,
             currency: 'DZD'
@@ -237,9 +241,9 @@ export async function POST(request: NextRequest) {
           data: {
             userId: user.id,
             plan: plan as any,
-            status: 'ACTIVE',
-            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-            active: false, // Will be activated after payment
+            status: 'PENDING',
+            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // placeholder until webhook confirms
+            active: false,
             paymentRef: checkout.id,
             priceCents: planCatalog.priceCents,
             currency: 'DZD'
