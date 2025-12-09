@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { chargilyClient } from '@/lib/chargily';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import prisma from '@/lib/prisma';
+import { SubscriptionStatus } from '@prisma/client';
 
 export async function POST(request: NextRequest) {
   try {
@@ -228,7 +229,7 @@ export async function POST(request: NextRequest) {
           where: { id: existingSubscription.id },
           data: {
             plan: plan as any,
-            status: 'PENDING',
+            status: SubscriptionStatus.PAUSED,
             expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days placeholder until webhook confirms
             active: false,
             paymentRef: checkout.id,
@@ -241,7 +242,7 @@ export async function POST(request: NextRequest) {
           data: {
             userId: user.id,
             plan: plan as any,
-            status: 'PENDING',
+            status: SubscriptionStatus.PAUSED,
             expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // placeholder until webhook confirms
             active: false,
             paymentRef: checkout.id,

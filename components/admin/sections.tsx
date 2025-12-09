@@ -501,6 +501,7 @@ export function SubscriptionsSection({
   onExport,
   onShowSubscription,
   onShowPayment,
+  onReconcile,
   users,
 }: {
   plans: PlanCatalog[];
@@ -518,6 +519,7 @@ export function SubscriptionsSection({
   onExport: () => void;
   onShowSubscription: (s: SubscriptionRow) => void;
   onShowPayment: (p: PaymentRow) => void;
+  onReconcile: (s: SubscriptionRow) => void;
 }) {
   const reachOut = (email?: string | null) => {
     if (!email || typeof window === "undefined") return;
@@ -791,7 +793,7 @@ export function SubscriptionsSection({
             <span className="col-span-2">Amount</span>
             <span className="col-span-2">Status</span>
             <span className="col-span-2">Next Billing</span>
-            <span className="col-span-1 text-right">Actions</span>
+            <span className="col-span-2 text-right">Actions</span>
           </div>
           {loading && <div className="px-4 py-8 text-center text-sm text-slate-600 sm:px-6">Loading subscriptions...</div>}
           {!loading &&
@@ -821,13 +823,21 @@ export function SubscriptionsSection({
                     {s.expiresAt ? new Date(s.expiresAt).toLocaleDateString() : "—"}
                   </span>
                 </div>
-                <div className="col-span-1 flex items-center justify-end sm:col-span-1">
-                  <button
-                    onClick={() => onShowSubscription(s)}
-                    className="text-sm font-semibold text-indigo-600 hover:text-indigo-700"
-                  >
-                    View
-                  </button>
+                <div className="col-span-1 flex items-center justify-end sm:col-span-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => onShowSubscription(s)}
+                      className="text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+                    >
+                      View
+                    </button>
+                    <button
+                      onClick={() => onReconcile(s)}
+                      className="text-sm font-semibold text-orange-600 hover:text-orange-700"
+                    >
+                      Reconcile
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

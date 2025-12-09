@@ -90,8 +90,9 @@ async function handleSuccessfulPayment(event: any) {
     const payment = await prisma.payment.findFirst({
       where: { reference: checkout.id },
       include: {
-        user: true
-      }
+        user: true,
+        subscription: true,
+      },
     });
 
     if (payment && payment.userId && payment.user) {
