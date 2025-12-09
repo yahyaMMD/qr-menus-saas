@@ -95,8 +95,8 @@ async function handleSuccessfulPayment(event: any) {
     });
 
     if (payment && payment.userId && payment.user) {
-      const plan = checkout.metadata?.plan as any;
-      const priceCents = checkout.metadata?.priceCents || checkout.amount;
+      const plan = (checkout.metadata?.plan as any) || payment.subscription?.plan || 'STANDARD';
+      const priceCents = checkout.metadata?.priceCents || checkout.amount || payment.amountCents;
       const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
       
       // Update subscription to active
