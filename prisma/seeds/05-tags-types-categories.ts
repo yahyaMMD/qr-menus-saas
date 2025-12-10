@@ -6,6 +6,11 @@ export default async function tagsTypesCategories(
 ) {
   console.log("🏷 Creating tags, types, and categories...");
 
+  // Clear existing data to avoid duplicates
+  await prisma.tag.deleteMany({});
+  await prisma.type.deleteMany({});
+  await prisma.category.deleteMany({});
+
   const types = [];
   const categories = [];
   const tags = [];
