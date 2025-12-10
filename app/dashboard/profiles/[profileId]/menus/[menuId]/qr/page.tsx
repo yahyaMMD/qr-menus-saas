@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Download, Printer, QrCode, ArrowLeft, Copy, Check } from 'lucide-react';
+import { getPublicMenuUrl as resolvePublicMenuUrl } from '@/lib/public-menu-url';
 
 export default function MenuQRCodePage() {
   const params = useParams();
@@ -15,14 +16,20 @@ export default function MenuQRCodePage() {
   const [size, setSize] = useState(300);
   const qrRef = useRef<HTMLDivElement>(null);
 
+  const menuIdParam = params.menuId;
+  const menuId =
+    Array.isArray(menuIdParam) ? menuIdParam[0] : menuIdParam;
+
   useEffect(() => {
+    if (!menuId) return;
     fetchQRCode();
-  }, [params.menuId]);
+  }, [menuId]);
 
   const fetchQRCode = async () => {
+    if (!menuId) return;
     try {
       setLoading(true);
-      const response = await fetch(`/api/qr/${params.menuId}?format=svg&size=${size}`);
+      const response = await fetch(`/api/qr/${menuId}?format=svg&size=${size}`);
       
       if (!response.ok) throw new Error('Failed to generate QR code');
       
@@ -30,8 +37,7 @@ export default function MenuQRCodePage() {
       setQrCodeSvg(svg);
       
       // Extract menu URL from response headers or construct it
-      const baseUrl = window.location.origin;
-      const url = `${baseUrl}/menu/${params.menuId}`;
+      const url = resolvePublicMenuUrl(menuId, { client: true });
       setMenuUrl(url);
       
       setLoading(false);
@@ -42,8 +48,9 @@ export default function MenuQRCodePage() {
   };
 
   const handleDownload = async (downloadFormat: 'svg' | 'png') => {
+    if (!menuId) return;
     try {
-      const response = await fetch(`/api/qr/${params.menuId}?format=${downloadFormat}&size=${size}`);
+      const response = await fetch(`/api/qr/${menuId}?format=${downloadFormat}&size=${size}`);
       const blob = await response.blob();
       
       const url = window.URL.createObjectURL(blob);

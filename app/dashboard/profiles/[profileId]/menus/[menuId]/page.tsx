@@ -28,6 +28,7 @@ import { useRouter } from 'next/navigation';
 import { getErrorPagePath } from '@/lib/error-redirect';
 import { SUPPORTED_LANGUAGES, Language as LanguageType } from '@/lib/languages';
 import { ImageUpload } from '@/components/ui/ImageUpload';
+import { getPublicMenuUrl as resolvePublicMenuUrl } from '@/lib/public-menu-url';
 
 interface Tag {
   id: string;
@@ -562,7 +563,8 @@ export default function MenuBuilderPage({
     }
   };
 
-  const getPublicMenuUrl = () => `${window.location.origin}/menu/${menuId}`;
+  const getPublicMenuUrl = () =>
+    resolvePublicMenuUrl(menuId, { client: true });
 
   const handleCopyURL = () => {
     const menuUrl = getPublicMenuUrl();
