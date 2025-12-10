@@ -8,11 +8,15 @@ export default async function clean(prisma: PrismaClient) {
   await prisma.supportTicket.deleteMany();
   await prisma.feedback.deleteMany();
   await prisma.analytics.deleteMany();
+  await prisma.notification.deleteMany(); // Delete Notification (references User)
   await prisma.tokenBlacklist.deleteMany();
   await prisma.refreshToken.deleteMany();
   
   // Delete ItemTag first (it references Item and Tag)
   await prisma.itemTag.deleteMany();
+  
+  // Delete Translation (references Menu)
+  await prisma.translation.deleteMany();
   
   // Now safe to delete Item, Tag, Category, Type
   await prisma.item.deleteMany();
