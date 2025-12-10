@@ -21,10 +21,6 @@ interface ItemData {
 export default async function items(prisma: PrismaClient, { types, categories, tags }: ItemsParams) {
   console.log("🍽 Creating menu items...");
 
-  // Clear existing items to avoid duplicates
-  await prisma.itemTag.deleteMany({});
-  await prisma.item.deleteMany({});
-
   const popularTag = tags.find(t => t.name === "Popular");
   const vegetarianTag = tags.find(t => t.name === "Vegetarian");
   const veganTag = tags.find(t => t.name === "Vegan");

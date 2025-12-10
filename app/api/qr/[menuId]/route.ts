@@ -35,7 +35,7 @@ export async function GET(
         ? `https://${process.env.VERCEL_URL}`
         : "http://localhost:3000");
 
-    const menuUrl = `${baseUrl}/menu/${menu.profileId}?menuId=${menuId}`;
+    const menuUrl = `${baseUrl}/menu/${menuId}`;
 
     if (format === "png") {
       const buffer = await QRCode.toBuffer(menuUrl, {

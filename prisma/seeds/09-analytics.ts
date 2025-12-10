@@ -3,13 +3,10 @@ import { PrismaClient } from "@prisma/client";
 export default async function analytics(prisma: PrismaClient) {
   console.log("📊 Creating analytics data...");
 
-  // Clear existing analytics to avoid duplicates
-  await prisma.analytics.deleteMany({});
-
   const menus = await prisma.menu.findMany({ where: { isActive: true } });
   
   const today = new Date();
-  const daysToGenerate = 10; // Generate 90 days of analytics data
+  const daysToGenerate = 90; // Generate 90 days of analytics data
 
   let totalAnalytics = 0;
 

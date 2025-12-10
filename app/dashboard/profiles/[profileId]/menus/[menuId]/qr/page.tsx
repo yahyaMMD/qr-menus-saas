@@ -31,7 +31,7 @@ export default function MenuQRCodePage() {
       
       // Extract menu URL from response headers or construct it
       const baseUrl = window.location.origin;
-      const url = `${baseUrl}/menu/${params.profileId}?menuId=${params.menuId}`;
+      const url = `${baseUrl}/menu/${params.menuId}`;
       setMenuUrl(url);
       
       setLoading(false);

@@ -562,8 +562,10 @@ export default function MenuBuilderPage({
     }
   };
 
+  const getPublicMenuUrl = () => `${window.location.origin}/menu/${menuId}`;
+
   const handleCopyURL = () => {
-    const menuUrl = `${window.location.origin}/menu/${profileId}?menuId=${menuId}`;
+    const menuUrl = getPublicMenuUrl();
     navigator.clipboard.writeText(menuUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -641,7 +643,7 @@ export default function MenuBuilderPage({
   const handlePrintQR = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
-    const menuUrl = `${window.location.origin}/menu/${profileId}?menuId=${menuId}`;
+    const menuUrl = getPublicMenuUrl();
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -661,7 +663,7 @@ export default function MenuBuilderPage({
             <h1>Scan to View Menu</h1>
             <p>${menu?.profile?.name || 'Restaurant'}</p>
             <div class="qr-code">${qrCodeSvg}</div>
-            <div class="url"><strong>Direct link:</strong><br>${menuUrl}</div>
+                  <div class="url"><strong>Direct link:</strong><br>${menuUrl}</div>
           </div>
         </body>
       </html>
@@ -1111,7 +1113,7 @@ export default function MenuBuilderPage({
               <p className="text-sm text-blue-900 font-medium mb-2">Menu URL:</p>
               <div className="flex items-center gap-2">
                 <code className="flex-1 text-sm bg-white px-3 py-2 rounded border border-blue-200 overflow-x-auto">
-                  {`${window.location.origin}/menu/${profileId}?menuId=${menuId}`}
+                  {getPublicMenuUrl()}
                 </code>
                 <button
                   onClick={handleCopyURL}
