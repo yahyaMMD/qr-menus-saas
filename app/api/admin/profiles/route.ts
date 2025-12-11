@@ -21,7 +21,6 @@ export const GET = withAdmin(async () => {
             _count: {
               select: {
                 items: true,
-                analytics: true,
               },
             },
           },
@@ -36,9 +35,35 @@ export const GET = withAdmin(async () => {
       orderBy: { createdAt: 'desc' },
     });
 
+    const menuProfileMap = new Map<string, string>();
+    const menuIds: string[] = [];
+
+    for (const profile of profiles) {
+      for (const menu of profile.menus) {
+        menuProfileMap.set(menu.id, profile.id);
+        menuIds.push(menu.id);
+      }
+    }
+
+    const analyticsByMenu = menuIds.length
+      ? await prisma.analytics.groupBy({
+          by: ['menuId'],
+          where: { menuId: { in: menuIds } },
+          _sum: { scans: true },
+        })
+      : [];
+
+    const scansByProfile = new Map<string, number>();
+    for (const entry of analyticsByMenu) {
+      const profileId = menuProfileMap.get(entry.menuId);
+      if (!profileId) continue;
+      const existing = scansByProfile.get(profileId) ?? 0;
+      scansByProfile.set(profileId, existing + (entry._sum.scans ?? 0));
+    }
+
     const payload = profiles.map((profile) => {
       const totalItems = profile.menus.reduce((sum, menu) => sum + (menu._count?.items ?? 0), 0);
-      const totalScanRecords = profile.menus.reduce((sum, menu) => sum + (menu._count?.analytics ?? 0), 0);
+      const totalScanRecords = scansByProfile.get(profile.id) ?? 0;
 
       return {
         id: profile.id,

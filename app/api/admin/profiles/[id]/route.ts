@@ -30,7 +30,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
           menus: {
             include: {
               _count: {
-                select: { items: true, analytics: true },
+                select: { items: true },
               },
             },
           },
@@ -41,7 +41,18 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
       });
 
       const totalItems = profile.menus.reduce((sum, menu) => sum + (menu._count?.items ?? 0), 0);
-      const totalScanRecords = profile.menus.reduce((sum, menu) => sum + (menu._count?.analytics ?? 0), 0);
+      const menuIds = profile.menus.map((menu) => menu.id);
+      const analyticsByMenu = menuIds.length
+        ? await prisma.analytics.groupBy({
+            by: ['menuId'],
+            where: { menuId: { in: menuIds } },
+            _sum: { scans: true },
+          })
+        : [];
+      const totalScanRecords = analyticsByMenu.reduce(
+        (sum, entry) => sum + (entry._sum.scans ?? 0),
+        0
+      );
 
       return NextResponse.json(
         {
