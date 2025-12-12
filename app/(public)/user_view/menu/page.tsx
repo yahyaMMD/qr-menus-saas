@@ -1,26 +1,25 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  Facebook,
   Filter,
-  Instagram,
-  MessageCircle,
   Globe,
   ChevronDown,
+  MapPin,
+  Phone,
+  Sparkles,
+  Star,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
 import { Filters, Item, MenuData, LanguageInfo } from "./menu.types";
-import { mockMenuData } from "./menu.mock";
 import FilterModal from "./components/FilterModal";
 import MenuSection from "./components/MenuSection";
-import Link from "next/link";
 
 const MenuPage: React.FC = () => {
   const searchParams = useSearchParams();
   const menuId = searchParams.get("menuId");
-  
+
   const [data, setData] = useState<MenuData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,47 +33,48 @@ const MenuPage: React.FC = () => {
     priceRange: [0, 50000],
   });
 
-  const fetchData = async (lang?: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      
+  const fetchData = useCallback(
+    async (lang?: string) => {
+      try {
+        setLoading(true);
+        setError(null);
+
       if (!menuId) {
-        // Fall back to mock data if no menuId
-        setData(mockMenuData);
+        setError("No menu specified");
         return;
       }
 
-      const langParam = lang ? `?lang=${lang}` : '';
-      const response = await fetch(`/api/public/menu/${menuId}${langParam}`);
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          setError("Menu not found or not available");
-        } else {
-          setError("Failed to load menu");
+        const langParam = lang ? `?lang=${lang}` : "";
+        const response = await fetch(`/api/public/menu/${menuId}${langParam}`);
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError("Menu not found or not available");
+          } else {
+            setError("Failed to load menu");
+          }
+          return;
         }
-        return;
-      }
 
-      const menuData = await response.json();
-      setData(menuData);
-      
-      // Set current language from response
-      if (menuData.languages?.current) {
-        setCurrentLanguage(menuData.languages.current);
+        const menuData = await response.json();
+        setData(menuData);
+
+        if (menuData.languages?.current) {
+          setCurrentLanguage(menuData.languages.current);
+        }
+      } catch (err) {
+        console.error("Error fetching menu:", err);
+        setError("Failed to load menu");
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("Error fetching menu:", err);
-      setError("Failed to load menu");
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [menuId]
+  );
 
   useEffect(() => {
     fetchData();
-  }, [menuId]);
+  }, [fetchData]);
 
   const handleLanguageChange = (langCode: string) => {
     setIsLanguageOpen(false);
@@ -84,13 +84,10 @@ const MenuPage: React.FC = () => {
     }
   };
 
-  // Get current language info
   const currentLangInfo = data?.languages?.availableLanguages?.find(
     (l) => l.code === currentLanguage
   );
-
-  // Check if RTL language
-  const isRTL = currentLangInfo?.direction === 'rtl';
+  const isRTL = currentLangInfo?.direction === "rtl";
 
   if (loading) {
     return (
@@ -119,14 +116,11 @@ const MenuPage: React.FC = () => {
 
   if (!data) return null;
 
-  // Filter items based on active filters
   const filteredItems = data.items.filter((item) => {
-    // Type filter
     if (filters.typeIds.length > 0 && !filters.typeIds.includes(item.typeId || "")) {
       return false;
     }
 
-    // Category filter
     if (
       filters.categoryIds.length > 0 &&
       !filters.categoryIds.includes(item.categoryId || "")
@@ -134,13 +128,11 @@ const MenuPage: React.FC = () => {
       return false;
     }
 
-    // Tag filter
     if (filters.tagIds.length > 0) {
       const hasMatchingTag = item.tags.some((tag) => filters.tagIds.includes(tag));
       if (!hasMatchingTag) return false;
     }
 
-    // Price filter
     if (item.price !== null) {
       if (item.price < filters.priceRange[0] || item.price > filters.priceRange[1]) {
         return false;
@@ -150,7 +142,6 @@ const MenuPage: React.FC = () => {
     return true;
   });
 
-  // Group items by category
   const groupedItems: Record<string, Item[]> = {};
   filteredItems.forEach((item) => {
     const category = data.categories.find((c) => c.id === item.categoryId);
@@ -164,144 +155,253 @@ const MenuPage: React.FC = () => {
   const activeFilterCount =
     filters.typeIds.length + filters.categoryIds.length + filters.tagIds.length;
 
-  const hasMultipleLanguages = data.languages && data.languages.availableLanguages.length > 1;
+  const heroStats = [
+    { label: "Categories", value: data.categories.length },
+    { label: "Items", value: data.items.length },
+    { label: "Languages", value: data.languages?.availableLanguages.length ?? 1 },
+  ];
+
+  const highlightTags = data.tags.slice(0, 4);
+  const topPromotions = filteredItems.filter((item) => item.isPromotion).slice(0, 3);
+
+  const restaurantLocation = data.restaurant?.location;
+  const locationLabel = restaurantLocation
+    ? [
+        restaurantLocation.address,
+        restaurantLocation.city,
+        restaurantLocation.country,
+      ]
+        .filter(Boolean)
+        .join(" • ")
+    : "Location details coming soon";
+
+  const actions = [
+    {
+      icon: Phone,
+      label: "Call",
+      value: data.restaurant?.phone,
+      href: data.restaurant?.phone ? `tel:${data.restaurant.phone}` : undefined,
+    },
+    {
+      icon: MapPin,
+      label: "Visit",
+      value: locationLabel,
+    },
+    {
+      icon: Globe,
+      label: "Website",
+      value: data.restaurant?.website,
+      href: data.restaurant?.website,
+    },
+  ].filter((action) => Boolean(action.value));
+
+  const heroBadge = data.menu.description ? data.menu.description : "Digital curated menu";
 
   return (
-    <div className={`min-h-screen bg-gray-50 pb-20 ${isRTL ? 'rtl' : 'ltr'}`} dir={isRTL ? 'rtl' : 'ltr'}>
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <img
-              src={data.menu.logoUrl}
-              alt="Restaurant Logo"
-              className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover"
-            />
-            <span className="text-lg sm:text-xl font-bold text-gray-900">
-              {data.menu.name}
-            </span>
+    <div
+      className={`min-h-screen bg-[#fdfaf7] pb-16 ${isRTL ? "rtl" : "ltr"}`}
+      dir={isRTL ? "rtl" : "ltr"}
+    >
+      <header className="relative overflow-hidden rounded-b-[32px] bg-gradient-to-br from-orange-500 via-amber-500 to-rose-500 text-white shadow-lg">
+        <div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.4),_transparent_60%)]" />
+        <div className="relative z-10 mx-auto max-w-5xl px-4 py-10 space-y-6">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="h-16 w-16 rounded-2xl bg-white/30 p-1 shadow-lg">
+              <img
+                src={data.menu.logoUrl}
+                alt={data.menu.name}
+                className="h-full w-full rounded-xl object-cover"
+              />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.4em] text-white/80">
+                Digital Menu
+              </p>
+              <h1 className="text-3xl sm:text-4xl font-bold">{data.menu.name}</h1>
+              {heroBadge && (
+                <p className="text-sm sm:text-base text-white/90 mt-1 max-w-2xl">
+                  {heroBadge}
+                </p>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Language Switcher */}
-            {hasMultipleLanguages && (
-              <div className="relative">
-                <button
-                  onClick={() => setIsLanguageOpen(!isLanguageOpen)}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-full transition text-sm font-medium text-gray-700"
-                >
-                  <Globe className="w-4 h-4" />
-                  <span className="hidden sm:inline">{currentLangInfo?.flag} {currentLangInfo?.nativeName}</span>
-                  <span className="sm:hidden">{currentLangInfo?.flag}</span>
-                  <ChevronDown className={`w-3 h-3 transition-transform ${isLanguageOpen ? 'rotate-180' : ''}`} />
-                </button>
-
-                {/* Language Dropdown */}
-                {isLanguageOpen && (
-                  <>
-                    <div 
-                      className="fixed inset-0 z-40" 
-                      onClick={() => setIsLanguageOpen(false)}
-                    />
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
-                      <div className="px-3 py-2 border-b border-gray-100">
-                        <p className="text-xs font-medium text-gray-500 uppercase">Select Language</p>
-                      </div>
-                      {data.languages?.availableLanguages.map((lang: LanguageInfo) => (
-                        <button
-                          key={lang.code}
-                          onClick={() => handleLanguageChange(lang.code)}
-                          className={`w-full px-3 py-2.5 flex items-center gap-3 hover:bg-gray-50 transition ${
-                            currentLanguage === lang.code ? 'bg-orange-50 text-orange-600' : 'text-gray-700'
-                          }`}
-                        >
-                          <span className="text-xl">{lang.flag}</span>
-                          <div className="text-left">
-                            <p className="font-medium text-sm">{lang.nativeName}</p>
-                            <p className="text-xs text-gray-500">{lang.name}</p>
-                          </div>
-                          {currentLanguage === lang.code && (
-                            <span className="ml-auto text-orange-500">✓</span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
+          <div className="grid gap-3 sm:grid-cols-3">
+            {heroStats.map((stat) => (
+              <div
+                key={stat.label}
+                className="rounded-2xl border border-white/30 bg-white/20 px-4 py-3 backdrop-blur"
+              >
+                <p className="text-sm uppercase tracking-wide text-white/80">
+                  {stat.label}
+                </p>
+                <p className="text-2xl font-bold">{stat.value}</p>
               </div>
-            )}
+            ))}
+          </div>
 
-            {/* Filter Button */}
+          <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => setIsFilterOpen(true)}
-              className="bg-orange-500 text-white px-3 sm:px-4 py-2 rounded-full font-semibold flex items-center gap-2 hover:bg-orange-600 transition relative"
+              className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-orange-600 shadow-lg hover:bg-white/90 transition"
             >
               <Filter className="w-4 h-4" />
-              <span className="hidden sm:inline">Filters</span>
+              <span>Filters</span>
               {activeFilterCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                <span className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
                   {activeFilterCount}
                 </span>
               )}
             </button>
+
+            {data.languages?.availableLanguages && data.languages.availableLanguages.length > 1 && (
+              <div className="relative">
+                <button
+                  onClick={() => setIsLanguageOpen(!isLanguageOpen)}
+                  className="flex items-center gap-2 rounded-full border border-white/50 bg-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/30"
+                >
+                  <Globe className="w-4 h-4" />
+                  <span className="truncate">
+                    {currentLangInfo?.flag} {currentLangInfo?.nativeName}
+                  </span>
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform ${isLanguageOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+
+                {isLanguageOpen && (
+                  <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-white/30 bg-white text-gray-900 shadow-2xl">
+                    <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Select Language
+                    </div>
+                    {data.languages.availableLanguages.map((lang: LanguageInfo) => (
+                      <button
+                        key={lang.code}
+                        onClick={() => handleLanguageChange(lang.code)}
+                        className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm transition hover:bg-gray-50 ${
+                          currentLanguage === lang.code ? "bg-orange-50 text-orange-600" : "text-gray-800"
+                        }`}
+                      >
+                        <span className="text-xl">{lang.flag}</span>
+                        <div>
+                          <p className="font-semibold">{lang.nativeName}</p>
+                          <p className="text-xs text-gray-500">{lang.name}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Page Title */}
-      <div className="max-w-4xl mx-auto px-4 py-4 sm:py-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Menu</h1>
-        {data.menu.description && (
-          <p className="text-gray-600 mt-1">{data.menu.description}</p>
+      <div className="mx-auto mt-8 max-w-5xl px-4 space-y-8">
+        <section className="grid gap-4 rounded-3xl bg-white/60 p-5 shadow-lg border border-gray-100 sm:grid-cols-3">
+          {actions.map((action) => (
+            <div
+              key={action.label}
+              className="flex items-start gap-3 rounded-2xl border border-gray-200 bg-white/80 px-3 py-3 shadow-sm"
+            >
+              <action.icon className="w-5 h-5 text-orange-500" />
+              <div className="text-sm">
+                <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{action.label}</p>
+                {action.href ? (
+                  <a
+                    href={action.href}
+                    target={action.href.startsWith("http") ? "_blank" : undefined}
+                    rel={action.href.startsWith("http") ? "noreferrer" : undefined}
+                    className="text-base font-semibold text-gray-900 hover:text-orange-500"
+                  >
+                    {action.value}
+                  </a>
+                ) : (
+                  <p className="text-base font-semibold text-gray-900">{action.value}</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </section>
+
+        {highlightTags.length > 0 && (
+          <section className="rounded-3xl border border-dashed border-gray-200 bg-white/70 p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.4em] text-gray-400">Chef&apos;s Picks</p>
+                <h3 className="text-xl font-bold text-gray-900">Featured tags</h3>
+              </div>
+              <Sparkles className="text-orange-500" />
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {highlightTags.map((tag) => (
+                <span
+                  key={tag.id}
+                  className="inline-flex items-center rounded-2xl px-4 py-2 text-sm font-semibold text-white"
+                  style={{ backgroundColor: tag.color }}
+                >
+                  {tag.name}
+                </span>
+              ))}
+            </div>
+          </section>
         )}
+
+        {topPromotions.length > 0 && (
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.4em] text-gray-500">Limited time</p>
+                <h3 className="text-2xl font-bold text-gray-900">Chef&apos;s specials</h3>
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {topPromotions.map((item) => (
+                <div key={item.id} className="rounded-3xl border border-gray-200 bg-white p-4 shadow-sm">
+                  <div className="flex justify-between items-center mb-3">
+                    <p className="text-sm font-semibold text-gray-500">{item.categoryId ? data.categories.find((cat) => cat.id === item.categoryId)?.name : "Signature"}</p>
+                    <span className="text-xs text-green-600 font-semibold">Sale</span>
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="text-lg font-bold text-gray-900">{item.name}</h4>
+                    {item.description && (
+                      <p className="text-sm text-gray-500 line-clamp-3">{item.description}</p>
+                    )}
+                  </div>
+                  <div className="mt-4 flex items-center justify-between">
+                    <div>
+                      {item.originalPrice && (
+                        <p className="text-xs text-gray-400 line-through">{item.originalPrice} DZD</p>
+                      )}
+                      <p className="text-xl font-bold text-gray-900">{item.price} DZD</p>
+                    </div>
+                    <Star className="text-yellow-500" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <main className="space-y-10">
+          {Object.keys(groupedItems).length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-gray-200 bg-white p-8 text-center text-gray-500">
+              <p className="text-lg">No items found matching your filters.</p>
+              <p className="text-sm text-gray-400">Try toggling a different category or price range.</p>
+            </div>
+          ) : (
+            Object.entries(groupedItems).map(([categoryName, items]) => (
+              <MenuSection
+                key={categoryName}
+                title={categoryName}
+                items={items}
+                tags={data.tags}
+              />
+            ))
+          )}
+        </main>
       </div>
 
-      {/* Menu Sections */}
-      <main className="max-w-4xl mx-auto px-4">
-        {Object.keys(groupedItems).length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">
-              No items found matching your filters.
-            </p>
-          </div>
-        ) : (
-          Object.entries(groupedItems).map(([categoryName, items]) => (
-            <MenuSection
-              key={categoryName}
-              title={categoryName}
-              items={items}
-              tags={data.tags}
-            />
-          ))
-        )}
-      </main>
-
-      {/* Footer */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-30">
-        <div className="max-w-4xl mx-auto px-4 py-2 sm:py-3 flex items-center justify-center gap-4 sm:gap-6">
-          <button className="text-gray-600 hover:text-blue-600 transition flex items-center gap-1 sm:gap-2">
-            <Facebook className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="text-xs sm:text-sm font-medium hidden sm:inline">
-              Facebook
-            </span>
-          </button>
-          <button className="text-gray-600 hover:text-pink-600 transition flex items-center gap-1 sm:gap-2">
-            <Instagram className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="text-xs sm:text-sm font-medium hidden sm:inline">
-              Instagram
-            </span>
-          </button>
-          <Link
-             href="/feedback"
-             className="bg-orange-500 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-semibold flex items-center gap-1 sm:gap-2 hover:bg-orange-600 transition text-xs sm:text-sm"
-              >
-              <MessageCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">Feedback</span>
-          </Link>
-        </div>
-      </footer>
-
-      {/* Filter Modal */}
       <FilterModal
         isOpen={isFilterOpen}
         onClose={() => setIsFilterOpen(false)}
