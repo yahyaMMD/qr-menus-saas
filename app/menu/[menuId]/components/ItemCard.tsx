@@ -9,7 +9,9 @@ type Props = {
 };
 
 export function ItemCard({ item, onOpen }: Props) {
-  const isPromo = item.isPromotion && typeof item.originalPrice === "number";
+  const numericOriginalPrice =
+    typeof item.originalPrice === "number" ? item.originalPrice : undefined;
+  const isPromo = item.isPromotion && numericOriginalPrice !== undefined;
   const hasDescription = Boolean(item.description?.trim());
 
   return (
@@ -46,14 +48,18 @@ export function ItemCard({ item, onOpen }: Props) {
           <span className="text-xl font-bold text-orange-600">
             {item.price.toFixed(2)} DZD
           </span>
-          {isPromo && (
+          {isPromo && numericOriginalPrice !== undefined && (
             <span className="text-xs text-gray-400 line-through">
-              {item.originalPrice.toFixed(2)} DZD
+              {numericOriginalPrice.toFixed(2)} DZD
             </span>
           )}
-          {isPromo && item.originalPrice && item.price && (
+          {isPromo && numericOriginalPrice !== undefined && (
             <span className="ml-auto rounded-full bg-green-500 px-2 py-0.5 text-[10px] font-semibold text-white">
-              Save {Math.round((1 - item.price / item.originalPrice) * 100)}%
+              Save{" "}
+              {Math.round(
+                (1 - item.price / numericOriginalPrice) * 100,
+              )}
+              %
             </span>
           )}
         </div>
