@@ -11,33 +11,33 @@ interface MenuItemCardProps {
 
 const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, tags }) => {
   const itemTags = tags.filter((tag) => item.tags.includes(tag.id));
+  const hasDescription = !!item.description;
+  const originalPrice = item.originalPrice ?? undefined;
 
   return (
-    <div className="bg-white rounded-2xl shadow-md overflow-hidden mb-4 flex transition-transform hover:scale-[1.02]">
-      <div className="relative w-32 sm:w-40 h-24 sm:h-32 flex-shrink-0">
+    <article className="group bg-white border border-gray-100 rounded-3xl shadow-sm overflow-hidden mb-4 transition hover:shadow-lg">
+      <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-gray-100">
         <img
-          src={item.image || "https://via.placeholder.com/400x300"}
+          src={item.image || "https://via.placeholder.com/640x480"}
           alt={item.name}
-          className="w-full h-full object-cover"
+          className="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
         />
 
-        {/* Promotion Badge */}
         {item.isPromotion && (
-          <div className="absolute top-1 right-1 sm:top-2 sm:right-2">
-            <span className="bg-green-500 text-white px-2 py-0.5 rounded-full text-xs font-bold flex items-center gap-1">
+          <div className="absolute top-3 right-3">
+            <span className="inline-flex items-center gap-1 rounded-full bg-green-500 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white shadow-lg">
               <Percent className="w-3 h-3" />
-              SALE
+              Sale
             </span>
           </div>
         )}
 
-        {/* Tags */}
         {itemTags.length > 0 && (
-          <div className="absolute top-1 left-1 sm:top-2 sm:left-2 flex flex-col gap-1">
+          <div className="absolute top-3 left-3 flex flex-wrap gap-1">
             {itemTags.slice(0, 2).map((tag) => (
               <span
                 key={tag.id}
-                className="px-2 py-0.5 rounded-full text-xs font-semibold text-white"
+                className="px-2 py-0.5 rounded-full text-[11px] font-semibold text-white"
                 style={{ backgroundColor: tag.color }}
               >
                 {tag.name}
@@ -46,41 +46,59 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item, tags }) => {
           </div>
         )}
 
-        {/* Price - with promotion support */}
         {item.price !== null && (
-          <div className="absolute bottom-1 left-1 sm:bottom-2 sm:left-2 flex items-center gap-1">
-            {item.isPromotion && item.originalPrice !== null && (
-              <span className="bg-gray-400 text-white px-2 py-0.5 rounded-full text-xs line-through opacity-80">
-                {item.originalPrice}DA
+          <div className="absolute bottom-3 left-3 flex items-center gap-1">
+            {item.isPromotion && originalPrice && (
+              <span className="bg-gray-800/70 text-[11px] text-white px-2 py-0.5 rounded-full line-through opacity-80">
+                {originalPrice}DA
               </span>
             )}
-            <span className={`${item.isPromotion ? 'bg-green-500' : 'bg-orange-500'} text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-bold`}>
+            <span
+              className={`text-white px-3 py-1 rounded-full text-xs font-semibold ${
+                item.isPromotion ? "bg-green-500" : "bg-orange-500"
+              }`}
+            >
               {item.price}DA
             </span>
           </div>
         )}
       </div>
 
-      <div className="flex-1 p-3 sm:p-4 flex flex-col justify-center min-w-0">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 text-sm sm:text-base mb-1 truncate">
+      <div className="p-4 sm:p-5 space-y-2">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 space-y-1">
+            <h3 className="text-base font-semibold text-gray-900 truncate">
               {item.name}
             </h3>
-            <p className="text-gray-500 text-xs sm:text-sm line-clamp-2">
-              {item.description}
-            </p>
-            {/* Savings indicator */}
-            {item.isPromotion && item.originalPrice && item.price && (
-              <p className="text-green-600 text-xs font-medium mt-1">
-                Save {Math.round((1 - item.price / item.originalPrice) * 100)}%
+            {hasDescription && (
+              <p className="text-sm text-gray-500 leading-relaxed line-clamp-3">
+                {item.description}
               </p>
             )}
           </div>
-          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0" />
+          <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
         </div>
+
+        {itemTags.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {itemTags.map((tag) => (
+              <span
+                key={`${item.id}-${tag.id}`}
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold text-gray-700 border border-gray-200"
+              >
+                {tag.name}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {item.isPromotion && item.originalPrice && item.price && (
+          <p className="text-xs text-green-600 font-semibold">
+            Save {Math.round((1 - item.price / item.originalPrice) * 100)}%
+          </p>
+        )}
       </div>
-    </div>
+    </article>
   );
 };
 
