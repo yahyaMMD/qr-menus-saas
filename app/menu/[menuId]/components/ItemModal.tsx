@@ -6,9 +6,10 @@ import { ItemView } from "../types";
 type Props = {
   item: ItemView | null;
   onClose: () => void;
+  onGiveFeedback: () => void;
 };
 
-export function ItemModal({ item, onClose }: Props) {
+export function ItemModal({ item, onClose, onGiveFeedback }: Props) {
   if (!item) return null;
 
   const isPromo = item.isPromotion && item.originalPrice;
@@ -81,10 +82,11 @@ export function ItemModal({ item, onClose }: Props) {
 
             <button
               type="button"
+              onClick={onGiveFeedback}
               className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-3 text-sm font-bold text-white shadow-lg hover:shadow-xl transition-all"
             >
               <Star className="h-4 w-4" />
-              Add Feedback (placeholder action)
+              Give Feedback
             </button>
           </div>
         </div>

@@ -155,6 +155,11 @@ export default function MenuPage() {
     }
   };
 
+  const handleGiveFeedbackFromModal = () => {
+    setSelectedItem(null);
+    handleOpenFeedback();
+  };
+
   // Loading state
   if (isLoading) {
     return (
@@ -328,6 +333,7 @@ export default function MenuPage() {
       <ItemModal
         item={selectedItem}
         onClose={() => setSelectedItem(null)}
+        onGiveFeedback={handleGiveFeedbackFromModal}
       />
     </div>
   );
