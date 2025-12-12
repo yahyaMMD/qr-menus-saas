@@ -18,8 +18,10 @@ import {
   UserRoundPlus,
   Users,
   UtensilsCrossed,
+  Menu,
   X,
 } from "lucide-react";
+import Link from "next/link";
 import {
   AnalyticsSummary,
   DetailItem,
@@ -592,9 +594,34 @@ export function RestaurantsSection({
                 <span className="text-xs text-slate-500 sm:hidden">Status:</span>
                 <Badge tone={p.status === "ACTIVE" ? "success" : p.status === "SUSPENDED" ? "danger" : "muted"}>{p.status}</Badge>
               </div>
-              <div className="col-span-1 flex items-center justify-between sm:col-span-2 sm:block">
+              <div className="col-span-1 sm:col-span-2">
                 <span className="text-xs text-slate-500 sm:hidden">Menus:</span>
-                <span className="text-slate-800">{p.stats?.menus ?? 0}</span>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {p.menus.length === 0 ? (
+                    <span className="rounded-full border border-dashed border-slate-300 px-3 py-1 text-[11px] text-slate-400">
+                      No menus yet
+                    </span>
+                  ) : (
+                    p.menus.slice(0, 4).map((menu) => (
+                    <Link
+                      key={menu.id}
+                      href={`/menu/${menu.id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100/80 px-3 py-1 text-[11px] font-semibold text-slate-800 transition hover:border-orange-300 hover:bg-white"
+                    >
+                      <Menu className="h-3 w-3 text-orange-500" />
+                      <span className="truncate max-w-[100px]">{menu.name}</span>
+                      {menu.isActive ? <Badge tone="success">Live</Badge> : <Badge tone="muted">Draft</Badge>}
+                    </Link>
+                    ))
+                  )}
+                  {p.menus.length > 4 && (
+                    <span className="inline-flex items-center rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[11px] font-semibold text-slate-500">
+                      +{p.menus.length - 4} more
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="col-span-1 flex items-center justify-end gap-2 sm:col-span-2">
                 <button
@@ -658,7 +685,7 @@ export function SubscriptionsSection({
 }) {
   const reachOut = (email?: string | null) => {
     if (!email || typeof window === "undefined") return;
-    window.location.href = `mailto:${email}?subject=Subscription%20follow-up`;
+    window.open(`mailto:${email}?subject=Subscription%20follow-up`, "_blank", "noopener");
   };
 
   const [planFilter, setPlanFilter] = useState<"ALL" | "FREE" | "STANDARD" | "CUSTOM">("ALL");
@@ -682,14 +709,6 @@ export function SubscriptionsSection({
   const filteredCount = filteredSubs.length;
   const totalSubs = subscriptions.length;
   const [planEdits, setPlanEdits] = useState<Record<string, { priceCents: number; description: string }>>({});
-
-  useEffect(() => {
-    const next: Record<string, { priceCents: number; description: string }> = {};
-    plans.forEach((p) => {
-      next[p.id] = { priceCents: p.priceCents, description: p.description ?? "" };
-    });
-    setPlanEdits(next);
-  }, [plans]);
 
   const cyclePlanFilter = () => {
     const options: typeof planFilter[] = ["ALL", "FREE", "STANDARD", "CUSTOM"];

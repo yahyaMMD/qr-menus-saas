@@ -78,6 +78,11 @@ export const GET = withAdmin(async () => {
             }
           : null,
         description: profile.description,
+        menus: profile.menus.map((menu) => ({
+          id: menu.id,
+          name: menu.name,
+          isActive: menu.isActive,
+        })),
         location: profile.location,
         createdAt: profile.createdAt,
         stats: {
