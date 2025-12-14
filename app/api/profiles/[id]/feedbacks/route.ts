@@ -22,6 +22,21 @@ export async function GET(
 
     const { id: profileId } = await params;
 
+    if (!profileId || profileId === 'undefined') {
+      return NextResponse.json(
+        { error: 'Profile ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const objectIdPattern = /^[0-9a-fA-F]{24}$/;
+    if (!objectIdPattern.test(profileId)) {
+      return NextResponse.json(
+        { error: 'Invalid profile ID' },
+        { status: 400 }
+      );
+    }
+
     // Verify profile belongs to user
     const profile = await prisma.profile.findUnique({
       where: { id: profileId },
@@ -105,4 +120,3 @@ export async function GET(
     );
   }
 }
-

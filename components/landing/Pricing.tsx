@@ -17,6 +17,11 @@ export default function Pricing() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [showPaymentMethods, setShowPaymentMethods] = useState(false);
   const [loginPrompt, setLoginPrompt] = useState<{ open: boolean; planId: string | null }>({ open: false, planId: null });
+  const [freePlanSuccess, setFreePlanSuccess] = useState<{ open: boolean; planName: string; message: string }>({
+    open: false,
+    planName: '',
+    message: '',
+  });
 
   // Check auth on component mount
   useEffect(() => {
@@ -63,7 +68,6 @@ export default function Pricing() {
     setError('');
 
     try {
-      console.log('Payment request - Sending token:', accessToken?.substring(0, 20) + '...');
       const response = await fetch('/api/payment/checkout', {
         method: 'POST',
         headers: {
@@ -75,8 +79,6 @@ export default function Pricing() {
           paymentMethod: paymentMethod
         }),
       });
-
-      console.log('Payment response status:', response.status);
 
       if (response.status === 401) {
         console.error('Payment API returned 401 Unauthorized');
@@ -92,8 +94,12 @@ export default function Pricing() {
       }
 
       if (data.isFreePlan) {
-        alert('Free plan activated successfully!');
-        router.push('/dashboard');
+        setShowPaymentMethods(false);
+        setFreePlanSuccess({
+          open: true,
+          planName,
+          message: data.message || 'Your Free plan is now active.',
+        });
         return;
       }
 
@@ -244,6 +250,31 @@ export default function Pricing() {
                   className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
                 >
                   Go to login
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {freePlanSuccess.open && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+            <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full space-y-4 text-center">
+              <h3 className="text-xl font-bold text-gray-900">Free plan activated</h3>
+              <p className="text-gray-600">
+                {freePlanSuccess.message} You are now on the {freePlanSuccess.planName} plan.
+              </p>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button
+                  onClick={() => router.push('/dashboard')}
+                  className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
+                >
+                  Go to Dashboard
+                </button>
+                <button
+                  onClick={() => setFreePlanSuccess({ open: false, planName: '', message: '' })}
+                  className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                >
+                  Close
                 </button>
               </div>
             </div>

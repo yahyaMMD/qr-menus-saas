@@ -32,6 +32,7 @@ export default function MenuShowcase() {
     },
   ]);
   const [loading, setLoading] = useState(true);
+  const galleryLink = isAuthenticated ? '/dashboard/profiles' : '/auth/register';
 
   useEffect(() => {
     const fetchRestaurants = async () => {
@@ -82,6 +83,17 @@ export default function MenuShowcase() {
               Qresto
             </span>
           </p>
+          <div className="mt-6 flex justify-center">
+            <Link
+              href={galleryLink}
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-transform duration-300 hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
+            >
+              Explore the Gallery
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
+            </Link>
+          </div>
         </div>
 
         {loading ? (
@@ -91,9 +103,10 @@ export default function MenuShowcase() {
         ) : (
           <div className="grid md:grid-cols-3 gap-8">
             {restaurants.map((restaurant, index) => (
-              <div
+              <Link
                 key={index}
-                className="group cursor-pointer rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100 hover:border-orange-200 relative bg-white hover:-translate-y-2"
+                href={galleryLink}
+                className="group block rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100 hover:border-orange-200 relative bg-white hover:-translate-y-2"
               >
                 {/* Restaurant Image */}
                 <div className="h-64 bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center relative overflow-hidden">
@@ -143,7 +156,7 @@ export default function MenuShowcase() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
@@ -176,7 +189,7 @@ export default function MenuShowcase() {
                   🔓 Unlock the Gallery
                 </h3>
                 <p className="text-gray-700 mb-8 leading-relaxed">
-                  Sign up as a user to explore real restaurant menus created with Qresto and see what's possible for your business
+                  Sign up as a user to explore real restaurant menus created with Qresto and see what&apos;s possible for your business
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Link 

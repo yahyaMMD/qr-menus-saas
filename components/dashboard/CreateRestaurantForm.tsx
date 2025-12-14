@@ -9,6 +9,67 @@ import { ImageUpload } from "../ui/ImageUpload";
 import { Facebook, Instagram, Music } from "lucide-react";
 import { useAuth } from '@/lib/auth/context';
 
+const ALGERIAN_WILAYAS = [
+  "Adrar",
+  "Chlef",
+  "Laghouat",
+  "Oum El Bouaghi",
+  "Batna",
+  "Béjaïa",
+  "Biskra",
+  "Béchar",
+  "Blida",
+  "Bouira",
+  "Tamanrasset",
+  "Tébessa",
+  "Tlemcen",
+  "Tiaret",
+  "Tizi Ouzou",
+  "Algiers",
+  "Djelfa",
+  "Jijel",
+  "Sétif",
+  "Saïda",
+  "Skikda",
+  "Sidi Bel Abbès",
+  "Annaba",
+  "Guelma",
+  "Constantine",
+  "Médéa",
+  "Mostaganem",
+  "M'Sila",
+  "Mascara",
+  "Ouargla",
+  "Oran",
+  "El Bayadh",
+  "Illizi",
+  "Bordj Bou Arréridj",
+  "Boumerdès",
+  "El Tarf",
+  "Tindouf",
+  "Tissemsilt",
+  "El Oued",
+  "Khenchela",
+  "Souk Ahras",
+  "Tipaza",
+  "Mila",
+  "Aïn Defla",
+  "Naâma",
+  "Aïn Témouchent",
+  "Ghardaïa",
+  "Relizane",
+  "El M'Ghair",
+  "El Meniaa",
+  "Ouled Djellal",
+  "Bordj Badji Mokhtar",
+  "Béni Abbès",
+  "Timimoun",
+  "Touggourt",
+  "Djanet",
+  "In Salah",
+  "In Guezzam",
+] as const;
+
 export const CreateRestaurantForm = () => {
   const router = useRouter();
   const { user } = useAuth(); // Access authenticated user
@@ -178,11 +239,11 @@ export const CreateRestaurantForm = () => {
               required
             >
               <option value="">Select wilaya</option>
-              <option value="bejaia">Bejaia</option>
-              <option value="algiers">Algiers</option>
-              <option value="oran">Oran</option>
-              <option value="constantine">Constantine</option>
-              <option value="annaba">Annaba</option>
+              {ALGERIAN_WILAYAS.map((wilaya) => (
+                <option key={wilaya} value={wilaya}>
+                  {wilaya}
+                </option>
+              ))}
             </select>
           </div>
           <div>

@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client";
 import { useState, useEffect } from "react";
-import { Home, Store, Menu as MenuIcon, Settings, CreditCard, HelpCircle, LogOut, ChevronRight, BarChart3, MessageSquare, User } from "lucide-react";
+import { Home, Store, Menu as MenuIcon, Settings, CreditCard, HelpCircle, LogOut, BarChart3, MessageSquare, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import NotificationBell from "@/components/notifications/NotificationBell";
@@ -78,6 +78,9 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
     if (href === '/dashboard') {
       return pathname === '/dashboard';
     }
+    if (href === '/dashboard/settings') {
+      return pathname === '/dashboard/settings';
+    }
     return pathname.startsWith(href);
   };
 
@@ -113,9 +116,6 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
                     <span className="px-2 py-0.5 bg-orange-500 text-white text-xs font-semibold rounded-full">
                       {item.badge}
                     </span>
-                  )}
-                  {isActive(item.href) && (
-                    <ChevronRight className="h-4 w-4 text-orange-600" />
                   )}
                 </Link>
               ))}

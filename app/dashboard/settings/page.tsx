@@ -2,6 +2,7 @@
 import { useRouter } from 'next/navigation';
 
 import React, { useState, useEffect } from 'react';
+import { getStoredAccessToken } from '@/lib/auth/session';
 import { 
   User, 
   Mail, 
@@ -45,14 +46,7 @@ function ProfilePhotoUpload({
 
     setIsUploading(true);
     try {
-      let token = localStorage.getItem('accessToken');
-      if (!token) {
-        const authRaw = localStorage.getItem('auth');
-        if (authRaw) {
-          const auth = JSON.parse(authRaw);
-          token = auth?.tokens?.accessToken;
-        }
-      }
+      const token = getStoredAccessToken();
 
       const formData = new FormData();
       formData.append('file', file);
@@ -134,6 +128,38 @@ interface UserPreferences {
   };
 }
 
+type BillingRecord = {
+  id: string;
+  createdAt: string;
+  description: string;
+  amountCents: number;
+  currency: string;
+  status: string;
+  reference?: string | null;
+};
+
+const mergePreferencesWithDefaults = (
+  base: UserPreferences,
+  incoming?: Partial<UserPreferences>
+): UserPreferences => {
+  const notifications = {
+    email: {
+      ...base.notifications.email,
+      ...(incoming?.notifications?.email ?? {}),
+    },
+    push: {
+      ...base.notifications.push,
+      ...(incoming?.notifications?.push ?? {}),
+    },
+  };
+
+  return {
+    ...base,
+    ...incoming,
+    notifications,
+  };
+};
+
 export default function AccountSettingsPage() {
   const [activeSection, setActiveSection] = useState('profile');
   const [isSaving, setIsSaving] = useState(false);
@@ -173,35 +199,25 @@ export default function AccountSettingsPage() {
       },
     },
   });
+  const [billingHistory, setBillingHistory] = useState<BillingRecord[]>([]);
+  const [billingLoading, setBillingLoading] = useState(true);
+  const [billingError, setBillingError] = useState<string | null>(null);
 
   const router = useRouter();
 
-  const getToken = () => {
-    let token = localStorage.getItem('accessToken');
-    if (!token) {
-      const authRaw = localStorage.getItem('auth');
-      if (authRaw) {
-        try {
-          const auth = JSON.parse(authRaw);
-          token = auth?.tokens?.accessToken;
-        } catch (e) {
-          console.error('Failed to parse auth', e);
-        }
-      }
-    }
-    return token;
-  };
+  const getToken = () => getStoredAccessToken();
 
   useEffect(() => {
     fetchUserData();
     fetchPreferences();
+    fetchBillingHistory();
   }, []);
 
   const fetchUserData = async () => {
     try {
       const token = getToken();
       if (!token) {
-        router.push('/login');
+        router.push('/auth/login');
         return;
       }
 
@@ -229,7 +245,7 @@ export default function AccountSettingsPage() {
           avatar: data.user.avatar || ''
         });
       } else if (response.status === 401) {
-        router.push('/login');
+        router.push('/auth/login');
       }
     } catch (error) {
       console.error('Error fetching user:', error);
@@ -252,14 +268,49 @@ export default function AccountSettingsPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setPreferences(data.preferences);
-        // Set payment method preference
-        if (data.preferences.defaultPaymentMethod) {
-          setDefaultPaymentMethod(data.preferences.defaultPaymentMethod);
+        const serverPrefs = data.preferences || {};
+        setPreferences((prev) => mergePreferencesWithDefaults(prev, serverPrefs));
+        if (serverPrefs.defaultPaymentMethod) {
+          setDefaultPaymentMethod(serverPrefs.defaultPaymentMethod as 'edahabia' | 'cib');
         }
       }
     } catch (error) {
       console.error('Error fetching preferences:', error);
+    }
+  };
+
+  const fetchBillingHistory = async () => {
+    setBillingLoading(true);
+    setBillingError(null);
+    const token = getToken();
+    if (!token) {
+      setBillingLoading(false);
+      router.push('/auth/login');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/user/payments', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load billing history');
+      }
+
+      const data = await response.json();
+      setBillingHistory(
+        (data.payments ?? []).map((payment: any) => ({
+          ...payment,
+          description: payment.description || 'Subscription payment',
+        }))
+      );
+    } catch (error: any) {
+      setBillingError(error.message || 'Failed to load billing history');
+    } finally {
+      setBillingLoading(false);
     }
   };
 
@@ -271,7 +322,7 @@ export default function AccountSettingsPage() {
     try {
       const token = getToken();
       if (!token) {
-        router.push('/login');
+        router.push('/auth/login');
         return;
       }
 
@@ -316,7 +367,7 @@ export default function AccountSettingsPage() {
     try {
       const token = getToken();
       if (!token) {
-        router.push('/login');
+        router.push('/auth/login');
         return;
       }
 
@@ -360,7 +411,7 @@ export default function AccountSettingsPage() {
       setTimeout(() => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('auth');
-        router.push('/login');
+        router.push('/auth/login');
       }, 2000);
     } catch (err: any) {
       setError(err.message || 'Failed to change password');
@@ -377,7 +428,7 @@ export default function AccountSettingsPage() {
     try {
       const token = getToken();
       if (!token) {
-        router.push('/login');
+        router.push('/auth/login');
         return;
       }
 
@@ -398,6 +449,7 @@ export default function AccountSettingsPage() {
         throw new Error(data.error || 'Failed to save notification preferences');
       }
 
+      setPreferences((prev) => mergePreferencesWithDefaults(prev, data.preferences || {}));
       setSuccess('Notification preferences saved!');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
@@ -415,7 +467,7 @@ export default function AccountSettingsPage() {
     try {
       const token = getToken();
       if (!token) {
-        router.push('/login');
+        router.push('/auth/login');
         return;
       }
 
@@ -439,6 +491,7 @@ export default function AccountSettingsPage() {
         throw new Error(data.error || 'Failed to save preferences');
       }
 
+      setPreferences((prev) => mergePreferencesWithDefaults(prev, data.preferences || {}));
       setSuccess('Preferences saved!');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
@@ -492,7 +545,7 @@ export default function AccountSettingsPage() {
       try {
         const token = getToken();
         if (!token) {
-          router.push('/login');
+          router.push('/auth/login');
           return;
         }
 
@@ -1149,43 +1202,89 @@ export default function AccountSettingsPage() {
                 </div>
 
                 {/* Billing History */}
-                <div>
-                  <h3 className="font-medium text-gray-900 mb-4">Billing History</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-gray-200">
-                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Date</th>
-                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Description</th>
-                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Amount</th>
-                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Status</th>
-                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Invoice</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {[
-                          { date: 'Nov 1, 2025', desc: 'Standard Plan - Monthly', amount: '2,500 DZD', status: 'Paid' },
-                          { date: 'Oct 1, 2025', desc: 'Standard Plan - Monthly', amount: '2,500 DZD', status: 'Paid' },
-                          { date: 'Sep 1, 2025', desc: 'Standard Plan - Monthly', amount: '2,500 DZD', status: 'Paid' },
-                        ].map((invoice, idx) => (
-                          <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50">
-                            <td className="py-4 px-4 text-sm text-gray-900">{invoice.date}</td>
-                            <td className="py-4 px-4 text-sm text-gray-600">{invoice.desc}</td>
-                            <td className="py-4 px-4 text-sm font-medium text-gray-900">{invoice.amount}</td>
-                            <td className="py-4 px-4">
-                              <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                                {invoice.status}
-                              </span>
-                            </td>
-                            <td className="py-4 px-4">
-                              <button className="text-sm text-orange-600 hover:text-orange-700 font-medium">Download</button>
-                            </td>
+                  <div>
+                    <h3 className="font-medium text-gray-900 mb-4">Billing History</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-gray-200">
+                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Date</th>
+                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Description</th>
+                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Amount</th>
+                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Status</th>
+                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Invoice</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {billingLoading ? (
+                            <tr>
+                              <td colSpan={5} className="py-6 px-4 text-center text-sm text-gray-500">
+                                Loading billing history...
+                              </td>
+                            </tr>
+                          ) : billingError ? (
+                            <tr>
+                              <td colSpan={5} className="py-6 px-4 text-center text-sm text-red-600">
+                                {billingError}
+                                <button
+                                  onClick={fetchBillingHistory}
+                                  className="ml-3 text-orange-600 underline"
+                                >
+                                  Retry
+                                </button>
+                              </td>
+                            </tr>
+                          ) : billingHistory.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="py-6 px-4 text-center text-sm text-gray-500">
+                                No payments recorded yet. Your billing history will appear here.
+                              </td>
+                            </tr>
+                          ) : (
+                            billingHistory.map((invoice) => {
+                              const amount = (invoice.amountCents / 100).toLocaleString();
+                              const statusTone =
+                                invoice.status === 'PAID'
+                                  ? 'bg-green-100 text-green-700'
+                                  : invoice.status === 'FAILED'
+                                    ? 'bg-red-100 text-red-700'
+                                    : 'bg-yellow-100 text-yellow-700';
+                              return (
+                                <tr
+                                  key={invoice.id}
+                                  className="border-b border-gray-200 hover:bg-gray-50"
+                                >
+                                  <td className="py-4 px-4 text-sm text-gray-900">
+                                    {new Date(invoice.createdAt).toLocaleDateString()}
+                                  </td>
+                                  <td className="py-4 px-4 text-sm text-gray-600">{invoice.description}</td>
+                                  <td className="py-4 px-4 text-sm font-medium text-gray-900">
+                                    {amount} {invoice.currency}
+                                  </td>
+                                  <td className="py-4 px-4">
+                                    <span className={`px-3 py-1 text-xs font-medium ${statusTone} rounded-full`}>
+                                      {invoice.status}
+                                    </span>
+                                  </td>
+                                  <td className="py-4 px-4">
+                                    {invoice.reference ? (
+                                      <button
+                                        className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                                      >
+                                        Download
+                                      </button>
+                                    ) : (
+                                      <span className="text-xs text-gray-400">—</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
               </div>
             )}
 

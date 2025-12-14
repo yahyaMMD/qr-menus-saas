@@ -201,10 +201,12 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
   };
 
   const toggleTag = (tagName: string) => {
-    const newTags = currentItem.tags.includes(tagName)
-      ? currentItem.tags.filter(t => t !== tagName)
-      : [...currentItem.tags, tagName];
-    setCurrentItem({ ...currentItem, tags: newTags });
+    setCurrentItem((prev) => {
+      const updatedTags = prev.tags.includes(tagName)
+        ? prev.tags.filter((t) => t !== tagName)
+        : [...prev.tags, tagName];
+      return { ...prev, tags: updatedTags };
+    });
   };
 
   // Type Actions
@@ -668,7 +670,9 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
                 <label className="block text-sm font-medium text-gray-700 mb-2">Item Name *</label>
                 <Input
                   value={currentItem.name}
-                  onChange={(e) => setCurrentItem({ ...currentItem, name: e.target.value })}
+                  onChange={(e) =>
+                    setCurrentItem((prev) => ({ ...prev, name: e.target.value }))
+                  }
                   placeholder="e.g., Cappuccino"
                 />
               </div>
@@ -677,7 +681,9 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
                 <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
                 <Textarea
                   value={currentItem.description}
-                  onChange={(e) => setCurrentItem({ ...currentItem, description: e.target.value })}
+                  onChange={(e) =>
+                    setCurrentItem((prev) => ({ ...prev, description: e.target.value }))
+                  }
                   placeholder="Describe your item..."
                   rows={3}
                 />
@@ -689,7 +695,9 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
                   <Input
                     type="number"
                     value={currentItem.price}
-                    onChange={(e) => setCurrentItem({ ...currentItem, price: e.target.value })}
+                    onChange={(e) =>
+                      setCurrentItem((prev) => ({ ...prev, price: e.target.value }))
+                    }
                     placeholder="350"
                   />
                 </div>
@@ -698,7 +706,9 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
                   <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
                   <select
                     value={currentItem.category}
-                    onChange={(e) => setCurrentItem({ ...currentItem, category: e.target.value })}
+                    onChange={(e) =>
+                      setCurrentItem((prev) => ({ ...prev, category: e.target.value }))
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                   >
                     {categories.map(cat => (
@@ -731,7 +741,9 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
                 <label className="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
                 <Input
                   value={currentItem.image || ''}
-                  onChange={(e) => setCurrentItem({ ...currentItem, image: e.target.value || null })}
+                  onChange={(e) =>
+                    setCurrentItem((prev) => ({ ...prev, image: e.target.value || null }))
+                  }
                   placeholder="https://example.com/image.jpg"
                 />
                 <p className="text-xs text-gray-500 mt-1">Or upload an image file (coming soon)</p>

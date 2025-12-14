@@ -89,12 +89,18 @@ export default function ChangePlanPage() {
 
   const handleSelectPlan = (planId: 'FREE' | 'STANDARD' | 'CUSTOM') => {
     if (planId === currentSubscription?.plan) return;
+
+    if (planId === 'CUSTOM') {
+      router.push('/help#contact');
+      return;
+    }
+
     setSelectedPlan(planId);
-    
-    if (planId !== 'FREE' && planId !== currentSubscription?.plan) {
-      setShowPaymentModal(true);
-    } else if (planId === 'FREE') {
+
+    if (planId === 'FREE') {
       handleFreePlan();
+    } else {
+      setShowPaymentModal(true);
     }
   };
 
@@ -422,23 +428,24 @@ export default function ChangePlanPage() {
                 {/* Select Button */}
                 <button
                   onClick={() => handleSelectPlan(plan.plan)}
-                  disabled={isCurrentPlan || processing || plan.plan === 'CUSTOM'}
+                  disabled={isCurrentPlan || processing}
                   className={`w-full py-3.5 rounded-xl font-semibold text-sm transition-all mb-6 ${
                     isCurrentPlan
                       ? 'bg-emerald-100 text-emerald-700 cursor-default'
                       : plan.plan === 'CUSTOM'
-                      ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                      ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 shadow-xl shadow-indigo-500/30'
                       : isSelected
                       ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 shadow-lg shadow-orange-500/25'
                       : 'bg-gray-900 text-white hover:bg-gray-800'
                   }`}
+                  type="button"
                 >
-                  {isCurrentPlan 
-                    ? 'Current Plan' 
+                  {isCurrentPlan
+                    ? 'Current Plan'
                     : plan.plan === 'CUSTOM'
                     ? 'Contact Sales'
-                    : plan.priceCents === 0 
-                    ? 'Get Started Free' 
+                    : plan.priceCents === 0
+                    ? 'Get Started Free'
                     : 'Select Plan'}
                 </button>
 
@@ -479,7 +486,11 @@ export default function ChangePlanPage() {
               Contact our team for personalized recommendations based on your restaurant's needs.
             </p>
           </div>
-          <button className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium text-sm">
+          <button
+            type="button"
+            onClick={() => router.push('/help#contact')}
+            className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium text-sm"
+          >
             Contact Support
           </button>
         </div>
