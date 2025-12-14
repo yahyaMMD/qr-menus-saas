@@ -1,41 +1,40 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { use, useState, useEffect } from 'react';
 import { ArrowLeft, Star, ThumbsUp, Filter, Search, MoreVertical } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { getStoredAccessToken } from '@/lib/auth/session';
 
-export default function CustomerFeedbackPage({ params }: { params: { profileId: string } }) {
+export default function CustomerFeedbackPage({ params }: { params: Promise<{ profileId: string }> }) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<any>(null);
   const [filterRating, setFilterRating] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const resolvedParams = use(params);
+  const profileId = resolvedParams.profileId;
 
   useEffect(() => {
     fetchFeedbacks();
-  }, []);
+  }, [profileId]);
 
   const fetchFeedbacks = async () => {
     try {
       setLoading(true);
-      
-      let token = localStorage.getItem('accessToken');
+      setError(null);
+      const token = getStoredAccessToken();
+
       if (!token) {
-        const authRaw = localStorage.getItem('auth');
-        if (authRaw) {
-          try {
-            const auth = JSON.parse(authRaw);
-            token = auth?.tokens?.accessToken;
-          } catch (e) {
-            console.error('Failed to parse auth', e);
-          }
-        }
+        setLoading(false);
+        setError('Please log in to view feedback');
+        router.push(`/auth/login?callbackUrl=/dashboard/profiles/${profileId}/feedbacks`);
+        return;
       }
 
-      const response = await fetch(`/api/profiles/${params.profileId}/feedbacks`, {
+      const response = await fetch(`/api/profiles/${profileId}/feedbacks`, {
         headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
       });
 

@@ -303,30 +303,41 @@ export default function ProfileSettingsPage({
           longitude: locationInfo.longitude
         };
       } else if (activeTab === 'extra') {
-        // Update flat fields
-        updateData.phone = extraInfo.phone;
-        updateData.email = extraInfo.email;
-        updateData.mapUrl = extraInfo.mapUrl;
-        
-        // Parse wifi string
-        if (extraInfo.wifi) {
-          const wifiMatch = extraInfo.wifi.match(/Network:\s*(.+?)\s*\|\s*Password:\s*(.+)/);
+        // Update only when values exist to avoid schema validation errors
+        const trimmedPhone = extraInfo.phone.trim();
+        if (trimmedPhone) {
+          updateData.phone = trimmedPhone;
+        }
+
+        const trimmedEmail = extraInfo.email.trim();
+        if (trimmedEmail) {
+          updateData.email = trimmedEmail;
+        }
+
+        const trimmedMapUrl = extraInfo.mapUrl.trim();
+        if (trimmedMapUrl) {
+          updateData.mapUrl = trimmedMapUrl;
+        }
+
+        const trimmedWifi = extraInfo.wifi.trim();
+        if (trimmedWifi) {
+          const wifiMatch = trimmedWifi.match(/Network:\s*(.+?)\s*\|\s*Password:\s*(.+)/);
           if (wifiMatch) {
             updateData.wifiName = wifiMatch[1].trim();
             updateData.wifiPassword = wifiMatch[2].trim();
           } else {
-            updateData.wifiName = extraInfo.wifi;
-            updateData.wifiPassword = '';
+            updateData.wifiName = trimmedWifi;
+            updateData.wifiPassword = "";
           }
         }
-        
-        // Parse opening hours as JSON
-        if (extraInfo.openingHours) {
+
+        const trimmedOpeningHours = extraInfo.openingHours.trim();
+        if (trimmedOpeningHours) {
           try {
-            updateData.businessHours = JSON.parse(extraInfo.openingHours);
+            updateData.businessHours = JSON.parse(trimmedOpeningHours);
           } catch {
             // If not valid JSON, store as string in an object
-            updateData.businessHours = { text: extraInfo.openingHours };
+            updateData.businessHours = { text: trimmedOpeningHours };
           }
         }
       }

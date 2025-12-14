@@ -111,7 +111,7 @@ export default function HelpCenterPage() {
       id: 13,
       category: 'settings',
       question: 'How do I add team members to my account?',
-      answer: 'Go to Restaurant Settings > Team Access. Click "Invite Member", enter their email, and select their role (Manager or Staff). They\'ll receive an invitation email to join.',
+      answer: 'Go to Restaurant Settings > Team Access. Click "Invite Member", enter their email, choose a role (Manager or Staff), and send the invite. The team member will receive an email with a secure link to join.',
     },
     {
       id: 14,

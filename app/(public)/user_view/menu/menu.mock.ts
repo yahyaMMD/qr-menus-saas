@@ -21,6 +21,18 @@ export const mockMenuData: MenuData = {
     { id: "c5", name: "Lunch", image: null, menuId: "1" },
     { id: "c6", name: "Dinner", image: null, menuId: "1" },
   ],
+  restaurant: {
+    id: "r1",
+    name: "Café Gourmet",
+    description: "Fine dining bistro & specialty coffee roastery",
+    location: {
+      address: "Rue Sidi Yahia",
+      city: "Algiers",
+      country: "Algeria",
+    },
+    phone: "+213 600 123 456",
+    website: "https://cafe-gourmet.example",
+  },
   tags: [
     { id: "tag1", name: "Vegan", color: "#10b981", menuId: "1" },
     { id: "tag2", name: "Vegetarian", color: "#059669", menuId: "1" },

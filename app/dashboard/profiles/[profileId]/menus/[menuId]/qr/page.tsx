@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Download, Printer, QrCode, ArrowLeft, Copy, Check } from 'lucide-react';
+import { getPublicMenuUrl as resolvePublicMenuUrl } from '@/lib/public-menu-url';
 
 export default function MenuQRCodePage() {
   const params = useParams();
@@ -14,15 +15,29 @@ export default function MenuQRCodePage() {
   const [format, setFormat] = useState<'svg' | 'png'>('svg');
   const [size, setSize] = useState(300);
   const qrRef = useRef<HTMLDivElement>(null);
+  const [stats, setStats] = useState<{ totalScans: number; scansToday: number } | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState<string | null>(null);
+
+  const menuIdParam = params.menuId;
+  const menuId =
+    Array.isArray(menuIdParam) ? menuIdParam[0] : menuIdParam;
 
   useEffect(() => {
+    if (!menuId) return;
     fetchQRCode();
-  }, [params.menuId]);
+  }, [menuId]);
+
+  useEffect(() => {
+    if (!menuId) return;
+    fetchQuickStats();
+  }, [menuId]);
 
   const fetchQRCode = async () => {
+    if (!menuId) return;
     try {
       setLoading(true);
-      const response = await fetch(`/api/qr/${params.menuId}?format=svg&size=${size}`);
+      const response = await fetch(`/api/qr/${menuId}?format=svg&size=${size}`);
       
       if (!response.ok) throw new Error('Failed to generate QR code');
       
@@ -30,8 +45,7 @@ export default function MenuQRCodePage() {
       setQrCodeSvg(svg);
       
       // Extract menu URL from response headers or construct it
-      const baseUrl = window.location.origin;
-      const url = `${baseUrl}/menu/${params.profileId}?menuId=${params.menuId}`;
+      const url = resolvePublicMenuUrl(menuId, { client: true });
       setMenuUrl(url);
       
       setLoading(false);
@@ -41,9 +55,63 @@ export default function MenuQRCodePage() {
     }
   };
 
-  const handleDownload = async (downloadFormat: 'svg' | 'png') => {
+  const fetchQuickStats = async () => {
+    if (!menuId) return;
+
     try {
-      const response = await fetch(`/api/qr/${params.menuId}?format=${downloadFormat}&size=${size}`);
+      setStatsLoading(true);
+      setStatsError(null);
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setStats(null);
+        setStatsError('Missing authentication token');
+        return;
+      }
+
+      const response = await fetch(`/api/analytics?menuId=${menuId}&days=30`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load analytics');
+      }
+
+      const data = await response.json();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const todayEntry = (data.analytics || []).find((entry: any) => {
+        const entryDate = new Date(entry.date);
+        entryDate.setHours(0, 0, 0, 0);
+        return entryDate.getTime() === today.getTime();
+      });
+
+      setStats({
+        totalScans: data.summary?.totalScans ?? 0,
+        scansToday: todayEntry?.scans ?? 0,
+      });
+    } catch (error) {
+      console.error('Failed to load quick stats:', error);
+      setStatsError('Unable to load scan stats');
+      setStats(null);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  const formatStatValue = (value: number) => {
+    if (statsLoading) {
+      return '—';
+    }
+    return value.toLocaleString();
+  };
+
+  const handleDownload = async (downloadFormat: 'svg' | 'png') => {
+    if (!menuId) return;
+    try {
+      const response = await fetch(`/api/qr/${menuId}?format=${downloadFormat}&size=${size}`);
       const blob = await response.blob();
       
       const url = window.URL.createObjectURL(blob);
@@ -308,14 +376,21 @@ export default function MenuQRCodePage() {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Stats</h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-gray-50 rounded-lg p-4">
-                <div className="text-2xl font-bold text-gray-900">0</div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {formatStatValue(stats?.scansToday ?? 0)}
+                </div>
                 <div className="text-sm text-gray-600">Scans Today</div>
               </div>
               <div className="bg-gray-50 rounded-lg p-4">
-                <div className="text-2xl font-bold text-gray-900">0</div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {formatStatValue(stats?.totalScans ?? 0)}
+                </div>
                 <div className="text-sm text-gray-600">Total Scans</div>
               </div>
             </div>
+            {statsError && (
+              <p className="text-xs text-red-600 mt-3">{statsError}</p>
+            )}
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@ export type Profile = {
   description: string | null;
   owner: { id: string; name: string; email: string; role: string } | null;
   stats: { menus: number; feedbacks: number; items: number; scanRecords: number };
+  menus: { id: string; name: string; isActive: boolean }[];
   createdAt: string;
 };
 

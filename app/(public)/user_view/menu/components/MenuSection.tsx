@@ -14,15 +14,18 @@ const MenuSection: React.FC<MenuSectionProps> = ({ title, items, tags }) => {
   if (items.length === 0) return null;
 
   return (
-    <section className="mb-6 sm:mb-8">
-      <div className="mb-3 sm:mb-4">
-        <h2 className="font-bold text-lg sm:text-xl text-gray-900 capitalize">
-          {title}
-        </h2>
-        <p className="text-gray-500 text-sm">{items.length} items</p>
+    <section className="space-y-5 rounded-3xl border border-gray-200 bg-white/80 p-6 shadow-sm">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 capitalize">{title}</h2>
+          <p className="text-sm text-gray-500">{items.length} delicious options</p>
+        </div>
+        <span className="text-xs font-semibold uppercase tracking-[0.3em] text-orange-500">
+          Menu curated
+        </span>
       </div>
 
-      <div>
+      <div className="space-y-4">
         {items.map((item) => (
           <MenuItemCard key={item.id} item={item} tags={tags} />
         ))}

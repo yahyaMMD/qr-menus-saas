@@ -55,8 +55,23 @@ export interface LanguagesData {
   availableLanguages: LanguageInfo[];
 }
 
+export interface RestaurantInfo {
+  id: string;
+  name: string;
+  description?: string | null;
+  location?: {
+    address?: string | null;
+    city?: string | null;
+    country?: string | null;
+  } | null;
+  phone?: string | null;
+  website?: string | null;
+  socialLinks?: Record<string, string | undefined>;
+}
+
 export interface MenuData {
   menu: Menu;
+  restaurant?: RestaurantInfo | null;
   items: Item[];
   types: Type[];
   categories: Category[];

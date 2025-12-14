@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
   ArrowLeft, 
@@ -14,7 +15,11 @@ import {
   Pause,
   Play,
   Trash2,
-  Loader2
+  Loader2,
+  BarChart3,
+  MessageSquare,
+  Users,
+  Star,
 } from 'lucide-react';
 
 interface SubscriptionData {
@@ -41,6 +46,74 @@ interface UsageData {
   menus: number;
 }
 
+interface InvoiceRecord {
+  id: string;
+  date: string;
+  desc: string;
+  amount: number;
+  status: string;
+  currency: string;
+  reference?: string | null;
+}
+
+interface DashboardStats {
+  totalScansToday: number;
+  scansChange: number;
+  weekFeedbacks: number;
+  feedbacksChange: number;
+  activeMenus: number;
+  totalRestaurants: number;
+}
+
+interface FeedbackItem {
+  id: string;
+  userName: string;
+  rating: number;
+  restaurantName: string;
+  comment: string | null;
+  createdAt: string;
+}
+
+interface NotificationPreferences {
+  email: Record<string, boolean>;
+  push: Record<string, boolean>;
+}
+
+const faqs = [
+  {
+    question: 'How often is my analytics data refreshed?',
+    answer:
+      'Dashboard analytics pull from the latest scan and feedback events every time you load the page. Today’s scans, week-over-week changes, and new reviews refresh in real time.',
+  },
+  {
+    question: 'How can I invite team members to help manage menus?',
+    answer:
+      'Open Restaurant Settings → Team Access, click “Invite Member,” enter the new user’s email, choose an access level (Owner, Manager, or Staff), and send the invite. The member receives a secure link to join.',
+  },
+  {
+    question: 'What should I do if notifications are out of sync?',
+    answer:
+      'Notification preferences are centralized under Account Settings → Notifications. Toggle the alerts you want and hit “Save Preferences” so everything syncs.',
+  },
+  {
+    question: 'Where can I download past invoices?',
+    answer:
+      'The billing history table lists every payment. Use “Download All” for a bulk export or the individual “Download” button to grab a text copy of each invoice.',
+  },
+];
+
+const emailNotificationLabels: Record<string, string> = {
+  feedback: 'Customer feedback updates',
+  menuScans: 'Menu scan alerts',
+  subscription: 'Subscription and billing updates',
+  marketing: 'Marketing tips and news',
+};
+
+const pushNotificationLabels: Record<string, string> = {
+  feedback: 'Real-time review alerts',
+  system: 'System status and product updates',
+};
+
 export default function ManageSubscriptionPage() {
   const router = useRouter();
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -52,6 +125,22 @@ export default function ManageSubscriptionPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const [analyticsStats, setAnalyticsStats] = useState<DashboardStats | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+
+  const [recentFeedback, setRecentFeedback] = useState<FeedbackItem[]>([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(true);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+
+  const [notificationSummary, setNotificationSummary] = useState<NotificationPreferences | null>(null);
+  const [notificationsLoading, setNotificationsLoading] = useState(true);
+  const [notificationsError, setNotificationsError] = useState<string | null>(null);
+
+  const [billingHistory, setBillingHistory] = useState<InvoiceRecord[]>([]);
+  const [billingLoading, setBillingLoading] = useState(true);
+  const [billingError, setBillingError] = useState<string | null>(null);
 
   const getToken = () => {
     let token = localStorage.getItem('accessToken');
@@ -71,13 +160,17 @@ export default function ManageSubscriptionPage() {
 
   useEffect(() => {
     fetchSubscription();
+    fetchBillingHistory();
+    fetchAnalyticsSummary();
+    fetchRecentFeedback();
+    fetchNotificationSummary();
   }, []);
 
   const fetchSubscription = async () => {
     try {
       const token = getToken();
       if (!token) {
-        router.push('/login');
+        router.push('/auth/login');
         return;
       }
 
@@ -87,7 +180,7 @@ export default function ManageSubscriptionPage() {
 
       if (!response.ok) {
         if (response.status === 401) {
-          router.push('/login');
+          router.push('/auth/login');
           return;
         }
         throw new Error('Failed to fetch subscription');
@@ -106,6 +199,123 @@ export default function ManageSubscriptionPage() {
     }
   };
 
+  const fetchBillingHistory = async () => {
+    setBillingLoading(true);
+    setBillingError(null);
+    const token = getToken();
+    if (!token) {
+      setBillingLoading(false);
+      setBillingError('Please log in to view billing history');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/user/payments', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load billing history');
+      }
+
+      const data = await response.json();
+      const payments = (data.payments ?? []).map((payment: any) => ({
+        id: payment.id,
+        date: formatDate(payment.createdAt),
+        desc: payment.description,
+        amount: (payment.amountCents || 0) / 100,
+        currency: payment.currency || 'DZD',
+        status: payment.status,
+        reference: payment.reference || null,
+      }));
+
+      setBillingHistory(payments);
+    } catch (err: any) {
+      console.error('Billing history error:', err);
+      setBillingError(err.message || 'Failed to load billing history');
+    } finally {
+      setBillingLoading(false);
+    }
+  };
+
+  const fetchAnalyticsSummary = async () => {
+    setAnalyticsLoading(true);
+    setAnalyticsError(null);
+    const token = getToken();
+    if (!token) {
+      setAnalyticsLoading(false);
+      setAnalyticsError('Please log in to view analytics');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/dashboard', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load analytics');
+      }
+
+      const data = await response.json();
+      setAnalyticsStats(data.stats || null);
+    } catch (err: any) {
+      console.error('Analytics error:', err);
+      setAnalyticsError(err.message || 'Failed to load analytics');
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  const fetchRecentFeedback = async () => {
+    setFeedbackLoading(true);
+    setFeedbackError(null);
+
+    try {
+      const response = await fetch('/api/feedbacks?limit=3');
+      if (!response.ok) {
+        throw new Error('Failed to fetch customer feedback');
+      }
+
+      const data = await response.json();
+      setRecentFeedback(data.feedbacks || []);
+    } catch (err: any) {
+      console.error('Feedback fetch error:', err);
+      setFeedbackError(err.message || 'Failed to fetch customer feedback');
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
+
+  const fetchNotificationSummary = async () => {
+    setNotificationsLoading(true);
+    setNotificationsError(null);
+    const token = getToken();
+
+    if (!token) {
+      setNotificationsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/user/preferences', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load notification preferences');
+      }
+
+      const data = await response.json();
+      setNotificationSummary(data.preferences?.notifications || null);
+    } catch (err: any) {
+      console.error('Notification prefs error:', err);
+      setNotificationsError(err.message || 'Failed to load notification preferences');
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
   const handleAction = async (action: string, additionalData?: any) => {
     setIsProcessing(true);
     setError(null);
@@ -113,7 +323,7 @@ export default function ManageSubscriptionPage() {
     try {
       const token = getToken();
       if (!token) {
-        router.push('/login');
+        router.push('/auth/login');
         return;
       }
 
@@ -158,6 +368,38 @@ export default function ManageSubscriptionPage() {
   const formatPrice = (cents?: number) => {
     if (!cents) return '0 DZD';
     return `${(cents / 100).toLocaleString()} DZD`;
+  };
+
+  const downloadTextFile = (content: string, filename: string, mime = 'text/plain') => {
+    const blob = new Blob([content], { type: mime });
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const buildInvoiceText = (invoice: InvoiceRecord) => {
+    return `Invoice ID: ${invoice.id}
+Date: ${invoice.date}
+Description: ${invoice.desc}
+Status: ${invoice.status}
+Amount: ${invoice.amount.toLocaleString()} ${invoice.currency}
+`;
+  };
+
+  const handleDownloadInvoice = (invoiceId: string) => {
+    const invoice = billingHistory.find((inv) => inv.id === invoiceId);
+    if (!invoice) return;
+    downloadTextFile(buildInvoiceText(invoice), `${invoice.id}.txt`);
+  };
+
+  const handleDownloadAllInvoices = () => {
+    const content = billingHistory.map((invoice) => buildInvoiceText(invoice)).join('\n---\n');
+    downloadTextFile(content, 'billing-history.txt');
   };
 
   const CancelSubscriptionModal = () => {
@@ -466,6 +708,73 @@ export default function ManageSubscriptionPage() {
             </div>
           </div>
 
+          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Analytics Snapshot</h3>
+                <p className="text-sm text-gray-500">Live overview of scans and reviews</p>
+              </div>
+              <button
+                onClick={fetchAnalyticsSummary}
+                className="text-sm text-orange-600 hover:text-orange-700 font-semibold"
+              >
+                Refresh
+              </button>
+            </div>
+
+            {analyticsLoading ? (
+              <div className="py-6 text-center text-sm text-gray-500">Loading analytics...</div>
+            ) : analyticsError ? (
+              <div className="text-sm text-red-600">{analyticsError}</div>
+            ) : analyticsStats ? (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm text-gray-500">Total scans today</span>
+                    <BarChart3 className="w-4 h-4 text-orange-500" />
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900">{analyticsStats.totalScansToday}</div>
+                  <div className={`text-xs ${analyticsStats.scansChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {analyticsStats.scansChange >= 0 ? '+' : ''}
+                    {analyticsStats.scansChange}% vs yesterday
+                  </div>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm text-gray-500">Feedback this week</span>
+                    <MessageSquare className="w-4 h-4 text-orange-500" />
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900">{analyticsStats.weekFeedbacks}</div>
+                  <div className={`text-xs ${analyticsStats.feedbacksChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {analyticsStats.feedbacksChange >= 0 ? '+' : ''}
+                    {analyticsStats.feedbacksChange}% vs last week
+                  </div>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm text-gray-500">Active menus</span>
+                    <CreditCard className="w-4 h-4 text-orange-500" />
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900">{analyticsStats.activeMenus}</div>
+                  <div className="text-xs text-gray-500">
+                    Across {analyticsStats.totalRestaurants} restaurant
+                    {analyticsStats.totalRestaurants !== 1 ? 's' : ''}
+                  </div>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm text-gray-500">Restaurants</span>
+                    <Users className="w-4 h-4 text-orange-500" />
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900">{analyticsStats.totalRestaurants}</div>
+                  <div className="text-xs text-gray-500">Profiles linked to your account</div>
+                </div>
+              </div>
+            ) : (
+              <div className="py-6 text-sm text-gray-500">Analytics will appear once we collect some scan data.</div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             {/* Current Plan */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -559,12 +868,61 @@ export default function ManageSubscriptionPage() {
               </div>
             </div>
           </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Recent Customer Feedback</h3>
+                <p className="text-sm text-gray-500">Real comments from diners who scanned your menus</p>
+              </div>
+              <Link href="/dashboard/profiles">
+                <button className="text-sm text-orange-600 hover:text-orange-700 font-semibold">
+                  Browse all
+                </button>
+              </Link>
+            </div>
+
+            {feedbackLoading ? (
+              <div className="py-6 text-center text-sm text-gray-500">Loading feedback...</div>
+            ) : feedbackError ? (
+              <div className="text-sm text-red-600">{feedbackError}</div>
+            ) : recentFeedback.length === 0 ? (
+              <div className="py-6 text-sm text-gray-500">No feedback found yet.</div>
+            ) : (
+              <div className="space-y-4">
+                {recentFeedback.map((item) => (
+                  <div key={item.id} className="border border-gray-100 rounded-xl p-4 hover:border-orange-200 transition-colors">
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>{item.userName}</span>
+                      <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex items-center gap-1 mt-2">
+                      {Array.from({ length: 5 }).map((_, idx) => (
+                        <Star
+                          key={idx}
+                          className={`w-4 h-4 ${idx < Math.round(item.rating) ? 'text-yellow-400' : 'text-gray-200'}`}
+                        />
+                      ))}
+                      <span className="text-xs text-gray-500 ml-2">{item.rating.toFixed(1)} / 5</span>
+                    </div>
+                    <p className="text-sm text-gray-700 mt-2">
+                      {item.comment || 'Customer left no additional comment.'}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-2">{item.restaurantName}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Billing History */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-gray-900">Billing History</h3>
-              <button className="text-sm text-orange-600 hover:text-orange-700 font-medium flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleDownloadAllInvoices}
+                className="text-sm text-orange-600 hover:text-orange-700 font-medium flex items-center gap-2"
+              >
                 <Download className="w-4 h-4" />
                 Download All
               </button>
@@ -582,31 +940,152 @@ export default function ManageSubscriptionPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Static data for now - would come from payments API */}
-                  {[
-                    { date: 'Nov 1, 2025', desc: `${planDetails?.name || subscription.plan} Plan - Monthly`, amount: planDetails?.price || 2500, status: 'Paid', id: 'INV-2025-11' },
-                    { date: 'Oct 1, 2025', desc: `${planDetails?.name || subscription.plan} Plan - Monthly`, amount: planDetails?.price || 2500, status: 'Paid', id: 'INV-2025-10' },
-                    { date: 'Sep 1, 2025', desc: `${planDetails?.name || subscription.plan} Plan - Monthly`, amount: planDetails?.price || 2500, status: 'Paid', id: 'INV-2025-09' },
-                  ].map((invoice, idx) => (
-                    <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50">
-                      <td className="py-4 px-4 text-sm text-gray-900">{invoice.date}</td>
-                      <td className="py-4 px-4 text-sm text-gray-600">{invoice.desc}</td>
-                      <td className="py-4 px-4 text-sm font-medium text-gray-900">{invoice.amount.toLocaleString()} DZD</td>
-                      <td className="py-4 px-4">
-                        <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                          {invoice.status}
-                        </span>
+                  {billingLoading ? (
+                    <tr>
+                      <td colSpan={5} className="py-6 px-4 text-center text-sm text-gray-500">
+                        Loading billing history...
                       </td>
-                      <td className="py-4 px-4">
-                        <button className="text-sm text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1">
-                          <Download className="w-4 h-4" />
-                          {invoice.id}
+                    </tr>
+                  ) : billingError ? (
+                    <tr>
+                      <td colSpan={5} className="py-6 px-4 text-center text-sm text-red-600">
+                        {billingError}
+                        <button
+                          onClick={fetchBillingHistory}
+                          className="ml-3 text-orange-600 underline"
+                        >
+                          Retry
                         </button>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  ) : billingHistory.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-6 px-4 text-center text-sm text-gray-500">
+                        No payments recorded yet. We’ll list your billing history here as soon as charges occur.
+                      </td>
+                    </tr>
+                  ) : (
+                    billingHistory.map((invoice) => (
+                      <tr key={invoice.id} className="border-b border-gray-200 hover:bg-gray-50">
+                        <td className="py-4 px-4 text-sm text-gray-900">{invoice.date}</td>
+                        <td className="py-4 px-4 text-sm text-gray-600">{invoice.desc}</td>
+                        <td className="py-4 px-4 text-sm font-medium text-gray-900">
+                          {invoice.amount.toLocaleString()} {invoice.currency}
+                        </td>
+                        <td className="py-4 px-4">
+                          <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                            {invoice.status}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4">
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadInvoice(invoice.id)}
+                            className="text-sm text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1"
+                          >
+                            <Download className="w-4 h-4" />
+                            {invoice.id}
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Notification Preferences Snapshot</h3>
+                <p className="text-sm text-gray-500">The dashboard mirrors these settings in real time</p>
+              </div>
+              <button
+                onClick={fetchNotificationSummary}
+                className="text-sm text-orange-600 hover:text-orange-700 font-semibold"
+              >
+                Refresh
+              </button>
+            </div>
+
+            {notificationsLoading ? (
+              <div className="py-6 text-center text-sm text-gray-500">Loading preferences...</div>
+            ) : notificationsError ? (
+              <div className="text-sm text-red-600">{notificationsError}</div>
+            ) : notificationSummary ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-900">Email</h4>
+                  {Object.entries(emailNotificationLabels).map(([key, label]) => {
+                    const enabled = notificationSummary.email[key] ?? false;
+                    return (
+                      <div key={key} className="flex items-center justify-between text-sm text-gray-700">
+                          <div className="flex items-center gap-2">
+                            {enabled ? (
+                              <CheckCircle className="w-4 h-4 text-green-500" />
+                            ) : (
+                              <XCircle className="w-4 h-4 text-gray-300" />
+                            )}
+                            <span>{label}</span>
+                          </div>
+                        <span className={`text-xs ${enabled ? 'text-green-600' : 'text-gray-500'}`}>
+                          {enabled ? 'Enabled' : 'Off'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-900">Push</h4>
+                  {Object.entries(pushNotificationLabels).map(([key, label]) => {
+                    const enabled = notificationSummary.push[key] ?? false;
+                    return (
+                      <div key={key} className="flex items-center justify-between text-sm text-gray-700">
+                          <div className="flex items-center gap-2">
+                            {enabled ? (
+                              <CheckCircle className="w-4 h-4 text-green-500" />
+                            ) : (
+                              <XCircle className="w-4 h-4 text-gray-300" />
+                            )}
+                            <span>{label}</span>
+                          </div>
+                        <span className={`text-xs ${enabled ? 'text-green-600' : 'text-gray-500'}`}>
+                          {enabled ? 'Enabled' : 'Off'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="py-6 text-sm text-gray-500">
+                Notification preferences haven’t been configured yet. Update them under Account Settings → Notifications.
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Quick Q&A</h3>
+                <p className="text-sm text-gray-500">Helpful answers for the questions we hear most often</p>
+              </div>
+              <Link href="/help">
+                <button className="text-sm text-orange-600 hover:text-orange-700 font-semibold">
+                  Visit Help Center
+                </button>
+              </Link>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {faqs.map((faq) => (
+                <div key={faq.question} className="border border-gray-100 rounded-xl p-4 bg-gray-50">
+                  <p className="text-sm font-semibold text-gray-900">{faq.question}</p>
+                  <p className="text-sm text-gray-600 mt-2">{faq.answer}</p>
+                </div>
+              ))}
             </div>
           </div>
 

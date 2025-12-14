@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Calendar, TrendingUp, Users, Eye } from 'lucide-react';
+import { getStoredAccessToken } from '@/lib/auth/session';
 import { useRouter } from 'next/navigation';
 
 export default function RestaurantAnalyticsPage({ params }: { params: { profileId: string } }) {
@@ -13,30 +14,30 @@ export default function RestaurantAnalyticsPage({ params }: { params: { profileI
 
   useEffect(() => {
     fetchAnalytics();
-  }, [timeRange]);
+  }, [timeRange, params.profileId]);
 
   const fetchAnalytics = async () => {
-    try {
-      setLoading(true);
-      
-      let token = localStorage.getItem('accessToken');
-      if (!token) {
-        const authRaw = localStorage.getItem('auth');
-        if (authRaw) {
-          try {
-            const auth = JSON.parse(authRaw);
-            token = auth?.tokens?.accessToken;
-          } catch (e) {
-            console.error('Failed to parse auth', e);
-          }
-        }
-      }
+    setLoading(true);
+    setError(null);
+    const token = getStoredAccessToken();
 
+    if (!token) {
+      setLoading(false);
+      setError('Please log in to view analytics');
+      router.push(`/auth/login?callbackUrl=/dashboard/profiles/${params.profileId}/analytics`);
+      return;
+    }
+
+    try {
       const response = await fetch(`/api/profiles/${params.profileId}/analytics?range=${timeRange}`, {
         headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
       });
+
+      if (response.status === 401) {
+        throw new Error('Session expired');
+      }
 
       if (!response.ok) {
         throw new Error('Failed to fetch analytics');
@@ -87,7 +88,7 @@ export default function RestaurantAnalyticsPage({ params }: { params: { profileI
   }
 
   const { profile, stats, dailyScans, hourlyData, heatmapData, mostViewedItems } = analyticsData;
-  const maxDailyScan = Math.max(...dailyScans);
+  const maxDailyScan = dailyScans.length ? Math.max(...dailyScans) : 1;
 
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const hours = ['6am', '9am', '12pm', '3pm', '6pm', '9pm', '12am'];

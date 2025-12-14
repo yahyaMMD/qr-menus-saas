@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import QRCode from "qrcode";
 import { prisma } from "@/lib/prisma";
+import { getPublicMenuUrl } from "@/lib/public-menu-url";
 
 export async function GET(
   request: NextRequest,
@@ -29,13 +30,7 @@ export async function GET(
       return NextResponse.json({ error: "Menu not found" }, { status: 404 });
     }
 
-    const baseUrl =
-      process.env.NEXT_PUBLIC_BASE_URL ||
-      (process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : "http://localhost:3000");
-
-    const menuUrl = `${baseUrl}/menu/${menu.profileId}?menuId=${menuId}`;
+    const menuUrl = getPublicMenuUrl(menuId);
 
     if (format === "png") {
       const buffer = await QRCode.toBuffer(menuUrl, {

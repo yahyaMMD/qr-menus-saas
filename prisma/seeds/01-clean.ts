@@ -28,6 +28,8 @@ export default async function clean(prisma: PrismaClient) {
   await prisma.subscription.deleteMany();
   await prisma.profile.deleteMany();
   
+  await prisma.notification.deleteMany();
+  
   // Finally delete User
   await prisma.user.deleteMany();
 
