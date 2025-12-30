@@ -1,6 +1,4 @@
-// @ts-nocheck
 "use client";
-import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import {
   Plus,
@@ -9,56 +7,17 @@ import {
   Settings,
   Eye,
   Pencil,
-  Trash2,
-  Download,
-  Share2
 } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
+import { useProfile, useMenus } from "@/lib/react-query/hooks";
 
 export const RestaurantProfile = ({ profileId }: { profileId: string }) => {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [profileData, setProfileData] = useState<any>(null);
+  const { data: profile, isLoading: profileLoading, error: profileError, refetch: refetchProfile } = useProfile(profileId);
+  const { data: menusData, isLoading: menusLoading } = useMenus(profileId);
 
-  useEffect(() => {
-    fetchProfileData();
-  }, [profileId]);
-
-  const fetchProfileData = async () => {
-    try {
-      setLoading(true);
-
-      // Fetch profile data
-      const profileResponse = await fetch(`/api/profiles/${profileId}`, {
-        credentials: 'include',
-      });
-
-      if (!profileResponse.ok) {
-        throw new Error('Failed to fetch profile');
-      }
-
-      const profile = await profileResponse.json();
-
-      // Fetch menus for this profile
-      const menusResponse = await fetch(`/api/profiles/${profileId}/menus`, {
-        credentials: 'include',
-      });
-
-      let menus = [];
-      if (menusResponse.ok) {
-        const menusData = await menusResponse.json();
-        menus = menusData.menus || [];
-      }
-
-      setProfileData({ profile, menus });
-    } catch (err: any) {
-      console.error('Error fetching profile:', err);
-      setError(err.message || 'Failed to load profile');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loading = profileLoading || menusLoading;
+  const error = profileError;
+  const menus = menusData?.menus || [];
 
   if (loading) {
     return (
@@ -71,13 +30,13 @@ export const RestaurantProfile = ({ profileId }: { profileId: string }) => {
     );
   }
 
-  if (error || !profileData) {
+  if (error || !profile) {
     return (
       <div className="p-6 md:p-8">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-700">{error || 'Failed to load profile'}</p>
+          <p className="text-red-700">{error instanceof Error ? error.message : 'Failed to load profile'}</p>
           <button
-            onClick={fetchProfileData}
+            onClick={() => refetchProfile()}
             className="mt-2 text-red-600 hover:text-red-800 underline"
           >
             Try again
@@ -86,9 +45,8 @@ export const RestaurantProfile = ({ profileId }: { profileId: string }) => {
       </div>
     );
   }
-
-  const { profile, menus } = profileData;
-  const locationText = profile.location?.address || profile.location?.city || 'No location set';
+  const profileData = profile as any;
+  const locationText = profileData.location?.address || profileData.location?.city || 'No location set';
 
   // Calculate active menus count
   const activeMenusCount = menus.filter((m: any) => m.isActive).length;
@@ -113,16 +71,16 @@ export const RestaurantProfile = ({ profileId }: { profileId: string }) => {
       <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
         <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
           <div className="w-28 h-28 md:w-32 md:h-32 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-            {profile.logo ? (
+            {profileData.logo ? (
               <img
-                src={profile.logo}
-                alt={profile.name}
+                src={profileData.logo}
+                alt={profileData.name}
                 className="w-full h-full object-cover"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-100 to-orange-200">
                 <span className="text-4xl font-bold text-orange-600">
-                  {profile.name.charAt(0).toUpperCase()}
+                  {profileData.name.charAt(0).toUpperCase()}
                 </span>
               </div>
             )}
@@ -132,9 +90,9 @@ export const RestaurantProfile = ({ profileId }: { profileId: string }) => {
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">
-                  {profile.name}
+                  {profileData.name}
                 </h1>
-                <p className="text-sm md:text-base text-gray-600 mb-1">{profile.description || 'No description'}</p>
+                <p className="text-sm md:text-base text-gray-600 mb-1">{profileData.description || 'No description'}</p>
                 <p className="text-xs md:text-sm text-gray-500">{locationText}</p>
               </div>
 

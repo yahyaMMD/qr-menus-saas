@@ -86,7 +86,6 @@ export default function MenuSettingsPage({
     setSuccess(null);
 
     try {
-      const token = getToken();
       const response = await fetch(`/api/menus/${menuId}`, {
         method: 'PATCH',
         headers: {
@@ -125,7 +124,6 @@ export default function MenuSettingsPage({
     setError(null);
 
     try {
-      const token = getToken();
       const response = await fetch(`/api/menus/${menuId}`, {
         method: 'DELETE',
         credentials: 'include',

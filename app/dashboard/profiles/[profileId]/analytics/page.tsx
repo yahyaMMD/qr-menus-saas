@@ -1,45 +1,15 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, use } from 'react';
 import { ArrowLeft, Calendar, TrendingUp, Users, Eye } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useProfileAnalytics } from '@/lib/react-query/hooks';
 
-export default function RestaurantAnalyticsPage({ params }: { params: { profileId: string } }) {
+export default function RestaurantAnalyticsPage({ params }: { params: Promise<{ profileId: string }> }) {
+  const { profileId } = use(params);
   const router = useRouter();
   const [timeRange, setTimeRange] = useState('30');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [analyticsData, setAnalyticsData] = useState<any>(null);
-
-  useEffect(() => {
-    fetchAnalytics();
-  }, [timeRange, params.profileId]);
-
-  const fetchAnalytics = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/profiles/${params.profileId}/analytics?range=${timeRange}`, {
-        credentials: 'include',
-      });
-
-      if (response.status === 401) {
-        throw new Error('Session expired');
-      }
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch analytics');
-      }
-
-      const data = await response.json();
-      setAnalyticsData(data);
-    } catch (err: any) {
-      console.error('Error fetching analytics:', err);
-      setError(err.message || 'Failed to load analytics');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: analyticsData, isLoading: loading, error, refetch } = useProfileAnalytics(profileId, timeRange);
 
   if (loading) {
     return (
@@ -52,7 +22,7 @@ export default function RestaurantAnalyticsPage({ params }: { params: { profileI
     );
   }
 
-  if (error || !analyticsData) {
+  if (error || (!loading && !analyticsData)) {
     return (
       <div className="p-8 bg-gray-50 min-h-screen">
         <button
@@ -63,9 +33,9 @@ export default function RestaurantAnalyticsPage({ params }: { params: { profileI
           Back
         </button>
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-700">{error || 'Failed to load analytics'}</p>
+          <p className="text-red-700">{error instanceof Error ? error.message : 'Failed to load analytics'}</p>
           <button
-            onClick={fetchAnalytics}
+            onClick={() => refetch()}
             className="mt-2 text-red-600 hover:text-red-800 underline"
           >
             Try again
@@ -75,7 +45,11 @@ export default function RestaurantAnalyticsPage({ params }: { params: { profileI
     );
   }
 
-  const { profile, stats, dailyScans, hourlyData, heatmapData, mostViewedItems } = analyticsData;
+  if (!analyticsData) {
+    return null;
+  }
+
+  const { profile, stats, dailyScans, hourlyData, heatmapData, mostViewedItems } = analyticsData as any;
   const maxDailyScan = dailyScans.length ? Math.max(...dailyScans) : 1;
 
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];

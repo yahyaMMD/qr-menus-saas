@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { authenticateRequest } from '@/lib/auth/middleware';
 import { findUserById, updateUser, deleteAllUserRefreshTokens } from '@/lib/auth/db';
 
@@ -58,8 +58,8 @@ export async function PATCH(request: NextRequest) {
 
     if (!hasMinLength || !hasUppercase || !hasNumber || !hasSpecialChar) {
       return NextResponse.json(
-        { 
-          error: 'Password must be at least 8 characters and contain uppercase, number, and special character' 
+        {
+          error: 'Password must be at least 8 characters and contain uppercase, number, and special character'
         },
         { status: 400 }
       );

@@ -1,50 +1,41 @@
-// @ts-nocheck
 "use client";
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import { Plus, BarChart3, MessageSquare, TrendingUp, MapPin, Pencil } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useDashboard } from "@/lib/react-query/hooks";
 import { getErrorPagePath } from "@/lib/error-redirect";
 
 export const DashboardContent = () => {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [dashboardData, setDashboardData] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { data: dashboardData, isLoading: loading, error, refetch } = useDashboard();
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  // Handle errors and redirects
+  if (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to load dashboard';
+    const status = (error as any)?.status || 500;
+    const errorPath = getErrorPagePath(status);
 
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-
-      const response = await fetch('/api/dashboard', {
-        credentials: 'include',
-      });
-
-      // Handle error status codes by redirecting to error pages
-      if (!response.ok) {
-        const errorPath = getErrorPagePath(response.status);
-        if (errorPath) {
-          router.push(errorPath);
-          return;
-        }
-        throw new Error('Failed to fetch dashboard data');
-      }
-
-      const data = await response.json();
-      setDashboardData(data);
-    } catch (err: any) {
-      console.error('Error fetching dashboard data:', err);
-      setError(err.message || 'Failed to load dashboard');
-    } finally {
-      setLoading(false);
+    if (errorPath) {
+      router.push(errorPath);
+      return null;
     }
-  };
+
+    return (
+      <div className="p-5">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-700">{errorMessage}</p>
+          <button
+            onClick={() => refetch()}
+            className="mt-2 text-red-600 hover:text-red-800 underline"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const quickActions = [
     {
@@ -64,7 +55,7 @@ export const DashboardContent = () => {
     },
   ];
 
-  if (loading) {
+  if (loading || !dashboardData) {
     return (
       <div className="p-5 flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -75,23 +66,7 @@ export const DashboardContent = () => {
     );
   }
 
-  if (error || !dashboardData) {
-    return (
-      <div className="p-5">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-700">{error || 'Failed to load dashboard data'}</p>
-          <button
-            onClick={fetchDashboardData}
-            className="mt-2 text-red-600 hover:text-red-800 underline"
-          >
-            Try again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const { user, stats, profiles } = dashboardData;
+  const { user, stats, profiles } = dashboardData as any;
 
   const statsDisplay = [
     {
@@ -147,8 +122,8 @@ export const DashboardContent = () => {
             {stat.change && (
               <p
                 className={`text-sm ${stat.changeType === "positive"
-                    ? "text-green-600"
-                    : "text-red-600"
+                  ? "text-green-600"
+                  : "text-red-600"
                   }`}
               >
                 {stat.change}
