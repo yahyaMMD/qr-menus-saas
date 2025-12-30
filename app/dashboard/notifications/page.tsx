@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Bell, 
-  CheckCheck, 
-  Trash2, 
+import {
+  Bell,
+  CheckCheck,
+  Trash2,
   Filter,
   CreditCard,
   Users,
@@ -99,14 +99,11 @@ export default function NotificationsPage() {
     try {
       if (reset) setLoading(true);
 
-      const token = localStorage.getItem('accessToken');
-      if (!token) return;
-
       const offset = reset ? 0 : notifications.length;
       const unreadOnly = filter === 'unread';
       const response = await fetch(
         `/api/notifications?limit=20&offset=${offset}&unreadOnly=${unreadOnly}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { credentials: 'include' }
       );
 
       if (!response.ok) return;
@@ -131,10 +128,9 @@ export default function NotificationsPage() {
 
   const markAsRead = async (id: string) => {
     try {
-      const token = localStorage.getItem('accessToken');
       await fetch(`/api/notifications/${id}`, {
         method: 'PATCH',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
 
       setNotifications(prev =>
@@ -148,13 +144,12 @@ export default function NotificationsPage() {
 
   const markAllAsRead = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
       await fetch('/api/notifications', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({ action: 'mark-all-read' }),
       });
 
@@ -169,10 +164,9 @@ export default function NotificationsPage() {
 
   const deleteNotification = async (id: string) => {
     try {
-      const token = localStorage.getItem('accessToken');
       await fetch(`/api/notifications/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
 
       const notification = notifications.find(n => n.id === id);
@@ -201,8 +195,8 @@ export default function NotificationsPage() {
   const types = Array.from(new Set(notifications.map(n => n.type)));
 
   // Filter by type
-  const filteredNotifications = typeFilter === 'all' 
-    ? notifications 
+  const filteredNotifications = typeFilter === 'all'
+    ? notifications
     : notifications.filter(n => n.type === typeFilter);
 
   // Group by date
@@ -264,21 +258,19 @@ export default function NotificationsPage() {
           <div className="flex gap-2">
             <button
               onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filter === 'all'
-                  ? 'bg-orange-100 text-orange-700'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'all'
+                ? 'bg-orange-100 text-orange-700'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
             >
               All ({total})
             </button>
             <button
               onClick={() => setFilter('unread')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filter === 'unread'
-                  ? 'bg-orange-100 text-orange-700'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === 'unread'
+                ? 'bg-orange-100 text-orange-700'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
             >
               Unread ({unreadCount})
             </button>
@@ -326,15 +318,13 @@ export default function NotificationsPage() {
                 {dayNotifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`group flex items-start gap-4 p-4 cursor-pointer transition-colors ${
-                      notification.read ? 'bg-white hover:bg-gray-50' : 'bg-orange-50/50 hover:bg-orange-50'
-                    }`}
+                    className={`group flex items-start gap-4 p-4 cursor-pointer transition-colors ${notification.read ? 'bg-white hover:bg-gray-50' : 'bg-orange-50/50 hover:bg-orange-50'
+                      }`}
                     onClick={() => handleNotificationClick(notification)}
                   >
                     {/* Icon */}
-                    <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center ${
-                      notification.read ? 'bg-gray-100' : 'bg-white shadow-sm'
-                    }`}>
+                    <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center ${notification.read ? 'bg-gray-100' : 'bg-white shadow-sm'
+                      }`}>
                       {notificationIcons[notification.type] || <Bell className="w-6 h-6 text-gray-400" />}
                     </div>
 

@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Plus, 
-  Search, 
-  Edit, 
-  Trash2, 
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
   Eye,
   EyeOff,
   MoreVertical,
@@ -28,14 +28,14 @@ interface Menu {
   };
 }
 
-export default function RestaurantMenusPage({ 
-  params 
-}: { 
-  params: Promise<{ profileId: string }> 
+export default function RestaurantMenusPage({
+  params
+}: {
+  params: Promise<{ profileId: string }>
 }) {
   const { profileId } = use(params); // Unwrap params with React.use()
   const router = useRouter();
-  
+
   const [menus, setMenus] = useState<Menu[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,22 +44,11 @@ export default function RestaurantMenusPage({
   useEffect(() => {
     const fetchMenus = async () => {
       try {
-        let token = localStorage.getItem('accessToken');
-        if (!token) {
-          const authRaw = localStorage.getItem('auth');
-          if (authRaw) {
-            const auth = JSON.parse(authRaw);
-            token = auth?.tokens?.accessToken;
-          }
-        }
-
         const response = await fetch(`/api/profiles/${profileId}/menus`, {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
+          credentials: 'include',
         });
         const data = await response.json();
-        
+
         if (response.ok) {
           setMenus(data.menus);
         } else {
@@ -85,28 +74,19 @@ export default function RestaurantMenusPage({
     if (!menu) return;
 
     try {
-      let token = localStorage.getItem('accessToken');
-      if (!token) {
-        const authRaw = localStorage.getItem('auth');
-        if (authRaw) {
-          const auth = JSON.parse(authRaw);
-          token = auth?.tokens?.accessToken;
-        }
-      }
-
       const response = await fetch(`/api/menus/${menuId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
+        credentials: 'include',
         body: JSON.stringify({
           isActive: !menu.isActive,
         }),
       });
 
       if (response.ok) {
-        setMenus(menus.map(m => 
+        setMenus(menus.map(m =>
           m.id === menuId ? { ...m, isActive: !m.isActive } : m
         ));
       } else {
@@ -121,22 +101,11 @@ export default function RestaurantMenusPage({
 
   const handleDeleteMenu = async (menuId: string) => {
     if (!confirm('Are you sure you want to delete this menu?')) return;
-    
-    try {
-      let token = localStorage.getItem('accessToken');
-      if (!token) {
-        const authRaw = localStorage.getItem('auth');
-        if (authRaw) {
-          const auth = JSON.parse(authRaw);
-          token = auth?.tokens?.accessToken;
-        }
-      }
 
+    try {
       const response = await fetch(`/api/menus/${menuId}`, {
         method: 'DELETE',
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        credentials: 'include',
       });
 
       if (response.ok) {
@@ -166,7 +135,7 @@ export default function RestaurantMenusPage({
     <div className="p-8">
       {/* Header */}
       <div className="mb-8">
-        <button 
+        <button
           onClick={() => router.push(`/dashboard/profiles/${profileId}`)}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
         >
@@ -309,7 +278,7 @@ export default function RestaurantMenusPage({
                     )}
                   </div>
                 </div>
-                
+
                 {/* Status Badge */}
                 <div className="flex items-center gap-2">
                   {menu.isActive ? (

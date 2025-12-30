@@ -25,23 +25,17 @@ export default function Pricing() {
 
   // Check auth on component mount
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuth = async () => {
       try {
-        let token: string | null = localStorage.getItem('accessToken');
-        if (!token) {
-          const authRaw = localStorage.getItem('authTokens') || localStorage.getItem('auth');
-          if (authRaw) {
-            const auth = JSON.parse(authRaw);
-            token = auth?.accessToken || auth?.tokens?.accessToken || null;
-          }
-        }
-        if (token) {
-          setAccessToken(token);
+        const response = await fetch('/api/auth?action=me', { credentials: 'include' });
+        if (response.ok) {
+          setAccessToken('present');
         }
       } catch (err) {
-        console.warn('Could not read auth from localStorage', err);
+        console.warn('Could not check auth', err);
+      } finally {
+        setIsCheckingAuth(false);
       }
-      setIsCheckingAuth(false);
     };
 
     checkAuth();
@@ -72,8 +66,8 @@ export default function Pricing() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         },
+        credentials: 'include',
         body: JSON.stringify({
           plan: planId,
           paymentMethod: paymentMethod
@@ -83,7 +77,7 @@ export default function Pricing() {
       if (response.status === 401) {
         console.error('Payment API returned 401 Unauthorized');
         setIsLoading(false);
-        router.push('/auth/login?callbackUrl=/');
+        setLoginPrompt({ open: true, planId });
         return;
       }
 
@@ -183,8 +177,8 @@ export default function Pricing() {
             setPlans(prevPlans => prevPlans.map(plan => {
               const dbPlan = data.plans.find((p: any) => p.plan === plan.id);
               if (dbPlan && plan.id !== 'CUSTOM') {
-                const priceDisplay = plan.id === 'FREE' 
-                  ? 'Free' 
+                const priceDisplay = plan.id === 'FREE'
+                  ? 'Free'
                   : `${(dbPlan.priceCents / 100).toLocaleString()} ${dbPlan.currency}`;
                 return {
                   ...plan,
@@ -225,7 +219,7 @@ export default function Pricing() {
       {/* Decorative elements */}
       <div className="absolute top-0 right-20 w-96 h-96 bg-orange-100/30 rounded-full blur-3xl"></div>
       <div className="absolute bottom-0 left-20 w-96 h-96 bg-blue-100/30 rounded-full blur-3xl"></div>
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Login prompt modal */}
         {loginPrompt.open && (
@@ -314,23 +308,21 @@ export default function Pricing() {
             <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Choose Payment Method</h3>
               <p className="text-gray-600 mb-6">Select your preferred payment method for the {currentPlan.name} plan</p>
-              
+
               <div className="space-y-4 mb-6">
                 <button
                   onClick={() => setPaymentMethod('edahabia')}
-                  className={`w-full p-4 border-2 rounded-xl text-left transition-all duration-300 ${
-                    paymentMethod === 'edahabia'
+                  className={`w-full p-4 border-2 rounded-xl text-left transition-all duration-300 ${paymentMethod === 'edahabia'
                       ? 'border-orange-500 bg-orange-50 shadow-md'
                       : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center">
                     <div
-                      className={`w-6 h-6 rounded-full border-2 mr-3 flex items-center justify-center transition-all duration-200 ${
-                        paymentMethod === 'edahabia'
+                      className={`w-6 h-6 rounded-full border-2 mr-3 flex items-center justify-center transition-all duration-200 ${paymentMethod === 'edahabia'
                           ? 'border-orange-500 bg-orange-500 shadow-sm'
                           : 'border-gray-300'
-                      }`}
+                        }`}
                     >
                       {paymentMethod === 'edahabia' && (
                         <div className="w-3 h-3 bg-white rounded-full"></div>
@@ -342,22 +334,20 @@ export default function Pricing() {
                     </div>
                   </div>
                 </button>
-                
+
                 <button
                   onClick={() => setPaymentMethod('cib')}
-                  className={`w-full p-4 border-2 rounded-xl text-left transition-all duration-300 ${
-                    paymentMethod === 'cib'
+                  className={`w-full p-4 border-2 rounded-xl text-left transition-all duration-300 ${paymentMethod === 'cib'
                       ? 'border-orange-500 bg-orange-50 shadow-md'
                       : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center">
                     <div
-                      className={`w-6 h-6 rounded-full border-2 mr-3 flex items-center justify-center transition-all duration-200 ${
-                        paymentMethod === 'cib'
+                      className={`w-6 h-6 rounded-full border-2 mr-3 flex items-center justify-center transition-all duration-200 ${paymentMethod === 'cib'
                           ? 'border-orange-500 bg-orange-500 shadow-sm'
                           : 'border-gray-300'
-                      }`}
+                        }`}
                     >
                       {paymentMethod === 'cib' && (
                         <div className="w-3 h-3 bg-white rounded-full"></div>
@@ -403,11 +393,10 @@ export default function Pricing() {
           {plans.map((plan) => (
             <div
               key={plan.name}
-              className={`bg-white rounded-2xl p-8 relative transition-all duration-500 hover:-translate-y-2 ${
-                plan.popular 
-                  ? 'border-2 border-orange-500 shadow-2xl scale-105 hover:shadow-orange-200' 
+              className={`bg-white rounded-2xl p-8 relative transition-all duration-500 hover:-translate-y-2 ${plan.popular
+                  ? 'border-2 border-orange-500 shadow-2xl scale-105 hover:shadow-orange-200'
                   : 'border border-gray-200 shadow-lg hover:shadow-xl'
-              }`}
+                }`}
             >
               {plan.popular && (
                 <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
@@ -441,9 +430,8 @@ export default function Pricing() {
               <button
                 onClick={() => handlePayment(plan.id, plan.name)}
                 disabled={isLoading}
-                className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 ${plan.buttonStyle} ${
-                  isLoading ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
+                className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 ${plan.buttonStyle} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
               >
                 {isLoading ? (
                   <div className="flex items-center justify-center">

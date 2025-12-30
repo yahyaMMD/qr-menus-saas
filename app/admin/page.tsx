@@ -87,48 +87,20 @@ export default function AdminPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const storedTokens = localStorage.getItem(TOKEN_KEY);
-    const storedUser = localStorage.getItem(USER_KEY);
-
-    if (storedTokens) {
+    (async () => {
       try {
-        setTokens(JSON.parse(storedTokens));
+        const res = await fetch("/api/auth?action=me", {
+          credentials: 'include'
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data.user ?? null);
+          setTokens({ accessToken: 'present', refreshToken: 'present' }); // Dummy values
+        }
       } catch {
-        setTokens(null);
+        // ignore
       }
-    } else {
-      const access = localStorage.getItem(ACCESS_KEY);
-      const refresh = localStorage.getItem(REFRESH_KEY);
-      if (access) {
-        setTokens({ accessToken: access, refreshToken: refresh ?? "" });
-      }
-    }
-
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch {
-        setUser(null);
-      }
-    } else {
-      // If no user in storage but we have an access token, fetch current user
-      const access = localStorage.getItem(ACCESS_KEY);
-      if (access) {
-        (async () => {
-          try {
-            const res = await fetch("/api/auth?action=me", {
-              headers: { Authorization: `Bearer ${access}` },
-            });
-            if (res.ok) {
-              const data = await res.json();
-              setUser(data.user ?? null);
-            }
-          } catch {
-            // ignore
-          }
-        })();
-      }
-    }
+    })();
   }, []);
 
   const loadData = useCallback(async () => {
@@ -142,46 +114,13 @@ export default function AdminPage() {
       const res = await fetch(input, {
         ...init,
         headers: {
-          Authorization: `Bearer ${tokens.accessToken}`,
           "Content-Type": "application/json",
           ...(init?.headers || {}),
         },
+        credentials: 'include',
       });
       if (res.status === 401 || res.status === 403) {
-        const refreshToken =
-          localStorage.getItem(REFRESH_KEY) ||
-          (tokens?.refreshToken ?? null);
-        if (refreshToken) {
-          try {
-            const refreshRes = await fetch("/api/auth?action=refresh", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ refreshToken }),
-            });
-            if (refreshRes.ok) {
-              const refreshJson = await refreshRes.json();
-              const newTokens = refreshJson.tokens;
-              localStorage.setItem(TOKEN_KEY, JSON.stringify(newTokens));
-              localStorage.setItem(ACCESS_KEY, newTokens.accessToken);
-              localStorage.setItem(REFRESH_KEY, newTokens.refreshToken);
-              setTokens(newTokens);
-              return await fetch(input, {
-                ...init,
-                headers: {
-                  Authorization: `Bearer ${newTokens.accessToken}`,
-                  "Content-Type": "application/json",
-                  ...(init?.headers || {}),
-                },
-              });
-            }
-          } catch {
-            // fall through to logout
-          }
-        }
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(USER_KEY);
-        localStorage.removeItem(ACCESS_KEY);
-        localStorage.removeItem(REFRESH_KEY);
+        // Cookies are cleared by the server on logout
         setTokens(null);
         setUser(null);
         router.replace("/auth/login");
@@ -288,11 +227,9 @@ export default function AdminPage() {
     };
   }, [users, profiles, subscriptions, payments, feedback]);
 
-  const authHeaders =
-    tokens && {
-      Authorization: `Bearer ${tokens.accessToken}`,
-      "Content-Type": "application/json",
-    };
+  const authHeaders = {
+    "Content-Type": "application/json",
+  };
 
   const downloadCsv = (rows: string[][], filename: string) => {
     const content = rows.map((row) => row.map((cell) => `"${cell?.replace?.(/"/g, '""') ?? ""}"`).join(",")).join("\n");
@@ -428,13 +365,17 @@ export default function AdminPage() {
     }
   };
 
-  const handleLogout = () => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(USER_KEY);
-      localStorage.removeItem(ACCESS_KEY);
-      localStorage.removeItem(REFRESH_KEY);
+  const handleLogout = async () => {
+    try {
+      // Call logout API to clear cookies on server
+      await fetch('/api/auth?action=logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      // Ignore errors, cookies will be cleared anyway
     }
+    // Cookies are cleared by the server on logout
     setTokens(null);
     setUser(null);
     router.replace("/auth/login");
@@ -741,7 +682,7 @@ export default function AdminPage() {
       <div className="mx-auto flex max-w-7xl gap-6 px-4 py-6 lg:px-6">
         {/* Mobile Menu Overlay */}
         {mobileMenuOpen && (
-          <div 
+          <div
             className="fixed inset-0 z-30 bg-black/50 lg:hidden"
             onClick={() => setMobileMenuOpen(false)}
           />
@@ -767,14 +708,13 @@ export default function AdminPage() {
                 <button
                   key={item.key}
                   onClick={() => goToSection(item.key)}
-                  className={`flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm font-semibold transition-all duration-200 ${
-                    activeSection === item.key 
-                      ? "bg-gradient-to-r from-orange-50 to-orange-100 text-orange-600 shadow-sm ring-1 ring-orange-100" 
+                  className={`flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm font-semibold transition-all duration-200 ${activeSection === item.key
+                      ? "bg-gradient-to-r from-orange-50 to-orange-100 text-orange-600 shadow-sm ring-1 ring-orange-100"
                       : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                  }`}
+                    }`}
                 >
                   <span className="flex items-center gap-3">
-                    {item.icon} 
+                    {item.icon}
                     {item.label}
                   </span>
                   <MoreHorizontal className="h-4 w-4 text-slate-400" />
@@ -817,24 +757,24 @@ export default function AdminPage() {
               </button>
             </div>
           )}
-          
+
           {activeSection === "dashboard" && (
-          <DashboardSection
-            totals={totals}
-            analytics={analytics}
-            loading={loading}
-            onExport={exportData}
-            onSupport={handleSupportNavigate}
-            onQuickAction={handleQuickAction}
-            announcement={announcement}
-            setAnnouncement={setAnnouncement}
-            onSendAnnouncement={sendAnnouncement}
-            actionLoading={actionLoading}
-            emailBlast={emailBlast}
-            setEmailBlast={setEmailBlast}
-            onSendEmail={sendEmailBlast}
-            users={users}
-          />
+            <DashboardSection
+              totals={totals}
+              analytics={analytics}
+              loading={loading}
+              onExport={exportData}
+              onSupport={handleSupportNavigate}
+              onQuickAction={handleQuickAction}
+              announcement={announcement}
+              setAnnouncement={setAnnouncement}
+              onSendAnnouncement={sendAnnouncement}
+              actionLoading={actionLoading}
+              emailBlast={emailBlast}
+              setEmailBlast={setEmailBlast}
+              onSendEmail={sendEmailBlast}
+              users={users}
+            />
           )}
           {activeSection === "users" && (
             <UsersSection
@@ -877,15 +817,15 @@ export default function AdminPage() {
               actionLoading={actionLoading}
               subscriptionQuery={subscriptionQuery}
               setSubscriptionQuery={setSubscriptionQuery}
-      onExport={() => {
-        exportSubscriptionsCsv();
-        exportPaymentsCsv();
-      }}
-      onShowSubscription={(s) => openDetails({ type: "subscription", data: s })}
-      onShowPayment={(p) => openDetails({ type: "payment", data: p })}
-      onReconcile={reconcileSubscription}
-      users={users}
-    />
+              onExport={() => {
+                exportSubscriptionsCsv();
+                exportPaymentsCsv();
+              }}
+              onShowSubscription={(s) => openDetails({ type: "subscription", data: s })}
+              onShowPayment={(p) => openDetails({ type: "payment", data: p })}
+              onReconcile={reconcileSubscription}
+              users={users}
+            />
           )}
           {activeSection === "analytics" && (
             <AnalyticsSection analytics={analytics} payments={payments} loading={loading} totals={totals} subscriptions={subscriptions} onExport={exportData} />

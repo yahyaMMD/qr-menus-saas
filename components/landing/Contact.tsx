@@ -33,26 +33,12 @@ export const Contact = () => {
     setSubmitStatus({ type: null, message: "" });
 
     try {
-      let accessToken: string | null = null;
-      try {
-        accessToken = localStorage.getItem("accessToken");
-        if (!accessToken) {
-          const authRaw = localStorage.getItem("authTokens") || localStorage.getItem("auth");
-          if (authRaw) {
-            const parsed = JSON.parse(authRaw);
-            accessToken = parsed?.accessToken || parsed?.tokens?.accessToken || null;
-          }
-        }
-      } catch {
-        accessToken = null;
-      }
-
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         },
+        credentials: 'include',
         body: JSON.stringify(formData),
       });
 
@@ -263,11 +249,10 @@ export const Contact = () => {
                 {/* Status */}
                 {submitStatus.type && (
                   <div
-                    className={`p-4 rounded-xl border-2 text-sm font-medium ${
-                      submitStatus.type === "success"
-                        ? "bg-green-50 text-green-800 border-green-200"
-                        : "bg-red-50 text-red-800 border-red-200"
-                    }`}
+                    className={`p-4 rounded-xl border-2 text-sm font-medium ${submitStatus.type === "success"
+                      ? "bg-green-50 text-green-800 border-green-200"
+                      : "bg-red-50 text-red-800 border-red-200"
+                      }`}
                   >
                     {submitStatus.message}
                   </div>

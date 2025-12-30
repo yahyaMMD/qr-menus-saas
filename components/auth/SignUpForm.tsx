@@ -28,6 +28,7 @@ export default function SignUpForm() {
       const res = await fetch(`/api/auth?action=register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Important: include cookies in request
         body: JSON.stringify({ name, email, password }),
       });
 
@@ -39,11 +40,8 @@ export default function SignUpForm() {
         return;
       }
 
-      try {
-        localStorage.setItem('auth', JSON.stringify(data));
-      } catch (err) {
-        console.warn('Could not save auth to localStorage', err);
-      }
+      // Tokens are automatically stored in httpOnly cookies by the server
+      // No need to store anything in localStorage
 
       router.push('/dashboard');
     } catch (err) {

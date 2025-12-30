@@ -1,34 +1,21 @@
-type TokenPayload = { accessToken?: string };
-
-function parseStoredTokens(value: string | null): string | null {
-  if (!value) return null;
-  try {
-    const parsed: TokenPayload = JSON.parse(value);
-    return parsed?.accessToken ?? null;
-  } catch {
-    return null;
-  }
-}
-
+/**
+ * @deprecated Tokens are now stored in httpOnly cookies and cannot be accessed from client-side code.
+ * Use credentials: 'include' in fetch requests instead of manually adding Authorization headers.
+ * The server middleware will automatically read tokens from cookies.
+ */
 export function getStoredAccessToken(): string | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const directToken = localStorage.getItem("accessToken");
-  if (directToken) {
-    return directToken;
-  }
-
-  const fromAuthTokens = parseStoredTokens(localStorage.getItem("authTokens"));
-  if (fromAuthTokens) {
-    return fromAuthTokens;
-  }
-
-  return parseStoredTokens(localStorage.getItem("auth"));
+  // Tokens are now in httpOnly cookies, not accessible from JavaScript
+  // This function returns null to indicate tokens should be read from cookies by the server
+  return null;
 }
 
+/**
+ * @deprecated Tokens are now stored in httpOnly cookies.
+ * Use credentials: 'include' in fetch requests instead.
+ * The server middleware will automatically read tokens from cookies.
+ */
 export function buildAuthHeaders(): Record<string, string> {
-  const token = getStoredAccessToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  // Tokens are in httpOnly cookies, automatically sent with requests
+  // No need to manually add Authorization headers
+  return {};
 }

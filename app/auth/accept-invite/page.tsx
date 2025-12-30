@@ -9,7 +9,7 @@ function AcceptInviteContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get('token');
-  
+
   const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'expired'>('loading');
   const [message, setMessage] = useState('');
   const [restaurantName, setRestaurantName] = useState('');
@@ -22,22 +22,20 @@ function AcceptInviteContent() {
 
   const acceptInvitation = async () => {
     try {
-      const accessToken = localStorage.getItem('accessToken');
-      
-      if (!accessToken) {
-        // Redirect to login with return URL
-        router.push(`/auth/login?redirect=/auth/accept-invite?token=${token}`);
-        return;
-      }
-
       const response = await fetch('/api/team/accept-invite', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
         },
+        credentials: 'include',
         body: JSON.stringify({ token }),
       });
+
+      if (response.status === 401) {
+        // Redirect to login with return URL
+        router.push(`/auth/login?redirect=/auth/accept-invite?token=${token}`);
+        return;
+      }
 
       const data = await response.json();
 

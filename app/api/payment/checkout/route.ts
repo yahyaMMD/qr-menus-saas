@@ -6,16 +6,13 @@ import { SubscriptionStatus } from '@prisma/client';
 
 export async function POST(request: NextRequest) {
   try {
-    // Debug: Log incoming headers
-    const authHeader = request.headers.get('Authorization');
-    console.log('Checkout API - Authorization header:', authHeader ? `Bearer ${authHeader.substring(0, 20)}...` : 'MISSING');
-    
-    // Authenticate user from JWT token
+    // Authenticate user from JWT token (reads from httpOnly cookies or Authorization header)
     const authResult = await authenticateRequest(request);
-    console.log('Checkout API - Auth result:', { success: authResult.success, error: authResult.error });
 
     if (!authResult.success || !authResult.payload) {
-      console.error('Auth failed:', authResult.error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Auth failed:', authResult.error);
+      }
       return NextResponse.json(
         { error: authResult.error || 'Authentication required' },
         { status: 401 }
@@ -229,7 +226,7 @@ export async function POST(request: NextRequest) {
           where: { id: existingSubscription.id },
           data: {
             plan: plan as any,
-            status: SubscriptionStatus.PAUSED,
+            status: 'PAUSED' as SubscriptionStatus, // Pending payment - will be activated by webhook
             expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days placeholder until webhook confirms
             active: false,
             paymentRef: checkout.id,
@@ -242,7 +239,7 @@ export async function POST(request: NextRequest) {
           data: {
             userId: user.id,
             plan: plan as any,
-            status: SubscriptionStatus.PAUSED,
+            status: 'PAUSED' as SubscriptionStatus, // Pending payment - will be activated by webhook
             expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // placeholder until webhook confirms
             active: false,
             paymentRef: checkout.id,

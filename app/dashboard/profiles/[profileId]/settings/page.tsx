@@ -2,27 +2,27 @@
 
 import React, { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Store, Clock, Phone, Users, Trash2, Save, ArrowLeft, Mail, 
+import {
+  Store, Clock, Phone, Users, Trash2, Save, ArrowLeft, Mail,
   Globe, Wifi, MapPin, Info, Image as ImageIcon, AlertCircle, CheckCircle,
   Plus, X, Shield, UserMinus, Loader2, AlertTriangle, Crown
 } from 'lucide-react';
 import { ImageUpload } from '@/components/ui/ImageUpload';
 
-export default function ProfileSettingsPage({ 
-  params 
-}: { 
-  params: Promise<{ profileId: string }> 
+export default function ProfileSettingsPage({
+  params
+}: {
+  params: Promise<{ profileId: string }>
 }) {
   const { profileId } = use(params);
   const router = useRouter();
-  
+
   const [activeTab, setActiveTab] = useState<'general' | 'hours' | 'contact' | 'extra' | 'team' | 'danger'>('general');
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
+
   // Team state
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [isOwner, setIsOwner] = useState(false);
@@ -30,13 +30,13 @@ export default function ProfileSettingsPage({
   const [newMember, setNewMember] = useState({ name: '', email: '', role: 'STAFF' });
   const [isAddingMember, setIsAddingMember] = useState(false);
   const [teamLoading, setTeamLoading] = useState(false);
-  
+
   // Danger zone state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [profileName, setProfileName] = useState('');
-  
+
   const [generalInfo, setGeneralInfo] = useState({
     name: '',
     description: '',
@@ -74,22 +74,19 @@ export default function ProfileSettingsPage({
 
   const fetchProfileData = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
       const response = await fetch(`/api/profiles/${profileId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include',
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to load profile');
       }
-      
+
       const data = await response.json();
-      
+
       console.log('Profile data:', data); // Debug log
-      
+
       setGeneralInfo({
         name: data.name || '',
         description: data.description || '',
@@ -138,9 +135,8 @@ export default function ProfileSettingsPage({
   const fetchTeamMembers = async () => {
     setTeamLoading(true);
     try {
-      const token = localStorage.getItem('accessToken');
       const response = await fetch(`/api/profiles/${profileId}/team`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
 
       if (response.ok) {
@@ -172,13 +168,12 @@ export default function ProfileSettingsPage({
     setError('');
 
     try {
-      const token = localStorage.getItem('accessToken');
       const response = await fetch(`/api/profiles/${profileId}/team`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify(newMember),
       });
 
@@ -202,18 +197,17 @@ export default function ProfileSettingsPage({
 
   const handleUpdateRole = async (memberId: string, newRole: string) => {
     try {
-      const token = localStorage.getItem('accessToken');
       const response = await fetch(`/api/profiles/${profileId}/team/${memberId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({ role: newRole }),
       });
 
       if (response.ok) {
-        setTeamMembers(teamMembers.map(m => 
+        setTeamMembers(teamMembers.map(m =>
           m.id === memberId ? { ...m, role: newRole } : m
         ));
         setSuccess('Role updated successfully!');
@@ -231,10 +225,9 @@ export default function ProfileSettingsPage({
     if (!confirm(`Remove ${memberName} from the team?`)) return;
 
     try {
-      const token = localStorage.getItem('accessToken');
       const response = await fetch(`/api/profiles/${profileId}/team/${memberId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
 
       if (response.ok) {
@@ -260,10 +253,9 @@ export default function ProfileSettingsPage({
     setError('');
 
     try {
-      const token = localStorage.getItem('accessToken');
       const response = await fetch(`/api/profiles/${profileId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
 
       if (response.ok) {
@@ -285,8 +277,6 @@ export default function ProfileSettingsPage({
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('accessToken');
-      
       const updateData: any = {};
 
       if (activeTab === 'general') {
@@ -346,8 +336,8 @@ export default function ProfileSettingsPage({
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
+        credentials: 'include',
         body: JSON.stringify(updateData),
       });
 
@@ -385,7 +375,7 @@ export default function ProfileSettingsPage({
     <div className="p-8 bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
-        <button 
+        <button
           onClick={() => router.push(`/dashboard/profiles/${profileId}`)}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
         >
@@ -421,11 +411,10 @@ export default function ProfileSettingsPage({
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors whitespace-nowrap ${
-                    activeTab === tab.id
-                      ? 'bg-gray-50 text-gray-900 border-b-2 border-orange-500'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
+                  className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors whitespace-nowrap ${activeTab === tab.id
+                    ? 'bg-gray-50 text-gray-900 border-b-2 border-orange-500'
+                    : 'text-gray-600 hover:bg-gray-50'
+                    }`}
                 >
                   <Icon className="w-4 h-4" />
                   {tab.label}
@@ -484,7 +473,7 @@ export default function ProfileSettingsPage({
             </div>
 
             <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-gray-200">
-              <button 
+              <button
                 onClick={handleSave}
                 disabled={isSaving}
                 className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium flex items-center gap-2 disabled:opacity-50"
@@ -602,7 +591,7 @@ export default function ProfileSettingsPage({
             </div>
 
             <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-gray-200">
-              <button 
+              <button
                 onClick={handleSave}
                 disabled={isSaving}
                 className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium flex items-center gap-2 disabled:opacity-50"
@@ -679,7 +668,7 @@ export default function ProfileSettingsPage({
             </div>
 
             <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-gray-200">
-              <button 
+              <button
                 onClick={handleSave}
                 disabled={isSaving}
                 className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium flex items-center gap-2 disabled:opacity-50"
@@ -828,11 +817,10 @@ export default function ProfileSettingsPage({
 
                     <div className="flex items-center gap-3">
                       {/* Role Badge */}
-                      <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        member.role === 'MANAGER' 
-                          ? 'bg-purple-100 text-purple-700' 
-                          : 'bg-blue-100 text-blue-700'
-                      }`}>
+                      <div className={`px-3 py-1 rounded-full text-xs font-medium ${member.role === 'MANAGER'
+                        ? 'bg-purple-100 text-purple-700'
+                        : 'bg-blue-100 text-blue-700'
+                        }`}>
                         <div className="flex items-center gap-1">
                           <Shield className="w-3 h-3" />
                           {member.role === 'MANAGER' ? 'Manager' : 'Staff'}

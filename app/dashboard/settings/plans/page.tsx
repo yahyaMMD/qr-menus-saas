@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  ArrowLeft, 
-  Check, 
-  Zap, 
-  Building2, 
+import {
+  ArrowLeft,
+  Check,
+  Zap,
+  Building2,
   Rocket,
   X,
   Loader2,
@@ -51,17 +51,8 @@ export default function ChangePlanPage() {
 
   const fetchPlans = async () => {
     try {
-      let token = localStorage.getItem('accessToken');
-      if (!token) {
-        const authRaw = localStorage.getItem('auth');
-        if (authRaw) {
-          const auth = JSON.parse(authRaw);
-          token = auth?.tokens?.accessToken;
-        }
-      }
-
       const response = await fetch('/api/plans', {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -75,7 +66,7 @@ export default function ChangePlanPage() {
 
       const data = await response.json();
       setPlans(data.plans);
-      
+
       if (data.currentSubscription) {
         setCurrentSubscription(data.currentSubscription);
         setSelectedPlan(data.currentSubscription.plan);
@@ -109,21 +100,12 @@ export default function ChangePlanPage() {
     setError('');
 
     try {
-      let token = localStorage.getItem('accessToken');
-      if (!token) {
-        const authRaw = localStorage.getItem('auth');
-        if (authRaw) {
-          const auth = JSON.parse(authRaw);
-          token = auth?.tokens?.accessToken;
-        }
-      }
-
       const response = await fetch('/api/payment/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
+        credentials: 'include',
         body: JSON.stringify({ plan: 'FREE', paymentMethod: 'edahabia' }),
       });
 
@@ -154,26 +136,12 @@ export default function ChangePlanPage() {
     setError('');
 
     try {
-      let token = localStorage.getItem('accessToken');
-      if (!token) {
-        const authRaw = localStorage.getItem('auth');
-        if (authRaw) {
-          const auth = JSON.parse(authRaw);
-          token = auth?.tokens?.accessToken;
-        }
-      }
-
-      if (!token) {
-        router.push('/auth/login?callbackUrl=/dashboard/settings/plans');
-        return;
-      }
-
       const response = await fetch('/api/payment/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
           plan: selectedPlan,
           paymentMethod,
@@ -256,16 +224,14 @@ export default function ChangePlanPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={() => setPaymentMethod('edahabia')}
-                    className={`p-4 border-2 rounded-xl text-left transition-all ${
-                      paymentMethod === 'edahabia'
-                        ? 'border-orange-500 bg-orange-50 shadow-md'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                    className={`p-4 border-2 rounded-xl text-left transition-all ${paymentMethod === 'edahabia'
+                      ? 'border-orange-500 bg-orange-50 shadow-md'
+                      : 'border-gray-200 hover:border-gray-300'
+                      }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                        paymentMethod === 'edahabia' ? 'border-orange-500 bg-orange-500' : 'border-gray-300'
-                      }`}>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'edahabia' ? 'border-orange-500 bg-orange-500' : 'border-gray-300'
+                        }`}>
                         {paymentMethod === 'edahabia' && <div className="w-2 h-2 bg-white rounded-full" />}
                       </div>
                       <div>
@@ -277,16 +243,14 @@ export default function ChangePlanPage() {
 
                   <button
                     onClick={() => setPaymentMethod('cib')}
-                    className={`p-4 border-2 rounded-xl text-left transition-all ${
-                      paymentMethod === 'cib'
-                        ? 'border-orange-500 bg-orange-50 shadow-md'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                    className={`p-4 border-2 rounded-xl text-left transition-all ${paymentMethod === 'cib'
+                      ? 'border-orange-500 bg-orange-50 shadow-md'
+                      : 'border-gray-200 hover:border-gray-300'
+                      }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                        paymentMethod === 'cib' ? 'border-orange-500 bg-orange-500' : 'border-gray-300'
-                      }`}>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'cib' ? 'border-orange-500 bg-orange-500' : 'border-gray-300'
+                        }`}>
                         {paymentMethod === 'cib' && <div className="w-2 h-2 bg-white rounded-full" />}
                       </div>
                       <div>
@@ -336,7 +300,7 @@ export default function ChangePlanPage() {
 
       {/* Header */}
       <div className="mb-8">
-        <button 
+        <button
           onClick={() => router.push('/dashboard/settings?section=billing')}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors group"
         >
@@ -365,13 +329,12 @@ export default function ChangePlanPage() {
           return (
             <div
               key={plan.id}
-              className={`bg-white rounded-2xl border-2 transition-all relative overflow-hidden ${
-                isSelected && !isCurrentPlan
-                  ? 'border-orange-500 shadow-xl shadow-orange-500/10'
-                  : isCurrentPlan
+              className={`bg-white rounded-2xl border-2 transition-all relative overflow-hidden ${isSelected && !isCurrentPlan
+                ? 'border-orange-500 shadow-xl shadow-orange-500/10'
+                : isCurrentPlan
                   ? 'border-emerald-400 shadow-lg'
                   : 'border-gray-200 hover:border-gray-300 hover:shadow-lg'
-              }`}
+                }`}
             >
               {/* Popular Badge */}
               {isPopular && (
@@ -397,7 +360,7 @@ export default function ChangePlanPage() {
                 <div className="mb-6">
                   <div className={`w-14 h-14 rounded-xl bg-${color}-100 flex items-center justify-center mb-4`}
                     style={{ backgroundColor: color === 'emerald' ? '#d1fae5' : color === 'orange' ? '#ffedd5' : '#ede9fe' }}>
-                    <Icon className={`w-7 h-7`} 
+                    <Icon className={`w-7 h-7`}
                       style={{ color: color === 'emerald' ? '#059669' : color === 'orange' ? '#ea580c' : '#7c3aed' }} />
                   </div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-1">{plan.plan}</h3>
@@ -429,24 +392,23 @@ export default function ChangePlanPage() {
                 <button
                   onClick={() => handleSelectPlan(plan.plan)}
                   disabled={isCurrentPlan || processing}
-                  className={`w-full py-3.5 rounded-xl font-semibold text-sm transition-all mb-6 ${
-                    isCurrentPlan
-                      ? 'bg-emerald-100 text-emerald-700 cursor-default'
-                      : plan.plan === 'CUSTOM'
+                  className={`w-full py-3.5 rounded-xl font-semibold text-sm transition-all mb-6 ${isCurrentPlan
+                    ? 'bg-emerald-100 text-emerald-700 cursor-default'
+                    : plan.plan === 'CUSTOM'
                       ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 shadow-xl shadow-indigo-500/30'
                       : isSelected
-                      ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 shadow-lg shadow-orange-500/25'
-                      : 'bg-gray-900 text-white hover:bg-gray-800'
-                  }`}
+                        ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 shadow-lg shadow-orange-500/25'
+                        : 'bg-gray-900 text-white hover:bg-gray-800'
+                    }`}
                   type="button"
                 >
                   {isCurrentPlan
                     ? 'Current Plan'
                     : plan.plan === 'CUSTOM'
-                    ? 'Contact Sales'
-                    : plan.priceCents === 0
-                    ? 'Get Started Free'
-                    : 'Select Plan'}
+                      ? 'Contact Sales'
+                      : plan.priceCents === 0
+                        ? 'Get Started Free'
+                        : 'Select Plan'}
                 </button>
 
                 {/* Features */}

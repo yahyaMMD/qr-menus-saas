@@ -8,7 +8,7 @@ export default function PaymentPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const plan = searchParams.get('plan');
-  
+
   const [selectedPlan, setSelectedPlan] = useState(plan || 'STANDARD');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('edahabia');
   const [isLoading, setIsLoading] = useState(false);
@@ -18,30 +18,18 @@ export default function PaymentPage() {
 
   // Check auth on component mount
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuth = async () => {
       try {
-        const authRaw = localStorage.getItem('auth');
-        console.log('Payment page - Auth raw:', authRaw ? authRaw.substring(0, 100) + '...' : 'null');
-        if (authRaw) {
-          const auth = JSON.parse(authRaw);
-          console.log('Payment page - Auth parsed:', { 
-            hasTokens: !!auth?.tokens,
-            hasAccessToken: !!auth?.tokens?.accessToken,
-            tokenStart: auth?.tokens?.accessToken?.substring(0, 30)
-          });
-          const token = auth?.tokens?.accessToken || null;
-          if (token) {
-            console.log('Payment page - Token found:', token.substring(0, 30) + '...');
-            setAccessToken(token);
-            setIsCheckingAuth(false);
-            return;
-          }
+        const response = await fetch('/api/auth?action=me', { credentials: 'include' });
+        if (response.ok) {
+          setAccessToken('present');
+          setIsCheckingAuth(false);
+          return;
         }
       } catch (err) {
-        console.warn('Could not read auth from localStorage', err);
+        console.warn('Could not check auth', err);
       }
       // No token found, redirect to login
-      console.warn('Payment page - No token found, redirecting to login');
       setIsCheckingAuth(false);
       router.push('/auth/login?callbackUrl=/payment');
     };
@@ -59,13 +47,12 @@ export default function PaymentPage() {
     setError('');
 
     try {
-      console.log('Payment request - Sending token:', accessToken.substring(0, 20) + '...');
       const response = await fetch('/api/payment/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         },
+        credentials: 'include',
         body: JSON.stringify({
           plan: selectedPlan,
           paymentMethod: paymentMethod
@@ -111,33 +98,33 @@ export default function PaymentPage() {
   };
 
   const plans = [
-    { 
-      id: 'FREE', 
-      name: 'Free', 
-      price: 0, 
+    {
+      id: 'FREE',
+      name: 'Free',
+      price: 0,
       features: [
         '1 Active Profile',
         'Basic Menu Features',
         'Standard Support',
         'Limited Analytics'
-      ] 
+      ]
     },
-    { 
-      id: 'STANDARD', 
-      name: 'Standard', 
-      price: 2500, 
+    {
+      id: 'STANDARD',
+      name: 'Standard',
+      price: 2500,
       features: [
         '5 Active Profiles',
         'Advanced Menu Features',
         'Priority Support',
         'Full Analytics Access',
         'Custom Domain'
-      ] 
+      ]
     },
-    { 
-      id: 'CUSTOM', 
-      name: 'Custom', 
-      price: 4000, 
+    {
+      id: 'CUSTOM',
+      name: 'Custom',
+      price: 4000,
       features: [
         'Unlimited Profiles',
         'All Advanced Features',
@@ -145,7 +132,7 @@ export default function PaymentPage() {
         'Advanced Analytics',
         'Custom Branding',
         'API Access'
-      ] 
+      ]
     }
   ];
 
@@ -190,11 +177,10 @@ export default function PaymentPage() {
           {plans.map((planItem) => (
             <div
               key={planItem.id}
-              className={`bg-white rounded-xl shadow-lg p-8 border-2 transition-all duration-200 ${
-                selectedPlan === planItem.id
+              className={`bg-white rounded-xl shadow-lg p-8 border-2 transition-all duration-200 ${selectedPlan === planItem.id
                   ? 'border-blue-500 transform scale-105'
                   : 'border-gray-200 hover:border-gray-300 hover:shadow-xl'
-              }`}
+                }`}
             >
               <div className="text-center mb-6">
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
@@ -209,7 +195,7 @@ export default function PaymentPage() {
                   )}
                 </div>
               </div>
-              
+
               <ul className="space-y-4 mb-8">
                 {planItem.features.map((feature, index) => (
                   <li key={index} className="flex items-start text-gray-600">
@@ -230,14 +216,13 @@ export default function PaymentPage() {
                   </li>
                 ))}
               </ul>
-              
+
               <button
                 onClick={() => setSelectedPlan(planItem.id)}
-                className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors duration-200 ${
-                  selectedPlan === planItem.id
+                className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors duration-200 ${selectedPlan === planItem.id
                     ? 'bg-blue-600 text-white hover:bg-blue-700'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                  }`}
               >
                 {selectedPlan === planItem.id ? 'Selected' : 'Select Plan'}
               </button>
@@ -254,19 +239,17 @@ export default function PaymentPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <button
                   onClick={() => setPaymentMethod('edahabia')}
-                  className={`p-6 border-2 rounded-xl text-left transition-all duration-200 ${
-                    paymentMethod === 'edahabia'
+                  className={`p-6 border-2 rounded-xl text-left transition-all duration-200 ${paymentMethod === 'edahabia'
                       ? 'border-blue-500 bg-blue-50 shadow-md'
                       : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center">
                     <div
-                      className={`w-6 h-6 rounded-full border-2 mr-4 flex items-center justify-center ${
-                        paymentMethod === 'edahabia'
+                      className={`w-6 h-6 rounded-full border-2 mr-4 flex items-center justify-center ${paymentMethod === 'edahabia'
                           ? 'border-blue-500 bg-blue-500'
                           : 'border-gray-300'
-                      }`}
+                        }`}
                     >
                       {paymentMethod === 'edahabia' && (
                         <div className="w-2 h-2 bg-white rounded-full"></div>
@@ -278,22 +261,20 @@ export default function PaymentPage() {
                     </div>
                   </div>
                 </button>
-                
+
                 <button
                   onClick={() => setPaymentMethod('cib')}
-                  className={`p-6 border-2 rounded-xl text-left transition-all duration-200 ${
-                    paymentMethod === 'cib'
+                  className={`p-6 border-2 rounded-xl text-left transition-all duration-200 ${paymentMethod === 'cib'
                       ? 'border-blue-500 bg-blue-50 shadow-md'
                       : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center">
                     <div
-                      className={`w-6 h-6 rounded-full border-2 mr-4 flex items-center justify-center ${
-                        paymentMethod === 'cib'
+                      className={`w-6 h-6 rounded-full border-2 mr-4 flex items-center justify-center ${paymentMethod === 'cib'
                           ? 'border-blue-500 bg-blue-500'
                           : 'border-gray-300'
-                      }`}
+                        }`}
                     >
                       {paymentMethod === 'cib' && (
                         <div className="w-2 h-2 bg-white rounded-full"></div>
@@ -337,7 +318,7 @@ export default function PaymentPage() {
                   `Pay ${currentPlan.price} DA`
                 )}
               </button>
-              
+
               <p className="text-sm text-gray-500 mt-4">
                 You will be redirected to secure payment page
               </p>

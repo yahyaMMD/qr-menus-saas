@@ -3,7 +3,6 @@
 import React, { use, useState, useEffect } from 'react';
 import { ArrowLeft, Star, ThumbsUp, Filter, Search, MoreVertical } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { getStoredAccessToken } from '@/lib/auth/session';
 
 export default function CustomerFeedbackPage({ params }: { params: Promise<{ profileId: string }> }) {
   const router = useRouter();
@@ -23,19 +22,9 @@ export default function CustomerFeedbackPage({ params }: { params: Promise<{ pro
     try {
       setLoading(true);
       setError(null);
-      const token = getStoredAccessToken();
-
-      if (!token) {
-        setLoading(false);
-        setError('Please log in to view feedback');
-        router.push(`/auth/login?callbackUrl=/dashboard/profiles/${profileId}/feedbacks`);
-        return;
-      }
 
       const response = await fetch(`/api/profiles/${profileId}/feedbacks`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -75,7 +64,7 @@ export default function CustomerFeedbackPage({ params }: { params: Promise<{ pro
         </button>
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-700">{error || 'Failed to load feedbacks'}</p>
-          <button 
+          <button
             onClick={fetchFeedbacks}
             className="mt-2 text-red-600 hover:text-red-800 underline"
           >
@@ -92,7 +81,7 @@ export default function CustomerFeedbackPage({ params }: { params: Promise<{ pro
   const filteredFeedbacks = feedbacks.filter((f: Feedback) => {
     const matchesRating = filterRating === 'all' || f.rating.toString() === filterRating;
     const matchesSearch = f.comment.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         f.userName.toLowerCase().includes(searchQuery.toLowerCase());
+      f.userName.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesRating && matchesSearch;
   });
 
@@ -125,13 +114,12 @@ export default function CustomerFeedbackPage({ params }: { params: Promise<{ pro
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
                   key={star}
-                  className={`w-6 h-6 ${
-                    star <= Math.floor(stats.avgRating)
-                      ? 'fill-yellow-400 text-yellow-400'
-                      : star - 0.5 <= stats.avgRating
+                  className={`w-6 h-6 ${star <= Math.floor(stats.avgRating)
+                    ? 'fill-yellow-400 text-yellow-400'
+                    : star - 0.5 <= stats.avgRating
                       ? 'fill-yellow-200 text-yellow-400'
                       : 'text-gray-300'
-                  }`}
+                    }`}
                 />
               ))}
             </div>
@@ -203,8 +191,8 @@ export default function CustomerFeedbackPage({ params }: { params: Promise<{ pro
             <div className="p-12 text-center text-gray-500">
               <p className="text-lg mb-2">No feedbacks found</p>
               <p className="text-sm">
-                {searchQuery || filterRating !== 'all' 
-                  ? 'Try adjusting your filters' 
+                {searchQuery || filterRating !== 'all'
+                  ? 'Try adjusting your filters'
                   : 'No customer feedback yet. Feedbacks will appear here once customers leave reviews.'}
               </p>
             </div>
@@ -219,7 +207,7 @@ export default function CustomerFeedbackPage({ params }: { params: Promise<{ pro
               return (
                 <div key={feedback.id} className="p-6 hover:bg-gray-50 transition-colors">
                   <div className="flex items-start gap-4">
-                    <div 
+                    <div
                       className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg"
                       style={{ backgroundColor: avatarColor }}
                     >
@@ -237,11 +225,10 @@ export default function CustomerFeedbackPage({ params }: { params: Promise<{ pro
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
                             key={star}
-                            className={`w-5 h-5 ${
-                              star <= feedback.rating
-                                ? 'fill-yellow-400 text-yellow-400'
-                                : 'text-gray-300'
-                            }`}
+                            className={`w-5 h-5 ${star <= feedback.rating
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-gray-300'
+                              }`}
                           />
                         ))}
                       </div>

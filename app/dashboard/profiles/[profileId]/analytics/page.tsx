@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Calendar, TrendingUp, Users, Eye } from 'lucide-react';
-import { getStoredAccessToken } from '@/lib/auth/session';
 import { useRouter } from 'next/navigation';
 
 export default function RestaurantAnalyticsPage({ params }: { params: { profileId: string } }) {
@@ -19,20 +18,9 @@ export default function RestaurantAnalyticsPage({ params }: { params: { profileI
   const fetchAnalytics = async () => {
     setLoading(true);
     setError(null);
-    const token = getStoredAccessToken();
-
-    if (!token) {
-      setLoading(false);
-      setError('Please log in to view analytics');
-      router.push(`/auth/login?callbackUrl=/dashboard/profiles/${params.profileId}/analytics`);
-      return;
-    }
-
     try {
       const response = await fetch(`/api/profiles/${params.profileId}/analytics?range=${timeRange}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
 
       if (response.status === 401) {
@@ -76,7 +64,7 @@ export default function RestaurantAnalyticsPage({ params }: { params: { profileI
         </button>
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-700">{error || 'Failed to load analytics'}</p>
-          <button 
+          <button
             onClick={fetchAnalytics}
             className="mt-2 text-red-600 hover:text-red-800 underline"
           >
@@ -239,7 +227,7 @@ export default function RestaurantAnalyticsPage({ params }: { params: { profileI
       <div className="bg-white rounded-xl p-6 border border-gray-200 mb-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Heat Map</h3>
         <p className="text-sm text-gray-500 mb-6">When customers are viewing your menu (darker = more views)</p>
-        
+
         <div className="overflow-x-auto">
           <div className="inline-block min-w-full">
             {/* Hour labels */}
@@ -288,7 +276,7 @@ export default function RestaurantAnalyticsPage({ params }: { params: { profileI
       <div className="bg-white rounded-xl p-6 border border-gray-200">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Most Viewed Items</h3>
         <p className="text-sm text-gray-500 mb-4">What's hot on your menu this period</p>
-        
+
         {mostViewedItems && mostViewedItems.length > 0 ? (
           <div className="space-y-3">
             {mostViewedItems.map((item: any, idx: number) => {

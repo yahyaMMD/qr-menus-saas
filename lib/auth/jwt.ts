@@ -1,25 +1,43 @@
 import * as jwt from "jsonwebtoken";
 import { JWTPayload, AuthTokens } from "./types";
 
-// now we use env variables and hardcode secret as a fallback but will be updated later
-const JWT_SECRET = process.env.JWT_SECRET || "secret";
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "refresh-secret";
+// Require JWT secrets from environment variables for security
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+
+if (!JWT_SECRET || !JWT_REFRESH_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'Missing required environment variables: JWT_SECRET and JWT_REFRESH_SECRET must be set in production'
+    );
+  }
+  // In development, warn but allow fallback
+  console.warn(
+    'WARNING: JWT_SECRET and JWT_REFRESH_SECRET not set. Using fallback values. This is insecure and should only be used in development.'
+  );
+}
+
+// Fallback only for development (should never be used in production)
+const FALLBACK_SECRET = 'dev-secret-change-in-production';
+const FALLBACK_REFRESH_SECRET = 'dev-refresh-secret-change-in-production';
 
 const JWT_ACCESS_EXPIRES_IN = process.env.JWT_ACCESS_EXPIRES_IN || "15m";
 const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || "7d";
 
 export function generateAccessToken(payload: Omit<JWTPayload, "type">): string {
+  const secret = (JWT_SECRET || FALLBACK_SECRET) as jwt.Secret;
   return jwt.sign(
     { ...payload, type: "access" },
-    JWT_SECRET as jwt.Secret,
+    secret,
     { expiresIn: JWT_ACCESS_EXPIRES_IN } as jwt.SignOptions
   );
 }
 
 export function generateRefreshToken(payload: Omit<JWTPayload, "type">): string {
+  const secret = (JWT_REFRESH_SECRET || FALLBACK_REFRESH_SECRET) as jwt.Secret;
   return jwt.sign(
     { ...payload, type: "refresh" },
-    JWT_REFRESH_SECRET as jwt.Secret,
+    secret,
     { expiresIn: JWT_REFRESH_EXPIRES_IN } as jwt.SignOptions
   );
 }
@@ -33,7 +51,8 @@ export function generateTokens(payload: Omit<JWTPayload, "type">): AuthTokens {
 
 export function verifyAccessToken(token: string): JWTPayload | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as unknown;
+    const secret = (JWT_SECRET || FALLBACK_SECRET) as jwt.Secret;
+    const decoded = jwt.verify(token, secret) as unknown;
 
     if (!decoded || typeof decoded !== 'object') return null;
 
@@ -51,7 +70,8 @@ export function verifyAccessToken(token: string): JWTPayload | null {
 
 export function verifyRefreshToken(token: string): JWTPayload | null {
   try {
-    const decoded = jwt.verify(token, JWT_REFRESH_SECRET) as JWTPayload;
+    const secret = (JWT_REFRESH_SECRET || FALLBACK_REFRESH_SECRET) as jwt.Secret;
+    const decoded = jwt.verify(token, secret) as JWTPayload;
     return decoded.type === "refresh" ? decoded : null;
   } catch {
     return null;

@@ -2,9 +2,9 @@
 
 import React, { useState, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  ArrowLeft, 
-  FileText, 
+import {
+  ArrowLeft,
+  FileText,
   Plus,
   Loader2,
   CheckCircle,
@@ -12,14 +12,14 @@ import {
   Sparkles
 } from 'lucide-react';
 
-export default function CreateMenuPage({ 
-  params 
-}: { 
-  params: Promise<{ profileId: string }> 
+export default function CreateMenuPage({
+  params
+}: {
+  params: Promise<{ profileId: string }>
 }) {
   const { profileId } = use(params);
   const router = useRouter();
-  
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -30,7 +30,7 @@ export default function CreateMenuPage({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
       setError('Menu name is required');
       return;
@@ -40,21 +40,12 @@ export default function CreateMenuPage({
     setError(null);
 
     try {
-      let token = localStorage.getItem('accessToken');
-      if (!token) {
-        const authRaw = localStorage.getItem('auth');
-        if (authRaw) {
-          const auth = JSON.parse(authRaw);
-          token = auth?.tokens?.accessToken;
-        }
-      }
-
       const response = await fetch(`/api/profiles/${profileId}/menus`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
+        credentials: 'include',
         body: JSON.stringify({
           name: formData.name.trim(),
           description: formData.description.trim() || null,
@@ -86,7 +77,7 @@ export default function CreateMenuPage({
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-orange-50/30 to-gray-50 p-8">
       {/* Back Button */}
-      <button 
+      <button
         onClick={() => router.push(`/dashboard/profiles/${profileId}/menus`)}
         className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-8 transition-colors group"
       >

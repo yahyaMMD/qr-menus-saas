@@ -2,10 +2,11 @@ import { NextRequest } from 'next/server';
 import { verifyAccessToken, extractTokenFromHeader } from './jwt';
 import { JWTPayload } from './types';
 import { isTokenBlacklisted } from './db';
+import { getAccessToken } from './cookies';
 
 /*
 Basically, this middleware does 3 things:
-  - Extract the JWT token from headers
+  - Extract the JWT token from httpOnly cookies (secure) or Authorization header (fallback)
   - Check if token is valid (signature + expiration) OR blacklisted.
   - Return the decoded payload OR an error
 */
@@ -17,16 +18,20 @@ export interface AuthResult {
 }
 
 /**
- * Authenticate a request by verifying the JWT token
+ * Authenticate a request by verifying the JWT token from httpOnly cookies
+ * Falls back to Authorization header for backward compatibility
  * @param request - Next.js request object
  * @returns Authentication result with payload or error
  */
 export async function authenticateRequest(request: NextRequest): Promise<AuthResult> {
-  const authHeader = request.headers.get('Authorization');
-  console.log('Middleware - Raw auth header:', authHeader);
+  // Prioritize httpOnly cookie (secure) over Authorization header
+  let token = getAccessToken(request);
   
-  const token = extractTokenFromHeader(authHeader);
-  console.log('Middleware - Extracted token:', token ? token.substring(0, 30) + '...' : 'null');
+  // Fallback to Authorization header for backward compatibility
+  if (!token) {
+    const authHeader = request.headers.get('Authorization');
+    token = extractTokenFromHeader(authHeader);
+  }
 
   if (!token) {
     return {
@@ -45,7 +50,10 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthRes
       };
     }
   } catch (err) {
-    console.error('Error checking token blacklist:', err);
+    // Log error in development only
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error checking token blacklist:', err);
+    }
     return {
       success: false,
       error: 'Internal server error',
@@ -67,7 +75,10 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthRes
       payload,
     };
   } catch (err) {
-    console.error('Token verification error:', err);
+    // Log error in development only
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Token verification error:', err);
+    }
     return {
       success: false,
       error: 'Invalid or expired token',

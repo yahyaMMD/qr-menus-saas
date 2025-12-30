@@ -19,19 +19,8 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
 
   const fetchUserData = async () => {
     try {
-      let token = localStorage.getItem('accessToken');
-      if (!token) {
-        const authRaw = localStorage.getItem('auth');
-        if (authRaw) {
-          const auth = JSON.parse(authRaw);
-          token = auth?.tokens?.accessToken;
-        }
-      }
-
       const response = await fetch('/api/profiles', {
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        credentials: 'include',
       });
 
       if (response.ok) {
@@ -47,20 +36,15 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
 
   const handleLogout = async () => {
     try {
-      const refreshToken = localStorage.getItem('refreshToken');
-      const accessToken = localStorage.getItem('accessToken');
-
       await fetch('/api/auth?action=logout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken, accessToken })
+        credentials: 'include'
       });
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('auth');
+      // Cookies are cleared by the server on logout
       router.push('/auth/login');
     }
   };
@@ -104,11 +88,10 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    isActive(item.href)
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive(item.href)
                       ? 'bg-orange-50 text-orange-600'
                       : 'text-gray-700 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   <item.icon className={`h-5 w-5 ${isActive(item.href) ? 'text-orange-600' : 'text-gray-400'}`} />
                   <span className="font-medium text-sm flex-1">{item.label}</span>
@@ -137,7 +120,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
                 </div>
               </div>
             )}
-            
+
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"

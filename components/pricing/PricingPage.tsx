@@ -30,7 +30,7 @@ export const PricingPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const plan = searchParams.get('plan');
-  
+
   const [selectedPlan, setSelectedPlan] = useState(plan || 'STANDARD');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('edahabia');
   const [isLoading, setIsLoading] = useState(false);
@@ -47,28 +47,21 @@ export const PricingPage = () => {
 
   // Check auth on component mount
   useEffect(() => {
-    const checkAuth = () => {
-      let token: string | null = null;
+    const checkAuth = async () => {
       try {
-        token = localStorage.getItem("accessToken");
-        if (!token) {
-          const raw = localStorage.getItem("authTokens") || localStorage.getItem("auth");
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            token = parsed?.accessToken || parsed?.tokens?.accessToken || null;
-          }
+        const response = await fetch('/api/profiles', { credentials: 'include' });
+        if (response.ok) {
+          setAccessToken('present'); // Use a dummy value to indicate we are logged in
         }
       } catch (err) {
-        console.warn("Could not read auth from localStorage", err);
+        console.warn("Could not check auth", err);
+      } finally {
+        setIsCheckingAuth(false);
       }
-      if (token) {
-        setAccessToken(token);
-      }
-      setIsCheckingAuth(false);
     };
 
     checkAuth();
-  }, [router]);
+  }, []);
 
   // Sync plan from query string
   useEffect(() => {
@@ -78,12 +71,6 @@ export const PricingPage = () => {
   }, [plan]);
 
   const handlePayment = async (planId: string) => {
-    if (!accessToken) {
-      setError('');
-      setLoginPrompt({ open: true, planId });
-      return;
-    }
-
     setIsLoading(true);
     setError('');
 
@@ -92,13 +79,20 @@ export const PricingPage = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         },
+        credentials: 'include',
         body: JSON.stringify({
           plan: planId,
           paymentMethod: paymentMethod
         }),
       });
+
+      if (response.status === 401) {
+        setError('');
+        setLoginPrompt({ open: true, planId });
+        setIsLoading(false);
+        return;
+      }
 
       // Handle error status codes by redirecting to error pages
       if (!response.ok) {
@@ -316,9 +310,8 @@ export const PricingPage = () => {
             {pricingPlans.map((plan, index) => (
               <div
                 key={index}
-                className={`bg-white rounded-2xl p-8 shadow-lg relative ${
-                  plan.popular ? "border-2 border-orange-500 transform md:-translate-y-4" : "border border-gray-200"
-                }`}
+                className={`bg-white rounded-2xl p-8 shadow-lg relative ${plan.popular ? "border-2 border-orange-500 transform md:-translate-y-4" : "border border-gray-200"
+                  }`}
               >
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
@@ -362,11 +355,10 @@ export const PricingPage = () => {
                 <Button
                   onClick={() => handlePayment(plan.id)}
                   disabled={isLoading}
-                  className={`w-full ${
-                    plan.buttonVariant === "primary"
-                      ? "bg-orange-500 hover:bg-orange-600 text-white"
-                      : "bg-white text-gray-900 border-2 border-gray-300 hover:border-gray-400"
-                  } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`w-full ${plan.buttonVariant === "primary"
+                    ? "bg-orange-500 hover:bg-orange-600 text-white"
+                    : "bg-white text-gray-900 border-2 border-gray-300 hover:border-gray-400"
+                    } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center">
@@ -394,19 +386,17 @@ export const PricingPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <button
                   onClick={() => setPaymentMethod('edahabia')}
-                  className={`p-6 border-2 rounded-xl text-left transition-all duration-200 ${
-                    paymentMethod === 'edahabia'
-                      ? 'border-blue-500 bg-blue-50 shadow-md'
-                      : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
-                  }`}
+                  className={`p-6 border-2 rounded-xl text-left transition-all duration-200 ${paymentMethod === 'edahabia'
+                    ? 'border-blue-500 bg-blue-50 shadow-md'
+                    : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                    }`}
                 >
                   <div className="flex items-center">
                     <div
-                      className={`w-6 h-6 rounded-full border-2 mr-4 flex items-center justify-center ${
-                        paymentMethod === 'edahabia'
-                          ? 'border-blue-500 bg-blue-500'
-                          : 'border-gray-300'
-                      }`}
+                      className={`w-6 h-6 rounded-full border-2 mr-4 flex items-center justify-center ${paymentMethod === 'edahabia'
+                        ? 'border-blue-500 bg-blue-500'
+                        : 'border-gray-300'
+                        }`}
                     >
                       {paymentMethod === 'edahabia' && (
                         <div className="w-2 h-2 bg-white rounded-full"></div>
@@ -418,22 +408,20 @@ export const PricingPage = () => {
                     </div>
                   </div>
                 </button>
-                
+
                 <button
                   onClick={() => setPaymentMethod('cib')}
-                  className={`p-6 border-2 rounded-xl text-left transition-all duration-200 ${
-                    paymentMethod === 'cib'
-                      ? 'border-blue-500 bg-blue-50 shadow-md'
-                      : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
-                  }`}
+                  className={`p-6 border-2 rounded-xl text-left transition-all duration-200 ${paymentMethod === 'cib'
+                    ? 'border-blue-500 bg-blue-50 shadow-md'
+                    : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                    }`}
                 >
                   <div className="flex items-center">
                     <div
-                      className={`w-6 h-6 rounded-full border-2 mr-4 flex items-center justify-center ${
-                        paymentMethod === 'cib'
-                          ? 'border-blue-500 bg-blue-500'
-                          : 'border-gray-300'
-                      }`}
+                      className={`w-6 h-6 rounded-full border-2 mr-4 flex items-center justify-center ${paymentMethod === 'cib'
+                        ? 'border-blue-500 bg-blue-500'
+                        : 'border-gray-300'
+                        }`}
                     >
                       {paymentMethod === 'cib' && (
                         <div className="w-2 h-2 bg-white rounded-full"></div>

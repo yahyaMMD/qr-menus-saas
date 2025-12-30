@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, use } from 'react';
-import { 
-  ArrowLeft, 
-  Plus, 
-  Search, 
-  Edit, 
-  Trash2, 
-  Image as ImageIcon, 
+import {
+  ArrowLeft,
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  Image as ImageIcon,
   Banknote,
   QrCode,
   Download,
@@ -84,14 +84,14 @@ interface Translation {
   value: string;
 }
 
-export default function MenuBuilderPage({ 
-  params 
-}: { 
-  params: Promise<{ profileId: string; menuId: string }> 
+export default function MenuBuilderPage({
+  params
+}: {
+  params: Promise<{ profileId: string; menuId: string }>
 }) {
   const { profileId, menuId } = use(params);
   const router = useRouter();
-  
+
   const [menu, setMenu] = useState<MenuData | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [types, setTypes] = useState<Type[]>([]);
@@ -100,7 +100,7 @@ export default function MenuBuilderPage({
   const [translations, setTranslations] = useState<Translation[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Modals
   const [showAddItem, setShowAddItem] = useState(false);
   const [showEditItem, setShowEditItem] = useState(false);
@@ -111,19 +111,19 @@ export default function MenuBuilderPage({
   const [showQRModal, setShowQRModal] = useState(false);
   const [showLanguagesModal, setShowLanguagesModal] = useState(false);
   const [showTranslationModal, setShowTranslationModal] = useState(false);
-  const [translatingEntity, setTranslatingEntity] = useState<{type: string; id: string; name: string} | null>(null);
-  
+  const [translatingEntity, setTranslatingEntity] = useState<{ type: string; id: string; name: string } | null>(null);
+
   const [qrCodeSvg, setQrCodeSvg] = useState<string>('');
   const [isLoadingQR, setIsLoadingQR] = useState(false);
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
-  
+
   // Form states
   const [newCategory, setNewCategory] = useState({ name: '', image: '' });
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [newTag, setNewTag] = useState({ name: '', color: '#f97316' });
   const [newType, setNewType] = useState({ name: '', image: '' });
-  
+
   const [itemForm, setItemForm] = useState({
     id: '',
     name: '',
@@ -137,44 +137,20 @@ export default function MenuBuilderPage({
     tagIds: [] as string[],
   });
 
-  // Get auth token
-  const getToken = () => {
-    let token = localStorage.getItem('accessToken');
-    if (!token) {
-      const authRaw = localStorage.getItem('auth');
-      if (authRaw) {
-        try {
-          const auth = JSON.parse(authRaw);
-          token = auth?.tokens?.accessToken;
-        } catch (e) {
-          console.error('Failed to parse auth', e);
-        }
-      }
-    }
-    return token;
-  };
-
   // Fetch all data
   useEffect(() => {
     const fetchData = async () => {
-      const token = getToken();
-      if (!token) {
-        router.push('/unauthorized');
-        return;
-      }
-
       try {
         setLoading(true);
-        const headers = { Authorization: `Bearer ${token}` };
-
         // Fetch menu details, categories, items, tags, types, translations in parallel
+        // Authentication is handled via httpOnly cookies automatically
         const [menuRes, categoriesRes, itemsRes, tagsRes, typesRes, translationsRes] = await Promise.all([
-          fetch(`/api/menus/${menuId}`, { headers }),
-          fetch(`/api/menus/${menuId}/categories`, { headers }),
-          fetch(`/api/menus/${menuId}/items`, { headers }),
-          fetch(`/api/menus/${menuId}/tags`, { headers }),
-          fetch(`/api/menus/${menuId}/types`, { headers }),
-          fetch(`/api/menus/${menuId}/translations`, { headers }),
+          fetch(`/api/menus/${menuId}`, { credentials: 'include' }),
+          fetch(`/api/menus/${menuId}/categories`, { credentials: 'include' }),
+          fetch(`/api/menus/${menuId}/items`, { credentials: 'include' }),
+          fetch(`/api/menus/${menuId}/tags`, { credentials: 'include' }),
+          fetch(`/api/menus/${menuId}/types`, { credentials: 'include' }),
+          fetch(`/api/menus/${menuId}/translations`, { credentials: 'include' }),
         ]);
 
         // Check for auth errors
@@ -224,22 +200,22 @@ export default function MenuBuilderPage({
 
   // Search filter
   const filteredItems = searchQuery
-    ? items.filter(item => 
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.tags.some(tag => tag.name.toLowerCase().includes(searchQuery.toLowerCase()))
-      )
+    ? items.filter(item =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.tags.some(tag => tag.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    )
     : null;
 
   // CRUD Operations
   const handleAddCategory = async () => {
     if (!newCategory.name.trim()) return;
-    const token = getToken();
     setSaving(true);
 
     try {
       const response = await fetch(`/api/menus/${menuId}/categories`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ name: newCategory.name, image: newCategory.image || null }),
       });
 
@@ -261,13 +237,13 @@ export default function MenuBuilderPage({
 
   const handleEditCategory = async () => {
     if (!editingCategory?.name.trim()) return;
-    const token = getToken();
     setSaving(true);
 
     try {
       const response = await fetch(`/api/menus/${menuId}/categories/${editingCategory.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ name: editingCategory.name, image: editingCategory.image || null }),
       });
 
@@ -289,12 +265,11 @@ export default function MenuBuilderPage({
 
   const handleDeleteCategory = async (categoryId: string, categoryName: string) => {
     if (!confirm(`Delete "${categoryName}"? Items in this category will become uncategorized.`)) return;
-    const token = getToken();
 
     try {
       const response = await fetch(`/api/menus/${menuId}/categories/${categoryId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
 
       if (response.ok) {
@@ -313,13 +288,13 @@ export default function MenuBuilderPage({
 
   const handleAddTag = async () => {
     if (!newTag.name.trim()) return;
-    const token = getToken();
     setSaving(true);
 
     try {
       const response = await fetch(`/api/menus/${menuId}/tags`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(newTag),
       });
 
@@ -341,13 +316,13 @@ export default function MenuBuilderPage({
 
   const handleAddType = async () => {
     if (!newType.name.trim()) return;
-    const token = getToken();
     setSaving(true);
 
     try {
       const response = await fetch(`/api/menus/${menuId}/types`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ name: newType.name, image: newType.image || null }),
       });
 
@@ -369,12 +344,11 @@ export default function MenuBuilderPage({
 
   const handleDeleteType = async (typeId: string, typeName: string) => {
     if (!confirm(`Delete type "${typeName}"?`)) return;
-    const token = getToken();
 
     try {
       const response = await fetch(`/api/menus/${menuId}/types/${typeId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
 
       if (response.ok) {
@@ -393,12 +367,11 @@ export default function MenuBuilderPage({
 
   const handleDeleteTag = async (tagId: string, tagName: string) => {
     if (!confirm(`Delete tag "${tagName}"?`)) return;
-    const token = getToken();
 
     try {
       const response = await fetch(`/api/menus/${menuId}/tags/${tagId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
 
       if (response.ok) {
@@ -423,7 +396,6 @@ export default function MenuBuilderPage({
       alert('Item name is required');
       return;
     }
-    const token = getToken();
     setSaving(true);
 
     const itemData = {
@@ -445,7 +417,8 @@ export default function MenuBuilderPage({
 
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(itemData),
       });
 
@@ -480,12 +453,11 @@ export default function MenuBuilderPage({
 
   const handleDeleteItem = async (itemId: string, itemName: string) => {
     if (!confirm(`Delete "${itemName}"?`)) return;
-    const token = getToken();
 
     try {
       const response = await fetch(`/api/menus/${menuId}/items/${itemId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
 
       if (response.ok) {
@@ -575,13 +547,13 @@ export default function MenuBuilderPage({
 
   // Language management
   const handleUpdateLanguages = async (defaultLang: string, supportedLangs: string[]) => {
-    const token = getToken();
     setSaving(true);
 
     try {
       const response = await fetch(`/api/menus/${menuId}/languages`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ defaultLanguage: defaultLang, supportedLanguages: supportedLangs }),
       });
 
@@ -601,12 +573,12 @@ export default function MenuBuilderPage({
   };
 
   const handleSaveTranslation = async (entityType: string, entityId: string, languageCode: string, field: string, value: string) => {
-    const token = getToken();
 
     try {
       const response = await fetch(`/api/menus/${menuId}/translations`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ entityType, entityId, languageCode, field, value }),
       });
 
@@ -614,7 +586,7 @@ export default function MenuBuilderPage({
       if (response.ok) {
         // Update local translations
         setTranslations(prev => {
-          const filtered = prev.filter(t => 
+          const filtered = prev.filter(t =>
             !(t.entityType === entityType && t.entityId === entityId && t.languageCode === languageCode && t.field === field)
           );
           return [...filtered, data.translation];
@@ -632,7 +604,7 @@ export default function MenuBuilderPage({
   };
 
   const getTranslation = (entityType: string, entityId: string, languageCode: string, field: string) => {
-    return translations.find(t => 
+    return translations.find(t =>
       t.entityType === entityType && t.entityId === entityId && t.languageCode === languageCode && t.field === field
     )?.value || '';
   };
@@ -689,7 +661,7 @@ export default function MenuBuilderPage({
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
-        
+
         <div className="p-6 space-y-5">
           {/* Name */}
           <div>
@@ -849,11 +821,10 @@ export default function MenuBuilderPage({
                         : [...itemForm.tagIds, tag.id],
                     });
                   }}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                    itemForm.tagIds.includes(tag.id)
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${itemForm.tagIds.includes(tag.id)
                       ? 'ring-2 ring-offset-2 ring-orange-500'
                       : 'opacity-60 hover:opacity-100'
-                  }`}
+                    }`}
                   style={{
                     backgroundColor: `${tag.color}20`,
                     color: tag.color,
@@ -910,7 +881,7 @@ export default function MenuBuilderPage({
         <h3 className="text-2xl font-bold text-gray-900 mb-6">
           {isEdit ? 'Edit Category' : 'Add New Category'}
         </h3>
-        
+
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -922,7 +893,7 @@ export default function MenuBuilderPage({
                 type="text"
                 placeholder="e.g., Appetizers, Main Courses"
                 value={isEdit ? editingCategory?.name || '' : newCategory.name}
-                onChange={(e) => isEdit 
+                onChange={(e) => isEdit
                   ? setEditingCategory({ ...editingCategory!, name: e.target.value })
                   : setNewCategory({ ...newCategory, name: e.target.value })
                 }
@@ -938,7 +909,7 @@ export default function MenuBuilderPage({
             </label>
             <ImageUpload
               value={isEdit ? editingCategory?.image || null : newCategory.image || null}
-              onChange={(url) => isEdit 
+              onChange={(url) => isEdit
                 ? setEditingCategory({ ...editingCategory!, image: url || '' })
                 : setNewCategory({ ...newCategory, image: url || '' })
               }
@@ -978,7 +949,7 @@ export default function MenuBuilderPage({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl max-w-lg w-full p-6">
         <h3 className="text-2xl font-bold text-gray-900 mb-6">Create New Tag</h3>
-        
+
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1041,7 +1012,7 @@ export default function MenuBuilderPage({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl max-w-lg w-full p-6">
         <h3 className="text-2xl font-bold text-gray-900 mb-6">Create New Type</h3>
-        
+
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1216,11 +1187,10 @@ export default function MenuBuilderPage({
                       key={lang.code}
                       onClick={() => toggleLanguage(lang.code)}
                       disabled={isDefault}
-                      className={`p-3 rounded-lg border-2 transition-all text-left ${
-                        isSelected
+                      className={`p-3 rounded-lg border-2 transition-all text-left ${isSelected
                           ? 'border-orange-500 bg-orange-50'
                           : 'border-gray-200 hover:border-gray-300'
-                      } ${isDefault ? 'opacity-75 cursor-not-allowed' : ''}`}
+                        } ${isDefault ? 'opacity-75 cursor-not-allowed' : ''}`}
                     >
                       <div className="flex items-center gap-2">
                         <span className="text-xl">{lang.flag}</span>
@@ -1507,8 +1477,8 @@ export default function MenuBuilderPage({
             <p className="text-gray-600">{menu?.profile?.name} • {menu?.name}</p>
           </div>
           <div className="flex gap-3">
-            <button 
-              onClick={() => router.push(`/dashboard/profiles/${profileId}/menus/${menuId}/settings`)} 
+            <button
+              onClick={() => router.push(`/dashboard/profiles/${profileId}/menus/${menuId}/settings`)}
               className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
               title="Menu Settings"
             >

@@ -32,28 +32,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
+      // Cookies are automatically sent with requests, no need to manually add them
       const response = await fetch('/api/auth?action=me', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include', // Important: include cookies in request
       });
 
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
-      } else {
+      } else if (response.status === 401) {
+        // Try to refresh token
         await refreshToken();
+      } else {
+        setUser(null);
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Auth check failed:', error);
+      }
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -61,30 +58,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshToken = async () => {
     try {
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (!refreshToken) {
-        setLoading(false);
-        return;
-      }
-
+      // Refresh token is in httpOnly cookie, automatically sent
       const response = await fetch('/api/auth?action=refresh', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken })
+        credentials: 'include', // Important: include cookies in request
       });
 
       if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('accessToken', data.tokens.accessToken);
-        localStorage.setItem('refreshToken', data.tokens.refreshToken);
+        // Tokens are automatically set in httpOnly cookies by the server
         await checkAuth();
       } else {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        setUser(null);
         setLoading(false);
       }
     } catch (error) {
-      console.error('Token refresh failed:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Token refresh failed:', error);
+      }
+      setUser(null);
       setLoading(false);
     }
   };
@@ -93,6 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const response = await fetch('/api/auth?action=login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', // Important: include cookies in request
       body: JSON.stringify({ email, password })
     });
 
@@ -102,15 +94,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const data = await response.json();
-    localStorage.setItem('accessToken', data.tokens.accessToken);
-    localStorage.setItem('refreshToken', data.tokens.refreshToken);
-    // persist convenient shapes for other parts of the app
-    try {
-      localStorage.setItem('authUser', JSON.stringify(data.user));
-    } catch {}
-    try {
-      localStorage.setItem('authTokens', JSON.stringify(data.tokens));
-    } catch {}
+    // Tokens are automatically stored in httpOnly cookies by the server
+    // Only store user info in memory (not localStorage for security)
     setUser(data.user);
     router.push('/');
   };
@@ -119,6 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const response = await fetch('/api/auth?action=register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', // Important: include cookies in request
       body: JSON.stringify({ name, email, password })
     });
 
@@ -128,34 +114,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const data = await response.json();
-    localStorage.setItem('accessToken', data.tokens.accessToken);
-    localStorage.setItem('refreshToken', data.tokens.refreshToken);
-    // persist convenient shapes for other parts of the app
-    try {
-      localStorage.setItem('authUser', JSON.stringify(data.user));
-    } catch {}
-    try {
-      localStorage.setItem('authTokens', JSON.stringify(data.tokens));
-    } catch {}
+    // Tokens are automatically stored in httpOnly cookies by the server
+    // Only store user info in memory (not localStorage for security)
     setUser(data.user);
     router.push('/');
   };
 
   const logout = async () => {
     try {
-      const refreshToken = localStorage.getItem('refreshToken');
-      const accessToken = localStorage.getItem('accessToken');
-
+      // Cookies are automatically sent with requests
       await fetch('/api/auth?action=logout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken, accessToken })
+        credentials: 'include', // Important: include cookies in request
       });
     } catch (error) {
-      console.error('Logout error:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Logout error:', error);
+      }
     } finally {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      // Cookies are cleared by the server
       setUser(null);
       router.push('/auth/login');
     }

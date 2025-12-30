@@ -15,58 +15,25 @@ export default function Navbar() {
 
   useEffect(() => {
     checkAuth()
-    
+
     const handleScroll = () => {
       setScrolled(window.scrollY > 10)
     }
-    
+
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
   const checkAuth = async () => {
     try {
-      const cached = localStorage.getItem('authUser') || localStorage.getItem('auth')
-      if (cached) {
-        try {
-          setUser(JSON.parse(cached))
-        } catch {}
-      }
-
-      let token = localStorage.getItem('accessToken')
-      if (!token) {
-        const authRaw = localStorage.getItem('authTokens') || localStorage.getItem('auth')
-        if (authRaw) {
-          try {
-            const parsed = JSON.parse(authRaw)
-            token = parsed?.accessToken ?? parsed?.tokens?.accessToken
-          } catch {}
-        }
-      }
-
-      if (!token) {
-        setLoading(false)
-        return
-      }
-
       const response = await fetch('/api/auth?action=me', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        credentials: 'include'
       })
 
       if (response.ok) {
         const data = await response.json()
         setUser(data.user)
-        try {
-          localStorage.setItem('authUser', JSON.stringify(data.user))
-        } catch {}
       } else {
-        localStorage.removeItem('accessToken')
-        localStorage.removeItem('refreshToken')
-        localStorage.removeItem('auth')
-        localStorage.removeItem('authTokens')
-        localStorage.removeItem('authUser')
         setUser(null)
       }
     } catch (error) {
@@ -78,22 +45,13 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      const refreshToken = localStorage.getItem('refreshToken')
-      const accessToken = localStorage.getItem('accessToken')
-
       await fetch('/api/auth?action=logout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken, accessToken })
+        credentials: 'include'
       })
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
-      localStorage.removeItem('accessToken')
-      localStorage.removeItem('refreshToken')
-      localStorage.removeItem('auth')
-      localStorage.removeItem('authTokens')
-      localStorage.removeItem('authUser')
       setUser(null)
       setIsOpen(false)
       router.push('/')
@@ -101,15 +59,14 @@ export default function Navbar() {
   }
 
   return (
-    <nav className={`bg-white/80 backdrop-blur-md border-b sticky top-0 z-50 transition-all duration-300 ${
-      scrolled ? 'border-gray-200 shadow-lg' : 'border-gray-100 shadow-sm'
-    }`}>
+    <nav className={`bg-white/80 backdrop-blur-md border-b sticky top-0 z-50 transition-all duration-300 ${scrolled ? 'border-gray-200 shadow-lg' : 'border-gray-100 shadow-sm'
+      }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <button 
-              className="lg:hidden text-gray-700 hover:text-orange-600 transition-colors p-1 rounded-lg hover:bg-orange-50" 
+            <button
+              className="lg:hidden text-gray-700 hover:text-orange-600 transition-colors p-1 rounded-lg hover:bg-orange-50"
               onClick={() => setIsOpen(!isOpen)}
             >
               {isOpen ? <X size={24} /> : <Menu size={24} />}
@@ -133,7 +90,7 @@ export default function Navbar() {
               Help
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-orange-600 transition-all duration-300 group-hover:w-full"></span>
             </Link>
-            
+
             {!loading && (
               <>
                 {user ? (
@@ -175,28 +132,28 @@ export default function Navbar() {
         {/* Mobile Menu */}
         {isOpen && (
           <div className="lg:hidden py-4 space-y-2 border-t border-gray-100 animate-in slide-in-from-top duration-300">
-            <Link 
-              href="/#pricing" 
+            <Link
+              href="/#pricing"
               className="block text-gray-600 hover:text-orange-600 hover:bg-orange-50 px-3 py-2.5 rounded-lg transition-all font-medium"
               onClick={() => setIsOpen(false)}
             >
               Pricing
             </Link>
-            <Link 
-              href="/about" 
+            <Link
+              href="/about"
               className="block text-gray-600 hover:text-orange-600 hover:bg-orange-50 px-3 py-2.5 rounded-lg transition-all font-medium"
               onClick={() => setIsOpen(false)}
             >
               About
             </Link>
-            <Link 
-              href="/help" 
+            <Link
+              href="/help"
               className="block text-gray-600 hover:text-orange-600 hover:bg-orange-50 px-3 py-2.5 rounded-lg transition-all font-medium"
               onClick={() => setIsOpen(false)}
             >
               Help
             </Link>
-            
+
             {!loading && (
               <>
                 {user ? (
@@ -219,8 +176,8 @@ export default function Navbar() {
                   </div>
                 ) : (
                   <div className="space-y-2 pt-3 border-t border-gray-100">
-                    <Link 
-                      href="/auth/login" 
+                    <Link
+                      href="/auth/login"
                       className="block text-gray-600 hover:text-orange-600 hover:bg-orange-50 px-3 py-2.5 rounded-lg transition-all font-medium"
                       onClick={() => setIsOpen(false)}
                     >

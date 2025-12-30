@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  ArrowLeft, 
+import {
+  ArrowLeft,
   Save,
   Trash2,
   Eye,
@@ -23,14 +23,14 @@ interface MenuData {
   isActive: boolean;
 }
 
-export default function MenuSettingsPage({ 
-  params 
-}: { 
-  params: Promise<{ profileId: string; menuId: string }> 
+export default function MenuSettingsPage({
+  params
+}: {
+  params: Promise<{ profileId: string; menuId: string }>
 }) {
   const { profileId, menuId } = use(params);
   const router = useRouter();
-  
+
   const [menu, setMenu] = useState<MenuData | null>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -49,25 +49,11 @@ export default function MenuSettingsPage({
     fetchMenuData();
   }, [menuId]);
 
-  const getToken = () => {
-    let token = localStorage.getItem('accessToken');
-    if (!token) {
-      const authRaw = localStorage.getItem('auth');
-      if (authRaw) {
-        const auth = JSON.parse(authRaw);
-        token = auth?.tokens?.accessToken;
-      }
-    }
-    return token;
-  };
-
   const fetchMenuData = async () => {
     try {
-      const token = getToken();
+      // Cookies are automatically sent with credentials: 'include'
       const response = await fetch(`/api/menus/${menuId}`, {
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -105,8 +91,8 @@ export default function MenuSettingsPage({
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
+        credentials: 'include',
         body: JSON.stringify({
           name: formData.name.trim(),
           description: formData.description.trim() || null,
@@ -142,9 +128,7 @@ export default function MenuSettingsPage({
       const token = getToken();
       const response = await fetch(`/api/menus/${menuId}`, {
         method: 'DELETE',
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -265,7 +249,7 @@ export default function MenuSettingsPage({
 
       {/* Header */}
       <div className="max-w-2xl mx-auto mb-8">
-        <button 
+        <button
           onClick={() => router.push(`/dashboard/profiles/${profileId}/menus/${menuId}`)}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors group"
         >
@@ -368,7 +352,7 @@ export default function MenuSettingsPage({
                   Menu Status
                 </label>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  {formData.isActive 
+                  {formData.isActive
                     ? 'This menu is visible to customers via QR code'
                     : 'This menu is hidden from customers'}
                 </p>

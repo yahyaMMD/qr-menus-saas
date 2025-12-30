@@ -53,25 +53,13 @@ export function ImageUpload({
     setIsUploading(true);
 
     try {
-      // Get auth token
-      let token = localStorage.getItem('accessToken');
-      if (!token) {
-        const authRaw = localStorage.getItem('auth');
-        if (authRaw) {
-          const auth = JSON.parse(authRaw);
-          token = auth?.tokens?.accessToken;
-        }
-      }
-
       const formData = new FormData();
       formData.append('file', file);
       formData.append('folder', folder);
 
       const response = await fetch('/api/upload', {
         method: 'POST',
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        credentials: 'include',
         body: formData,
       });
 
@@ -176,8 +164,8 @@ export function ImageUpload({
           className={`
             relative rounded-xl border-2 border-dashed transition-all cursor-pointer
             ${aspectClasses[aspectRatio]}
-            ${dragActive 
-              ? 'border-orange-500 bg-orange-50' 
+            ${dragActive
+              ? 'border-orange-500 bg-orange-50'
               : 'border-gray-300 hover:border-orange-400 hover:bg-orange-50/50'
             }
             ${isUploading ? 'pointer-events-none' : ''}

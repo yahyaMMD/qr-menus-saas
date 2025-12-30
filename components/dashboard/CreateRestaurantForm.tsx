@@ -73,7 +73,7 @@ const ALGERIAN_WILAYAS = [
 export const CreateRestaurantForm = () => {
   const router = useRouter();
   const { user } = useAuth(); // Access authenticated user
-  
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -110,8 +110,6 @@ export const CreateRestaurantForm = () => {
     setError("");
 
     try {
-      const token = localStorage.getItem('accessToken');
-      
       // Prepare the data to send to API
       const profileData = {
         name: formData.name,
@@ -136,8 +134,8 @@ export const CreateRestaurantForm = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
+        credentials: 'include',
         body: JSON.stringify(profileData),
       });
 
@@ -147,7 +145,7 @@ export const CreateRestaurantForm = () => {
       }
 
       const data = await response.json();
-      
+
       // Redirect to the new profile
       router.push(`/dashboard/profiles/${data.profile.id}`);
     } catch (err: any) {
@@ -308,7 +306,7 @@ export const CreateRestaurantForm = () => {
               />
             </div>
           </div>
-          
+
           {/* Map Preview */}
           {formData.latitude !== 0 && formData.longitude !== 0 ? (
             <div className="border border-gray-300 rounded-lg overflow-hidden">
@@ -335,7 +333,7 @@ export const CreateRestaurantForm = () => {
           <label className="block text-sm font-medium text-gray-900 mb-4">
             Social Media Links
           </label>
-          
+
           {/* Facebook */}
           <div className="mb-4">
             <div className="flex items-center gap-2 mb-2">

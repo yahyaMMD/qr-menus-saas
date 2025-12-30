@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { hashPassword, verifyPassword } from '@/lib/auth/password';
 import { generateTokens, verifyRefreshToken, verifyAccessToken } from '@/lib/auth/jwt';
 import {
-  findUserByEmail, createUser, saveRefreshToken, findRefreshToken, deleteRefreshToken, blacklistToken,
+  findUserByEmail, findUserById, createUser, saveRefreshToken, findRefreshToken, deleteRefreshToken, blacklistToken,
 } from '@/lib/auth/db';
 import { Role, RegisterRequest, LoginRequest, RefreshRequest, AuthResponse } from '@/lib/auth/types';
 import { authenticateRequest } from '@/lib/auth/middleware';
+import { setAuthCookies, clearAuthCookies, getRefreshToken, getAccessToken } from '@/lib/auth/cookies';
 import { z } from 'zod';
 import { sendEmail, getWelcomeEmailTemplate } from '@/lib/email';
 import { notifyWelcome } from '@/lib/notifications';
@@ -100,19 +101,21 @@ async function handleRegister(request: NextRequest): Promise<NextResponse> {
         email: user.email,
         role: user.role,
       },
-      tokens,
+      // Don't send tokens in response body for security (they're in httpOnly cookies)
+      tokens: {
+        accessToken: '',
+        refreshToken: '',
+      },
     };
 
     const res = NextResponse.json(responseBody, { status: 201 });
-    res.cookies.set('accessToken', tokens.accessToken, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-    });
+    // Set both tokens in httpOnly cookies
+    setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
     return res;
   } catch (error) {
-    console.error('Register error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Register error:', error);
+    }
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -172,19 +175,21 @@ async function handleLogin(request: NextRequest): Promise<NextResponse> {
         email: user.email,
         role: user.role,
       },
-      tokens,
+      // Don't send tokens in response body for security (they're in httpOnly cookies)
+      tokens: {
+        accessToken: '',
+        refreshToken: '',
+      },
     };
 
     const res = NextResponse.json(responseBody, { status: 200 });
-    res.cookies.set('accessToken', tokens.accessToken, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-    });
+    // Set both tokens in httpOnly cookies
+    setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
     return res;
   } catch (error) {
-    console.error('Login error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Login error:', error);
+    }
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -195,94 +200,43 @@ async function handleLogin(request: NextRequest): Promise<NextResponse> {
 // Logout user
 async function handleLogout(request: NextRequest): Promise<NextResponse> {
   try {
-    // Get refresh token from body or Authorization header
-    const body = await request.json().catch(() => ({}));
-    const refreshToken = body.refreshToken;
-
-    if (!refreshToken) {
-      const authHeader = request.headers.get('Authorization');
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.substring(7);
-        
-        // Try as refresh token first
-        let payload = verifyRefreshToken(token);
-        if (payload) {
-          // When logging out, blacklist the access token so it can't be reused
-          const accessToken = body.accessToken;
-          if (accessToken) {
-            const accessPayload = verifyAccessToken(accessToken);
-            if (accessPayload && accessPayload.exp) {
-              const expiresAt = new Date(accessPayload.exp * 1000);
-              await blacklistToken(accessToken, expiresAt);
-            }
-          }
-          // Delete refresh token
-          await deleteRefreshToken(token);
-          
-          return NextResponse.json(
-            { message: 'Logged out successfully' },
-            { status: 200 }
-          );
-        }
-        
-        // Try as access token
-        payload = verifyAccessToken(token);
-        if (payload && payload.exp) {
-          // Just blacklist the access token
-          const expiresAt = new Date(payload.exp * 1000);
-          await blacklistToken(token, expiresAt);
-          
-          return NextResponse.json(
-            { message: 'Logged out successfully' },
-            { status: 200 }
-          );
-        }
-      }
-
-      return NextResponse.json(
-        { error: 'Refresh token is required' },
-        { status: 400 }
-      );
-    }
-
-    // Verify refresh token
-    const payload = verifyRefreshToken(refreshToken);
-    if (!payload) {
-      return NextResponse.json(
-        { error: 'Invalid refresh token' },
-        { status: 401 }
-      );
-    }
-
-    // Check if token exists in database
-    const tokenData = await findRefreshToken(refreshToken);
-    if (!tokenData) {
-      return NextResponse.json(
-        { error: 'Refresh token not found' },
-        { status: 401 }
-      );
-    }
-
-    // Delete refresh token
-    await deleteRefreshToken(refreshToken);
-
-    // Blacklist access token if provided
-    if (body.accessToken) {
-      const accessPayload = verifyAccessToken(body.accessToken);
-      if (accessPayload && accessPayload.exp) {
-        const expiresAt = new Date(accessPayload.exp * 1000);
-        await blacklistToken(body.accessToken, expiresAt);
-      }
-    }
-
     const res = NextResponse.json(
       { message: 'Logged out successfully' },
       { status: 200 }
     );
-    res.cookies.delete('accessToken');
+
+    // Get tokens from httpOnly cookies (secure)
+    const refreshToken = getRefreshToken(request);
+    const accessToken = getAccessToken(request);
+
+    // If we have a refresh token, verify and delete it
+    if (refreshToken) {
+      const payload = verifyRefreshToken(refreshToken);
+      if (payload) {
+        // Check if token exists in database
+        const tokenData = await findRefreshToken(refreshToken);
+        if (tokenData) {
+          await deleteRefreshToken(refreshToken);
+        }
+      }
+    }
+
+    // Blacklist access token if valid
+    if (accessToken) {
+      const payload = verifyAccessToken(accessToken);
+      if (payload && payload.exp) {
+        const expiresAt = new Date(payload.exp * 1000);
+        await blacklistToken(accessToken, expiresAt);
+      }
+    }
+
+    // Clear all auth cookies
+    clearAuthCookies(res);
     return res;
   } catch (error) {
-    console.error('Logout error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Logout error:', error);
+    }
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -293,36 +247,41 @@ async function handleLogout(request: NextRequest): Promise<NextResponse> {
 // Refresh access token
 async function handleRefresh(request: NextRequest): Promise<NextResponse> {
   try {
-    const body: RefreshRequest = await request.json();
+    // Get refresh token from httpOnly cookie (secure)
+    const refreshToken = getRefreshToken(request);
 
-    const refreshSchema = z.object({
-      refreshToken: z.string().min(1, { message: 'Refresh token is required' }),
-    });
-
-    const parseResult = refreshSchema.safeParse(body);
-
-    if (!parseResult.success) {
-      return NextResponse.json({ error: parseResult.error.format() }, { status: 400 });
+    if (!refreshToken) {
+      return NextResponse.json(
+        { error: 'Refresh token is required' },
+        { status: 400 }
+      );
     }
-
-    const { refreshToken } = parseResult.data;
 
     // Verify refresh token
     const payload = verifyRefreshToken(refreshToken);
     if (!payload) {
-      return NextResponse.json({ error: 'Invalid or expired refresh token' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Invalid or expired refresh token' },
+        { status: 401 }
+      );
     }
 
     // Token existence check
     const tokenData = await findRefreshToken(refreshToken);
     if (!tokenData) {
-      return NextResponse.json({ error: 'Refresh token not found' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Refresh token not found' },
+        { status: 401 }
+      );
     }
 
     // Token expiration check
     if (tokenData.expiresAt < new Date()) {
       await deleteRefreshToken(refreshToken);
-      return NextResponse.json({ error: 'Refresh token has expired' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Refresh token has expired' },
+        { status: 401 }
+      );
     }
 
     // Delete old refresh token
@@ -335,17 +294,21 @@ async function handleRefresh(request: NextRequest): Promise<NextResponse> {
       role: payload.role,
     });
 
-    const res = NextResponse.json({ tokens }, { status: 200 });
-    res.cookies.set('accessToken', tokens.accessToken, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-    });
+    const res = NextResponse.json(
+      { message: 'Tokens refreshed successfully' },
+      { status: 200 }
+    );
+    // Set both tokens in httpOnly cookies
+    setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
     return res;
   } catch (error) {
-    console.error('Refresh error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Refresh error:', error);
+    }
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 
@@ -361,18 +324,30 @@ async function handleMe(request: NextRequest): Promise<NextResponse> {
       );
     }
 
+    // Get full user data from database to include name
+    const user = await findUserById(authResult.payload.userId);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json(
       {
         user: {
-          id: authResult.payload.userId,
-          email: authResult.payload.email,
-          role: authResult.payload.role,
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
         },
       },
       { status: 200 }
     );
   } catch (error) {
-    console.error('Me error:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Me error:', error);
+    }
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

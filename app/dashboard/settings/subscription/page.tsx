@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { 
-  ArrowLeft, 
+import {
+  ArrowLeft,
   Calendar,
   CreditCard,
   Download,
@@ -142,21 +142,6 @@ export default function ManageSubscriptionPage() {
   const [billingLoading, setBillingLoading] = useState(true);
   const [billingError, setBillingError] = useState<string | null>(null);
 
-  const getToken = () => {
-    let token = localStorage.getItem('accessToken');
-    if (!token) {
-      const authRaw = localStorage.getItem('auth');
-      if (authRaw) {
-        try {
-          const auth = JSON.parse(authRaw);
-          token = auth?.tokens?.accessToken;
-        } catch (e) {
-          console.error('Failed to parse auth', e);
-        }
-      }
-    }
-    return token;
-  };
 
   useEffect(() => {
     fetchSubscription();
@@ -168,14 +153,8 @@ export default function ManageSubscriptionPage() {
 
   const fetchSubscription = async () => {
     try {
-      const token = getToken();
-      if (!token) {
-        router.push('/auth/login');
-        return;
-      }
-
       const response = await fetch('/api/subscription', {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -202,16 +181,9 @@ export default function ManageSubscriptionPage() {
   const fetchBillingHistory = async () => {
     setBillingLoading(true);
     setBillingError(null);
-    const token = getToken();
-    if (!token) {
-      setBillingLoading(false);
-      setBillingError('Please log in to view billing history');
-      return;
-    }
-
     try {
       const response = await fetch('/api/user/payments', {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -241,16 +213,9 @@ export default function ManageSubscriptionPage() {
   const fetchAnalyticsSummary = async () => {
     setAnalyticsLoading(true);
     setAnalyticsError(null);
-    const token = getToken();
-    if (!token) {
-      setAnalyticsLoading(false);
-      setAnalyticsError('Please log in to view analytics');
-      return;
-    }
-
     try {
       const response = await fetch('/api/dashboard', {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -290,16 +255,9 @@ export default function ManageSubscriptionPage() {
   const fetchNotificationSummary = async () => {
     setNotificationsLoading(true);
     setNotificationsError(null);
-    const token = getToken();
-
-    if (!token) {
-      setNotificationsLoading(false);
-      return;
-    }
-
     try {
       const response = await fetch('/api/user/preferences', {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -321,18 +279,12 @@ export default function ManageSubscriptionPage() {
     setError(null);
 
     try {
-      const token = getToken();
-      if (!token) {
-        router.push('/auth/login');
-        return;
-      }
-
       const response = await fetch('/api/subscription', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({ action, ...additionalData }),
       });
 
@@ -346,7 +298,7 @@ export default function ManageSubscriptionPage() {
       setSubscription(data.subscription);
       setShowCancelModal(false);
       setShowPauseModal(false);
-      
+
       // Refresh data
       await fetchSubscription();
     } catch (err: any) {
@@ -607,7 +559,7 @@ Amount: ${invoice.amount.toLocaleString()} ${invoice.currency}
 
       {/* Header */}
       <div className="mb-8">
-        <button 
+        <button
           onClick={() => router.push('/dashboard/settings?section=billing')}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
         >
@@ -686,7 +638,7 @@ Amount: ${invoice.amount.toLocaleString()} ${invoice.currency}
                 )}
               </div>
               {subscriptionStatus === 'paused' && (
-                <button 
+                <button
                   onClick={() => handleAction('resume')}
                   disabled={isProcessing}
                   className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-50"
@@ -696,7 +648,7 @@ Amount: ${invoice.amount.toLocaleString()} ${invoice.currency}
                 </button>
               )}
               {subscriptionStatus === 'canceled' && (
-                <button 
+                <button
                   onClick={() => handleAction('reactivate')}
                   disabled={isProcessing}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center gap-2 disabled:opacity-50"
@@ -841,12 +793,12 @@ Amount: ${invoice.amount.toLocaleString()} ${invoice.currency}
                     </span>
                   </div>
                   <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-purple-500" 
-                      style={{ 
-                        width: planDetails?.limitations?.maxProfiles 
-                          ? `${Math.min((usage.profiles / planDetails.limitations.maxProfiles) * 100, 100)}%` 
-                          : '10%' 
+                    <div
+                      className="h-full bg-purple-500"
+                      style={{
+                        width: planDetails?.limitations?.maxProfiles
+                          ? `${Math.min((usage.profiles / planDetails.limitations.maxProfiles) * 100, 100)}%`
+                          : '10%'
                       }}
                     ></div>
                   </div>
@@ -859,8 +811,8 @@ Amount: ${invoice.amount.toLocaleString()} ${invoice.currency}
                     </span>
                   </div>
                   <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-purple-500" 
+                    <div
+                      className="h-full bg-purple-500"
                       style={{ width: '25%' }}
                     ></div>
                   </div>
@@ -990,10 +942,10 @@ Amount: ${invoice.amount.toLocaleString()} ${invoice.currency}
                       </tr>
                     ))
                   )}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
@@ -1021,14 +973,14 @@ Amount: ${invoice.amount.toLocaleString()} ${invoice.currency}
                     const enabled = notificationSummary.email[key] ?? false;
                     return (
                       <div key={key} className="flex items-center justify-between text-sm text-gray-700">
-                          <div className="flex items-center gap-2">
-                            {enabled ? (
-                              <CheckCircle className="w-4 h-4 text-green-500" />
-                            ) : (
-                              <XCircle className="w-4 h-4 text-gray-300" />
-                            )}
-                            <span>{label}</span>
-                          </div>
+                        <div className="flex items-center gap-2">
+                          {enabled ? (
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <XCircle className="w-4 h-4 text-gray-300" />
+                          )}
+                          <span>{label}</span>
+                        </div>
                         <span className={`text-xs ${enabled ? 'text-green-600' : 'text-gray-500'}`}>
                           {enabled ? 'Enabled' : 'Off'}
                         </span>
@@ -1043,14 +995,14 @@ Amount: ${invoice.amount.toLocaleString()} ${invoice.currency}
                     const enabled = notificationSummary.push[key] ?? false;
                     return (
                       <div key={key} className="flex items-center justify-between text-sm text-gray-700">
-                          <div className="flex items-center gap-2">
-                            {enabled ? (
-                              <CheckCircle className="w-4 h-4 text-green-500" />
-                            ) : (
-                              <XCircle className="w-4 h-4 text-gray-300" />
-                            )}
-                            <span>{label}</span>
-                          </div>
+                        <div className="flex items-center gap-2">
+                          {enabled ? (
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <XCircle className="w-4 h-4 text-gray-300" />
+                          )}
+                          <span>{label}</span>
+                        </div>
                         <span className={`text-xs ${enabled ? 'text-green-600' : 'text-gray-500'}`}>
                           {enabled ? 'Enabled' : 'Off'}
                         </span>

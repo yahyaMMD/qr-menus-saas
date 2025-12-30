@@ -2,14 +2,13 @@
 import { useRouter } from 'next/navigation';
 
 import React, { useState, useEffect } from 'react';
-import { getStoredAccessToken } from '@/lib/auth/session';
-import { 
-  User, 
-  Mail, 
-  Lock, 
-  Bell, 
-  CreditCard, 
-  Globe, 
+import {
+  User,
+  Mail,
+  Lock,
+  Bell,
+  CreditCard,
+  Globe,
   Save,
   Camera,
   Phone,
@@ -21,13 +20,13 @@ import {
   Loader2
 } from 'lucide-react';
 // Profile Photo Upload Component with Camera Icon Overlay
-function ProfilePhotoUpload({ 
-  value, 
-  onChange, 
-  fallbackLetter 
-}: { 
-  value: string; 
-  onChange: (url: string | null) => void; 
+function ProfilePhotoUpload({
+  value,
+  onChange,
+  fallbackLetter
+}: {
+  value: string;
+  onChange: (url: string | null) => void;
   fallbackLetter: string;
 }) {
   const [isUploading, setIsUploading] = React.useState(false);
@@ -46,15 +45,13 @@ function ProfilePhotoUpload({
 
     setIsUploading(true);
     try {
-      const token = getStoredAccessToken();
-
       const formData = new FormData();
       formData.append('file', file);
       formData.append('folder', 'qr-menus/avatars');
 
       const response = await fetch('/api/upload', {
         method: 'POST',
-        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        credentials: 'include',
         body: formData,
       });
 
@@ -79,7 +76,7 @@ function ProfilePhotoUpload({
         className="hidden"
         disabled={isUploading}
       />
-      
+
       {/* Photo */}
       <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-gray-200">
         {value ? (
@@ -205,7 +202,6 @@ export default function AccountSettingsPage() {
 
   const router = useRouter();
 
-  const getToken = () => getStoredAccessToken();
 
   useEffect(() => {
     fetchUserData();
@@ -215,22 +211,14 @@ export default function AccountSettingsPage() {
 
   const fetchUserData = async () => {
     try {
-      const token = getToken();
-      if (!token) {
-        router.push('/auth/login');
-        return;
-      }
-
       const response = await fetch('/api/user', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
 
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
-        
+
         // Split name into first and last name
         const nameParts = (data.user.name || '').split(' ');
         const firstName = nameParts[0] || '';
@@ -257,13 +245,8 @@ export default function AccountSettingsPage() {
 
   const fetchPreferences = async () => {
     try {
-      const token = getToken();
-      if (!token) return;
-
       const response = await fetch('/api/user/preferences', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
 
       if (response.ok) {
@@ -282,18 +265,9 @@ export default function AccountSettingsPage() {
   const fetchBillingHistory = async () => {
     setBillingLoading(true);
     setBillingError(null);
-    const token = getToken();
-    if (!token) {
-      setBillingLoading(false);
-      router.push('/auth/login');
-      return;
-    }
-
     try {
       const response = await fetch('/api/user/payments', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -320,20 +294,14 @@ export default function AccountSettingsPage() {
     setSuccess(null);
 
     try {
-      const token = getToken();
-      if (!token) {
-        router.push('/auth/login');
-        return;
-      }
-
       const fullName = `${profileData.firstName} ${profileData.lastName}`.trim();
-      
+
       const response = await fetch('/api/user', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
           name: fullName,
           email: profileData.email,
@@ -365,12 +333,6 @@ export default function AccountSettingsPage() {
     setSuccess(null);
 
     try {
-      const token = getToken();
-      if (!token) {
-        router.push('/auth/login');
-        return;
-      }
-
       if (!currentPassword || !password || !confirmPassword) {
         throw new Error('All password fields are required');
       }
@@ -387,8 +349,8 @@ export default function AccountSettingsPage() {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
           currentPassword,
           newPassword: password,
@@ -406,11 +368,10 @@ export default function AccountSettingsPage() {
       setCurrentPassword('');
       setPassword('');
       setConfirmPassword('');
-      
+
       // Log out after password change
+      // Cookies are cleared by the server on logout
       setTimeout(() => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('auth');
         router.push('/auth/login');
       }, 2000);
     } catch (err: any) {
@@ -426,18 +387,12 @@ export default function AccountSettingsPage() {
     setSuccess(null);
 
     try {
-      const token = getToken();
-      if (!token) {
-        router.push('/auth/login');
-        return;
-      }
-
       const response = await fetch('/api/user/preferences', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
           notifications: preferences.notifications,
         }),
@@ -465,18 +420,12 @@ export default function AccountSettingsPage() {
     setSuccess(null);
 
     try {
-      const token = getToken();
-      if (!token) {
-        router.push('/auth/login');
-        return;
-      }
-
       const response = await fetch('/api/user/preferences', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
           language: preferences.language,
           timezone: preferences.timezone,
@@ -543,18 +492,12 @@ export default function AccountSettingsPage() {
       setModalError(null);
 
       try {
-        const token = getToken();
-        if (!token) {
-          router.push('/auth/login');
-          return;
-        }
-
         const response = await fetch('/api/user/preferences', {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
           },
+          credentials: 'include',
           body: JSON.stringify({
             defaultPaymentMethod: selectedMethod,
           }),
@@ -602,16 +545,14 @@ export default function AccountSettingsPage() {
               <button
                 type="button"
                 onClick={() => setSelectedMethod('edahabia')}
-                className={`w-full p-4 border-2 rounded-xl text-left transition-all ${
-                  selectedMethod === 'edahabia'
-                    ? 'border-orange-500 bg-orange-50 shadow-md'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
+                className={`w-full p-4 border-2 rounded-xl text-left transition-all ${selectedMethod === 'edahabia'
+                  ? 'border-orange-500 bg-orange-50 shadow-md'
+                  : 'border-gray-200 hover:border-gray-300'
+                  }`}
               >
                 <div className="flex items-center gap-4">
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                    selectedMethod === 'edahabia' ? 'border-orange-500 bg-orange-500' : 'border-gray-300'
-                  }`}>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedMethod === 'edahabia' ? 'border-orange-500 bg-orange-500' : 'border-gray-300'
+                    }`}>
                     {selectedMethod === 'edahabia' && <div className="w-2 h-2 bg-white rounded-full" />}
                   </div>
                   <div className="flex items-center gap-3 flex-1">
@@ -630,16 +571,14 @@ export default function AccountSettingsPage() {
               <button
                 type="button"
                 onClick={() => setSelectedMethod('cib')}
-                className={`w-full p-4 border-2 rounded-xl text-left transition-all ${
-                  selectedMethod === 'cib'
-                    ? 'border-orange-500 bg-orange-50 shadow-md'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
+                className={`w-full p-4 border-2 rounded-xl text-left transition-all ${selectedMethod === 'cib'
+                  ? 'border-orange-500 bg-orange-50 shadow-md'
+                  : 'border-gray-200 hover:border-gray-300'
+                  }`}
               >
                 <div className="flex items-center gap-4">
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                    selectedMethod === 'cib' ? 'border-orange-500 bg-orange-500' : 'border-gray-300'
-                  }`}>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedMethod === 'cib' ? 'border-orange-500 bg-orange-500' : 'border-gray-300'
+                    }`}>
                     {selectedMethod === 'cib' && <div className="w-2 h-2 bg-white rounded-full" />}
                   </div>
                   <div className="flex items-center gap-3 flex-1">
@@ -822,11 +761,10 @@ export default function AccountSettingsPage() {
                 <button
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
-                    activeSection === section.id
-                      ? 'bg-orange-50 text-orange-600 border-l-4 border-orange-500'
-                      : 'text-gray-700 hover:bg-gray-50 border-l-4 border-transparent'
-                  }`}
+                  className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${activeSection === section.id
+                    ? 'bg-orange-50 text-orange-600 border-l-4 border-orange-500'
+                    : 'text-gray-700 hover:bg-gray-50 border-l-4 border-transparent'
+                    }`}
                 >
                   <Icon className="w-5 h-5" />
                   <span className="font-medium">{section.label}</span>
@@ -926,13 +864,13 @@ export default function AccountSettingsPage() {
                 )}
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                  <button 
+                  <button
                     onClick={() => fetchUserData()}
                     className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                   >
                     Cancel
                   </button>
-                  <button 
+                  <button
                     onClick={handleSaveProfile}
                     disabled={isSaving}
                     className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-50"
@@ -1018,7 +956,7 @@ export default function AccountSettingsPage() {
                 </div>
 
                 <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-gray-200">
-                  <button 
+                  <button
                     onClick={handleChangePassword}
                     disabled={isSaving || passwordStrength !== 'strong' || !currentPassword || password !== confirmPassword}
                     className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1052,8 +990,8 @@ export default function AccountSettingsPage() {
                             <div className="text-sm text-gray-600">{item.description}</div>
                           </div>
                           <label className="relative inline-flex items-center cursor-pointer">
-                            <input 
-                              type="checkbox" 
+                            <input
+                              type="checkbox"
                               checked={preferences.notifications.email[item.key as keyof typeof preferences.notifications.email]}
                               onChange={(e) => setPreferences({
                                 ...preferences,
@@ -1065,7 +1003,7 @@ export default function AccountSettingsPage() {
                                   }
                                 }
                               })}
-                              className="sr-only peer" 
+                              className="sr-only peer"
                             />
                             <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
                           </label>
@@ -1088,8 +1026,8 @@ export default function AccountSettingsPage() {
                             <div className="text-sm text-gray-600">{item.description}</div>
                           </div>
                           <label className="relative inline-flex items-center cursor-pointer">
-                            <input 
-                              type="checkbox" 
+                            <input
+                              type="checkbox"
                               checked={preferences.notifications.push[item.key as keyof typeof preferences.notifications.push]}
                               onChange={(e) => setPreferences({
                                 ...preferences,
@@ -1101,7 +1039,7 @@ export default function AccountSettingsPage() {
                                   }
                                 }
                               })}
-                              className="sr-only peer" 
+                              className="sr-only peer"
                             />
                             <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
                           </label>
@@ -1112,7 +1050,7 @@ export default function AccountSettingsPage() {
                 </div>
 
                 <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-gray-200">
-                  <button 
+                  <button
                     onClick={handleSaveNotifications}
                     disabled={isSaving}
                     className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-50"
@@ -1142,13 +1080,13 @@ export default function AccountSettingsPage() {
                     </div>
                   </div>
                   <div className="flex gap-3">
-                    <button 
+                    <button
                       onClick={() => router.push('/dashboard/settings/plans')}
                       className="px-4 py-2 bg-white text-orange-600 border border-orange-300 rounded-lg hover:bg-orange-50 transition-colors font-medium text-sm"
                     >
                       Change Plan
                     </button>
-                    <button 
+                    <button
                       onClick={() => router.push('/dashboard/settings/subscription')}
                       className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium text-sm"
                     >
@@ -1161,7 +1099,7 @@ export default function AccountSettingsPage() {
                 <div className="mb-8">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-medium text-gray-900">Payment Methods</h3>
-                    <button 
+                    <button
                       onClick={() => setShowAddPaymentModal(true)}
                       className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium text-sm transition-colors"
                     >
@@ -1202,89 +1140,89 @@ export default function AccountSettingsPage() {
                 </div>
 
                 {/* Billing History */}
-                  <div>
-                    <h3 className="font-medium text-gray-900 mb-4">Billing History</h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="border-b border-gray-200">
-                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Date</th>
-                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Description</th>
-                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Amount</th>
-                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Status</th>
-                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Invoice</th>
+                <div>
+                  <h3 className="font-medium text-gray-900 mb-4">Billing History</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Date</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Description</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Amount</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Status</th>
+                          <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Invoice</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {billingLoading ? (
+                          <tr>
+                            <td colSpan={5} className="py-6 px-4 text-center text-sm text-gray-500">
+                              Loading billing history...
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {billingLoading ? (
-                            <tr>
-                              <td colSpan={5} className="py-6 px-4 text-center text-sm text-gray-500">
-                                Loading billing history...
-                              </td>
-                            </tr>
-                          ) : billingError ? (
-                            <tr>
-                              <td colSpan={5} className="py-6 px-4 text-center text-sm text-red-600">
-                                {billingError}
-                                <button
-                                  onClick={fetchBillingHistory}
-                                  className="ml-3 text-orange-600 underline"
-                                >
-                                  Retry
-                                </button>
-                              </td>
-                            </tr>
-                          ) : billingHistory.length === 0 ? (
-                            <tr>
-                              <td colSpan={5} className="py-6 px-4 text-center text-sm text-gray-500">
-                                No payments recorded yet. Your billing history will appear here.
-                              </td>
-                            </tr>
-                          ) : (
-                            billingHistory.map((invoice) => {
-                              const amount = (invoice.amountCents / 100).toLocaleString();
-                              const statusTone =
-                                invoice.status === 'PAID'
-                                  ? 'bg-green-100 text-green-700'
-                                  : invoice.status === 'FAILED'
-                                    ? 'bg-red-100 text-red-700'
-                                    : 'bg-yellow-100 text-yellow-700';
-                              return (
-                                <tr
-                                  key={invoice.id}
-                                  className="border-b border-gray-200 hover:bg-gray-50"
-                                >
-                                  <td className="py-4 px-4 text-sm text-gray-900">
-                                    {new Date(invoice.createdAt).toLocaleDateString()}
-                                  </td>
-                                  <td className="py-4 px-4 text-sm text-gray-600">{invoice.description}</td>
-                                  <td className="py-4 px-4 text-sm font-medium text-gray-900">
-                                    {amount} {invoice.currency}
-                                  </td>
-                                  <td className="py-4 px-4">
-                                    <span className={`px-3 py-1 text-xs font-medium ${statusTone} rounded-full`}>
-                                      {invoice.status}
-                                    </span>
-                                  </td>
-                                  <td className="py-4 px-4">
-                                    {invoice.reference ? (
-                                      <button
-                                        className="text-sm text-orange-600 hover:text-orange-700 font-medium"
-                                      >
-                                        Download
-                                      </button>
-                                    ) : (
-                                      <span className="text-xs text-gray-400">—</span>
-                                    )}
-                                  </td>
-                                </tr>
-                              );
-                            })
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
+                        ) : billingError ? (
+                          <tr>
+                            <td colSpan={5} className="py-6 px-4 text-center text-sm text-red-600">
+                              {billingError}
+                              <button
+                                onClick={fetchBillingHistory}
+                                className="ml-3 text-orange-600 underline"
+                              >
+                                Retry
+                              </button>
+                            </td>
+                          </tr>
+                        ) : billingHistory.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="py-6 px-4 text-center text-sm text-gray-500">
+                              No payments recorded yet. Your billing history will appear here.
+                            </td>
+                          </tr>
+                        ) : (
+                          billingHistory.map((invoice) => {
+                            const amount = (invoice.amountCents / 100).toLocaleString();
+                            const statusTone =
+                              invoice.status === 'PAID'
+                                ? 'bg-green-100 text-green-700'
+                                : invoice.status === 'FAILED'
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-yellow-100 text-yellow-700';
+                            return (
+                              <tr
+                                key={invoice.id}
+                                className="border-b border-gray-200 hover:bg-gray-50"
+                              >
+                                <td className="py-4 px-4 text-sm text-gray-900">
+                                  {new Date(invoice.createdAt).toLocaleDateString()}
+                                </td>
+                                <td className="py-4 px-4 text-sm text-gray-600">{invoice.description}</td>
+                                <td className="py-4 px-4 text-sm font-medium text-gray-900">
+                                  {amount} {invoice.currency}
+                                </td>
+                                <td className="py-4 px-4">
+                                  <span className={`px-3 py-1 text-xs font-medium ${statusTone} rounded-full`}>
+                                    {invoice.status}
+                                  </span>
+                                </td>
+                                <td className="py-4 px-4">
+                                  {invoice.reference ? (
+                                    <button
+                                      className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                                    >
+                                      Download
+                                    </button>
+                                  ) : (
+                                    <span className="text-xs text-gray-400">—</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
                   </div>
+                </div>
               </div>
             )}
 
@@ -1296,7 +1234,7 @@ export default function AccountSettingsPage() {
                 <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
-                    <select 
+                    <select
                       value={preferences.language}
                       onChange={(e) => setPreferences({ ...preferences, language: e.target.value })}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
@@ -1309,7 +1247,7 @@ export default function AccountSettingsPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
-                    <select 
+                    <select
                       value={preferences.timezone}
                       onChange={(e) => setPreferences({ ...preferences, timezone: e.target.value })}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
@@ -1322,7 +1260,7 @@ export default function AccountSettingsPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
-                    <select 
+                    <select
                       value={preferences.currency}
                       onChange={(e) => setPreferences({ ...preferences, currency: e.target.value })}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
@@ -1335,7 +1273,7 @@ export default function AccountSettingsPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Date Format</label>
-                    <select 
+                    <select
                       value={preferences.dateFormat}
                       onChange={(e) => setPreferences({ ...preferences, dateFormat: e.target.value })}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
@@ -1348,7 +1286,7 @@ export default function AccountSettingsPage() {
                 </div>
 
                 <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-gray-200">
-                  <button 
+                  <button
                     onClick={handleSavePreferences}
                     disabled={isSaving}
                     className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-50"

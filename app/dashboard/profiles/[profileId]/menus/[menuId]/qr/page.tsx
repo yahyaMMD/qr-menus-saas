@@ -38,16 +38,16 @@ export default function MenuQRCodePage() {
     try {
       setLoading(true);
       const response = await fetch(`/api/qr/${menuId}?format=svg&size=${size}`);
-      
+
       if (!response.ok) throw new Error('Failed to generate QR code');
-      
+
       const svg = await response.text();
       setQrCodeSvg(svg);
-      
+
       // Extract menu URL from response headers or construct it
       const url = resolvePublicMenuUrl(menuId, { client: true });
       setMenuUrl(url);
-      
+
       setLoading(false);
     } catch (error) {
       console.error('Error fetching QR code:', error);
@@ -61,17 +61,8 @@ export default function MenuQRCodePage() {
     try {
       setStatsLoading(true);
       setStatsError(null);
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        setStats(null);
-        setStatsError('Missing authentication token');
-        return;
-      }
-
       const response = await fetch(`/api/analytics?menuId=${menuId}&days=30`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -113,7 +104,7 @@ export default function MenuQRCodePage() {
     try {
       const response = await fetch(`/api/qr/${menuId}?format=${downloadFormat}&size=${size}`);
       const blob = await response.blob();
-      
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -226,8 +217,8 @@ export default function MenuQRCodePage() {
         {/* QR Code Preview */}
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">QR Code Preview</h2>
-          
-          <div 
+
+          <div
             ref={qrRef}
             className="bg-white p-8 rounded-xl border-4 border-gray-200 flex items-center justify-center mb-6"
             dangerouslySetInnerHTML={{ __html: qrCodeSvg }}
@@ -286,7 +277,7 @@ export default function MenuQRCodePage() {
           {/* Download Card */}
           <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
             <h2 className="text-xl font-semibold text-gray-900 mb-6">Download Options</h2>
-            
+
             <div className="space-y-4">
               <button
                 onClick={() => handleDownload('svg')}

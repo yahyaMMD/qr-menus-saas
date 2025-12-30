@@ -18,24 +18,8 @@ export default function Navbar() {
 
   const checkAuth = async () => {
     try {
-      let token = localStorage.getItem('accessToken')
-      if (!token) {
-        const authRaw = localStorage.getItem('auth')
-        if (authRaw) {
-          const auth = JSON.parse(authRaw)
-          token = auth?.tokens?.accessToken
-        }
-      }
-
-      if (!token) {
-        setLoading(false)
-        return
-      }
-
       const response = await fetch('/api/profiles', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        credentials: 'include'
       })
 
       if (response.ok) {
@@ -51,20 +35,15 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      const refreshToken = localStorage.getItem('refreshToken')
-      const accessToken = localStorage.getItem('accessToken')
-
       await fetch('/api/auth?action=logout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken, accessToken })
+        credentials: 'include'
       })
     } catch (error) {
       console.error('Logout error:', error)
     } finally {
-      localStorage.removeItem('accessToken')
-      localStorage.removeItem('refreshToken')
-      localStorage.removeItem('auth')
+      // Cookies are cleared by the server on logout
       setUser(null)
       router.push('/auth/login')
     }
@@ -95,7 +74,7 @@ export default function Navbar() {
             <Link href="/help" className="text-gray-700 hover:text-orange-600 transition-colors font-medium">
               Help
             </Link>
-            
+
             {!loading && (
               <>
                 {user ? (
@@ -145,7 +124,7 @@ export default function Navbar() {
             <Link href="/help" className="block text-gray-700 hover:text-orange-600 py-2 transition-colors">
               Help
             </Link>
-            
+
             {!loading && (
               <>
                 {user ? (

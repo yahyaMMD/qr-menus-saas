@@ -30,26 +30,11 @@ export default function MyRestaurantsPage() {
   useEffect(() => {
     const fetchProfiles = async () => {
       try {
-        let token = localStorage.getItem('accessToken');
-        if (!token) {
-          const authRaw = localStorage.getItem('auth');
-          if (authRaw) {
-            try {
-              const auth = JSON.parse(authRaw);
-              token = auth?.tokens?.accessToken;
-            } catch (e) {
-              console.error('Failed to parse auth', e);
-            }
-          }
-        }
-
         const response = await fetch('/api/profiles?list=restaurants', {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
+          credentials: 'include',
         });
         const data = await response.json();
-        
+
         if (response.ok) {
           setRestaurants(data.profiles);
         } else {
@@ -111,7 +96,7 @@ export default function MyRestaurantsPage() {
               </button>
               {showMenu === restaurant.id && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-10">
-                  <button 
+                  <button
                     onClick={() => {
                       router.push(`/dashboard/profiles/${restaurant.id}/settings`);
                       setShowMenu(null);
@@ -121,7 +106,7 @@ export default function MyRestaurantsPage() {
                     <Edit className="w-4 h-4" />
                     Edit Profile
                   </button>
-                  <button 
+                  <button
                     onClick={() => {
                       if (confirm(`Delete ${restaurant.name}?`)) {
                         // TODO: Call delete API

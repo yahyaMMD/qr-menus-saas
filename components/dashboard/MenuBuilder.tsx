@@ -4,10 +4,10 @@ import { useState } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
-import { 
-  Plus, 
-  Trash2, 
-  GripVertical, 
+import {
+  Plus,
+  Trash2,
+  GripVertical,
   Upload,
   Save,
   Eye,
@@ -56,7 +56,7 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
   const [activeTab, setActiveTab] = useState<'types' | 'categories' | 'tags' | 'items'>('items');
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
-  
+
   const [menuItems, setMenuItems] = useState<MenuItem[]>([
     {
       id: "1",
@@ -180,7 +180,7 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
       alert("Please enter item name and price");
       return;
     }
-    setMenuItems(menuItems.map(item => 
+    setMenuItems(menuItems.map(item =>
       item.id === currentItem.id ? currentItem : item
     ));
     setShowEditItemModal(false);
@@ -194,7 +194,7 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
 
   const toggleItemStatus = (itemId: string) => {
     setMenuItems(menuItems.map(item =>
-      item.id === itemId 
+      item.id === itemId
         ? { ...item, status: item.status === 'Active' ? 'Inactive' : 'Active' }
         : item
     ));
@@ -273,21 +273,12 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
     setIsPublishing(true);
 
     try {
-      let token = localStorage.getItem('accessToken');
-      if (!token) {
-        const authRaw = localStorage.getItem('auth');
-        if (authRaw) {
-          const auth = JSON.parse(authRaw);
-          token = auth?.tokens?.accessToken;
-        }
-      }
-
       const response = await fetch(`/api/profiles/${profileId}/menus`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
+        credentials: 'include',
         body: JSON.stringify({
           name: menuName,
           description: menuDescription,
@@ -301,7 +292,7 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
       }
 
       const data = await response.json();
-      
+
       // Show success alert
       setShowSuccessAlert(true);
 
@@ -344,22 +335,22 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
           <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
             <Check className="h-8 w-8 text-green-600" />
           </div>
-          
+
           {/* Title */}
           <h3 className="text-2xl font-bold text-gray-900 mb-2">
             Menu Published Successfully!
           </h3>
-          
+
           {/* Description */}
           <p className="text-gray-600 mb-6">
             Your menu "<span className="font-semibold text-orange-600">{menuName}</span>" is now live and ready to be shared with customers.
           </p>
-          
+
           {/* Loading bar */}
           <div className="w-full bg-gray-200 rounded-full h-1.5 mb-4 overflow-hidden">
-            <div className="bg-gradient-to-r from-orange-500 to-orange-600 h-1.5 rounded-full animate-pulse" style={{width: '100%'}}></div>
+            <div className="bg-gradient-to-r from-orange-500 to-orange-600 h-1.5 rounded-full animate-pulse" style={{ width: '100%' }}></div>
           </div>
-          
+
           <p className="text-sm text-gray-500">
             Redirecting to menu editor...
           </p>
@@ -390,11 +381,10 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as any)}
-                    className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${
-                      activeTab === tab.id
+                    className={`flex-1 px-6 py-3 text-sm font-medium transition-colors ${activeTab === tab.id
                         ? 'bg-gray-50 text-gray-900 border-b-2 border-orange-500'
                         : 'text-gray-600 hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     {tab.label}
                   </button>
@@ -408,7 +398,7 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <p className="text-sm text-gray-600">Add menu items with details, prices, and images</p>
-                    <Button 
+                    <Button
                       className="bg-orange-500 hover:bg-orange-600 text-white gap-2"
                       onClick={addMenuItem}
                     >
@@ -477,24 +467,23 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
                             <td className="py-4 px-4">
                               <button
                                 onClick={() => toggleItemStatus(item.id)}
-                                className={`px-3 py-1 text-xs font-medium rounded-full ${
-                                  item.status === 'Active'
+                                className={`px-3 py-1 text-xs font-medium rounded-full ${item.status === 'Active'
                                     ? 'bg-green-700 text-white'
                                     : 'bg-gray-300 text-gray-700'
-                                }`}
+                                  }`}
                               >
                                 {item.status}
                               </button>
                             </td>
                             <td className="py-4 px-4">
                               <div className="flex items-center gap-2">
-                                <button 
+                                <button
                                   className="p-1.5 hover:bg-gray-100 rounded"
                                   onClick={() => editMenuItem(item)}
                                 >
                                   <Edit2 className="h-4 w-4 text-gray-600" />
                                 </button>
-                                <button 
+                                <button
                                   className="p-1.5 hover:bg-red-50 rounded"
                                   onClick={() => deleteMenuItem(item.id)}
                                 >
@@ -510,15 +499,15 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
 
                   {/* Bottom Actions */}
                   <div className="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="gap-2"
                       onClick={handleSave}
                     >
                       <FileText className="h-4 w-4" />
                       Save Draft
                     </Button>
-                    <Button 
+                    <Button
                       className="bg-orange-500 hover:bg-orange-600 text-white gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       onClick={handlePublish}
                       disabled={isPublishing}
@@ -543,7 +532,7 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <p className="text-sm text-gray-600">Organize your menu into different types (e.g., Hot Drinks, Cold Drinks)</p>
-                    <Button 
+                    <Button
                       className="bg-orange-500 hover:bg-orange-600 text-white gap-2"
                       onClick={() => setShowAddTypeModal(true)}
                     >
@@ -576,7 +565,7 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <p className="text-sm text-gray-600">Create categories to organize your menu items</p>
-                    <Button 
+                    <Button
                       className="bg-orange-500 hover:bg-orange-600 text-white gap-2"
                       onClick={() => setShowAddCategoryModal(true)}
                     >
@@ -609,7 +598,7 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <p className="text-sm text-gray-600">Add tags to highlight special features (e.g., Vegan, Spicy, Popular)</p>
-                    <Button 
+                    <Button
                       className="bg-orange-500 hover:bg-orange-600 text-white gap-2"
                       onClick={() => setShowAddTagModal(true)}
                     >
@@ -623,7 +612,7 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
                       <div key={tag.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                         <div className="flex items-start justify-between">
                           <div className="flex-1 flex items-center gap-3">
-                            <div 
+                            <div
                               className="w-8 h-8 rounded-full"
                               style={{ backgroundColor: tag.color }}
                             ></div>
@@ -725,11 +714,10 @@ export const MenuBuilder = ({ profileId, menuId }: { profileId?: string; menuId?
                     <button
                       key={tag.id}
                       onClick={() => toggleTag(tag.name)}
-                      className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
-                        currentItem.tags.includes(tag.name)
+                      className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${currentItem.tags.includes(tag.name)
                           ? getTagColor(tag.name)
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
+                        }`}
                     >
                       {tag.name}
                     </button>

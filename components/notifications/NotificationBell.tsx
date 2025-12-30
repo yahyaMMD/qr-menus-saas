@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { 
-  Bell, 
-  Check, 
-  CheckCheck, 
-  Trash2, 
-  X, 
+import {
+  Bell,
+  Check,
+  CheckCheck,
+  Trash2,
+  X,
   CreditCard,
   Users,
   Star,
@@ -77,24 +77,21 @@ export default function NotificationBell() {
         setLoading(true);
       }
 
-      const token = localStorage.getItem('accessToken');
-      if (!token) return;
-
       const offset = reset ? 0 : notifications.length;
       const response = await fetch(`/api/notifications?limit=10&offset=${offset}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
 
       if (!response.ok) return;
 
       const data = await response.json();
-      
+
       if (reset) {
         setNotifications(data.notifications);
       } else {
         setNotifications(prev => [...prev, ...data.notifications]);
       }
-      
+
       setUnreadCount(data.unreadCount);
       setHasMore(data.notifications.length === 10);
     } catch (error) {
@@ -135,10 +132,9 @@ export default function NotificationBell() {
   // Mark single notification as read
   const markAsRead = async (id: string) => {
     try {
-      const token = localStorage.getItem('accessToken');
-      await fetch(`/api/notifications/${id}`, {
+      await fetch(`/api/notifications${id}`, {
         method: 'PATCH',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
 
       setNotifications(prev =>
@@ -153,13 +149,12 @@ export default function NotificationBell() {
   // Mark all as read
   const markAllAsRead = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
       await fetch('/api/notifications', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({ action: 'mark-all-read' }),
       });
 
@@ -176,10 +171,9 @@ export default function NotificationBell() {
   const deleteNotification = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      const token = localStorage.getItem('accessToken');
       await fetch(`/api/notifications/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
 
       const notification = notifications.find(n => n.id === id);
@@ -197,7 +191,7 @@ export default function NotificationBell() {
     if (!notification.read) {
       markAsRead(notification.id);
     }
-    
+
     const link = notification.data?.link;
     if (link) {
       window.location.href = link;
@@ -279,16 +273,14 @@ export default function NotificationBell() {
                   <div
                     key={notification.id}
                     onClick={() => handleNotificationClick(notification)}
-                    className={`group flex items-start gap-3 px-4 py-3 border-b border-slate-50 cursor-pointer transition-colors ${
-                      notification.read
+                    className={`group flex items-start gap-3 px-4 py-3 border-b border-slate-50 cursor-pointer transition-colors ${notification.read
                         ? 'bg-white hover:bg-slate-50'
                         : 'bg-orange-50/50 hover:bg-orange-50'
-                    }`}
+                      }`}
                   >
                     {/* Icon */}
-                    <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${
-                      notification.read ? 'bg-slate-100' : 'bg-white shadow-sm'
-                    }`}>
+                    <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${notification.read ? 'bg-slate-100' : 'bg-white shadow-sm'
+                      }`}>
                       {notificationIcons[notification.type] || <Bell className="w-5 h-5 text-slate-400" />}
                     </div>
 
