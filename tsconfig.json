@@ -20,7 +20,9 @@
     "types": [
       "react",
       "react-dom",
-      "node"
+      "node",
+      "jest",
+      "@testing-library/jest-dom"
     ],
     "plugins": [
       {
